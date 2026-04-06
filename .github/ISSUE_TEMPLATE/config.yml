@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 📚 Documentation
+    url: https://github.com/yourusername/neote#readme
+    about: Check the README and documentation for answers
+  - name: 💬 Discussions
+    url: https://github.com/yourusername/neote/discussions
+    about: Please ask and answer questions here
