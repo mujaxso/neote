@@ -1,10 +1,12 @@
+# Aider
 .aider*
+
 # Compiled files
 target/
 **/*.rs.bk
 
 # Cargo.lock is generated for applications, not libraries
-# But we have binaries, so we'll keep it
+# This workspace contains binaries, so we commit Cargo.lock
 # Cargo.lock
 
 # IDE specific files
@@ -36,3 +38,6 @@ coverage/
 # Temporary files
 tmp/
 temp/
+
+# GitHub Actions custom actions
+.github/actions/
