@@ -596,7 +596,7 @@ fn status_bar<'a>(
     };
 
     // Show a loading indicator if status contains "Loading"
-    let status_indicator = if status_message.contains("Loading") || status_message.contains("loading") {
+    let status_indicator: Element<_> = if status_message.contains("Loading") || status_message.contains("loading") {
         row![
             text("⏳").size(12),
             text(status_message).size(12),
