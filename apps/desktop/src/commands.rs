@@ -1,9 +1,11 @@
 use core_types::workspace::EditorCommand;
 
+#[allow(dead_code)]
 pub struct Command {
     pub command: EditorCommand,
 }
 
+#[allow(dead_code)]
 impl Command {
     pub fn new(command: EditorCommand) -> Self {
         Self { command }

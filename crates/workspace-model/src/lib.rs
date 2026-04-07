@@ -37,7 +37,7 @@ mod tests {
         assert_eq!(state.file_tree().len(), 2);
         
         // Test opening a buffer
-        let buffer_id = state.open_buffer("/test/path/file1.txt", "Hello, world!".to_string());
+        let _buffer_id = state.open_buffer("/test/path/file1.txt", "Hello, world!".to_string());
         assert!(state.active_buffer().is_some());
         assert_eq!(state.active_buffer().unwrap().text(), "Hello, world!");
         

@@ -3,6 +3,7 @@ use std::path::Path;
 
 use core_types::workspace::*;
 
+#[allow(dead_code)]
 pub fn list_directory(path: &str) -> Result<Vec<DirectoryEntry>, String> {
     let dir_path = Path::new(path);
     if !dir_path.exists() {
@@ -45,10 +46,12 @@ pub fn list_directory(path: &str) -> Result<Vec<DirectoryEntry>, String> {
     Ok(entries)
 }
 
+#[allow(dead_code)]
 pub fn read_file(path: &str) -> Result<String, String> {
     fs::read_to_string(path).map_err(|e| format!("Failed to read file: {}", e))
 }
 
+#[allow(dead_code)]
 pub fn write_file(path: &str, content: &str) -> Result<(), String> {
     fs::write(path, content).map_err(|e| format!("Failed to write file: {}", e))
 }
