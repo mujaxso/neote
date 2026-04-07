@@ -161,7 +161,11 @@ impl eframe::App for NeoteApp {
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Force X11 backend to avoid Wayland issues
-    std::env::set_var("WINIT_UNIX_BACKEND", "x11");
+    // SAFETY: We're setting an environment variable before any threads are spawned.
+    // This is safe because we do it at the very beginning of main.
+    unsafe {
+        std::env::set_var("WINIT_UNIX_BACKEND", "x11");
+    }
     
     let args: Vec<String> = env::args().collect();
     if args.len() < 2 {
