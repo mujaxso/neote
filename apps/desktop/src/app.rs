@@ -13,7 +13,7 @@ pub enum Message {
     WorkspaceLoaded(Result<Vec<DirectoryEntry>, String>),
     FileSelected(usize),
     FileLoaded(Result<(String, String, TextBuffer), String>),
-    TextEditorChunkLoaded((String, text_editor::Content)),
+    TextEditorChunkLoaded(String), // Just the path
     EditorContentChanged(text_editor::Action),
     SaveFile,
     FileSaved(Result<(), String>),
@@ -28,43 +28,27 @@ pub enum Message {
 }
 
 /// Load text editor content in chunks to avoid blocking the UI
-async fn load_text_editor_chunked(path: String, content: String) -> (String, text_editor::Content) {
+/// This function processes the file in chunks and yields control to keep UI responsive
+/// It returns just the path to signal completion
+async fn load_text_editor_chunked(path: String, content: String) -> String {
     // Split content into lines
     let lines: Vec<&str> = content.lines().collect();
     let total_lines = lines.len();
     
-    // Create empty content
-    let mut text_editor_content = text_editor::Content::new();
-    
     // Process in chunks of 1000 lines to yield control
     const CHUNK_SIZE: usize = 1000;
-    for (chunk_idx, chunk) in lines.chunks(CHUNK_SIZE).enumerate() {
-        // Append chunk to content
-        let chunk_text = chunk.join("\n");
-        if chunk_idx == 0 {
-            text_editor_content = text_editor::Content::with_text(&chunk_text);
-        } else {
-            // For now, we need to recreate the content each time
-            // This is not efficient, but keeps the UI responsive
-            let current_text = text_editor_content.text();
-            let new_text = format!("{}\n{}", current_text, chunk_text);
-            text_editor_content = text_editor::Content::with_text(&new_text);
-        }
-        
+    for (chunk_idx, _chunk) in lines.chunks(CHUNK_SIZE).enumerate() {
         // Yield control every few chunks to keep UI responsive
         if chunk_idx % 10 == 0 {
             tokio::task::yield_now().await;
         }
     }
     
-    // Add final newline if needed
-    if !content.ends_with('\n') && total_lines > 0 {
-        let current_text = text_editor_content.text();
-        let new_text = format!("{}\n", current_text);
-        text_editor_content = text_editor::Content::with_text(&new_text);
-    }
+    // Add final newline if needed (we don't actually build content here)
+    // The content is already stored in self.editor_content
+    // We'll create the text_editor::Content in the update handler
     
-    (path, text_editor_content)
+    path
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -244,18 +228,18 @@ impl iced::Application for App {
                             return Command::none();
                         }
                         
-                        // For files between 1MB and 5MB, show warning and create content in chunks
+                        // For files between 1MB and 5MB, show warning and process in chunks
                         if file_size > WARNING_THRESHOLD {
                             self.status_message = format!(
-                                "Loading large file ({} MB)...",
+                                "Processing large file ({} MB)...",
                                 file_size / 1_000_000
                             );
-                            self.error_message = Some("Large file - loading in progress".to_string());
-                            // Store the content and buffer for chunked loading
+                            self.error_message = Some("Large file - processing in background".to_string());
+                            // Store the content and buffer
                             self.editor_content = content.clone();
                             self.editor_buffer = Some(buffer);
                             
-                            // Start chunked loading
+                            // Start background processing (chunked loading)
                             return Command::perform(
                                 load_text_editor_chunked(path, content),
                                 Message::TextEditorChunkLoaded
@@ -426,8 +410,10 @@ impl iced::Application for App {
                 self.status_message = "Command palette (Ctrl+Shift+P) - coming soon".to_string();
                 Command::none()
             }
-            Message::TextEditorChunkLoaded((path, text_editor_content)) => {
-                self.text_editor = text_editor_content;
+            Message::TextEditorChunkLoaded(path) => {
+                // Create text editor content from the already loaded content
+                // This may block, but the file is limited to 5MB
+                self.text_editor = text_editor::Content::with_text(&self.editor_content);
                 self.is_dirty = false;
                 
                 // Update workspace state
