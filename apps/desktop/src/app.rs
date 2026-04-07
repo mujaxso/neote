@@ -3,7 +3,7 @@ use workspace_daemon::files;
 use workspace_model::state::WorkspaceState;
 use core_types::workspace::DirectoryEntry;
 use editor_buffer::buffer::TextBuffer;
-use iced::{Element, Task};
+use iced::{Element, Command};
 
 #[derive(Debug, Clone)]
 pub enum Message {
@@ -36,7 +36,7 @@ impl iced::Application for App {
     type Executor = iced::executor::Default;
     type Flags = ();
 
-    fn new(_flags: ()) -> (Self, Task<Message>) {
+    fn new(_flags: ()) -> (Self, Command<Message>) {
         (
             App {
                 workspace_path: String::new(),
@@ -49,7 +49,7 @@ impl iced::Application for App {
                 error_message: None,
                 workspace_state: Arc::new(Mutex::new(WorkspaceState::new(""))),
             },
-            Task::none(),
+            Command::none(),
         )
     }
 
@@ -57,20 +57,20 @@ impl iced::Application for App {
         String::from("Neote")
     }
 
-    fn update(&mut self, message: Message) -> Task<Message> {
+    fn update(&mut self, message: Message) -> Command<Message> {
         match message {
             Message::WorkspacePathChanged(path) => {
                 self.workspace_path = path;
-                Task::none()
+                Command::none()
             }
             Message::OpenWorkspace => {
                 if self.workspace_path.is_empty() {
                     self.status_message = "Please enter a workspace path".to_string();
-                    return Task::none();
+                    return Command::none();
                 }
                 
                 let path = self.workspace_path.clone();
-                Task::perform(
+                Command::perform(
                     async move {
                         match files::list_directory(&path) {
                             Ok(entries) => Message::WorkspaceLoaded(Ok(entries)),
@@ -96,7 +96,7 @@ impl iced::Application for App {
                         self.status_message = "Failed to load workspace".to_string();
                     }
                 }
-                Task::none()
+                Command::none()
             }
             Message::FileSelected(index) => {
                 if index < self.file_entries.len() {
@@ -105,7 +105,7 @@ impl iced::Application for App {
                         let path = entry.path.clone();
                         self.active_file_path = Some(path.clone());
                         
-                        Task::perform(
+                        Command::perform(
                             async move {
                                 match files::read_file(&path) {
                                     Ok(content) => Message::FileLoaded(Ok((path, content))),
@@ -115,10 +115,10 @@ impl iced::Application for App {
                             |result| result,
                         )
                     } else {
-                        Task::none()
+                        Command::none()
                     }
                 } else {
-                    Task::none()
+                    Command::none()
                 }
             }
             Message::FileLoaded(result) => {
@@ -140,7 +140,7 @@ impl iced::Application for App {
                         self.status_message = "Failed to load file".to_string();
                     }
                 }
-                Task::none()
+                Command::none()
             }
             Message::EditorContentChanged(new_content) => {
                 self.editor_content = new_content.clone();
@@ -153,14 +153,14 @@ impl iced::Application for App {
                 } else {
                     "All changes saved".to_string()
                 };
-                Task::none()
+                Command::none()
             }
             Message::SaveFile => {
                 if let Some(path) = &self.active_file_path {
                     let content = self.editor_content.clone();
                     let path_clone = path.clone();
                     
-                    Task::perform(
+                    Command::perform(
                         async move {
                             match files::write_file(&path_clone, &content) {
                                 Ok(_) => Message::FileSaved(Ok(())),
@@ -171,7 +171,7 @@ impl iced::Application for App {
                     )
                 } else {
                     self.status_message = "No file selected to save".to_string();
-                    Task::none()
+                    Command::none()
                 }
             }
             Message::FileSaved(result) => {
@@ -189,12 +189,12 @@ impl iced::Application for App {
                         self.status_message = "Failed to save file".to_string();
                     }
                 }
-                Task::none()
+                Command::none()
             }
             Message::RefreshWorkspace => {
                 if !self.workspace_path.is_empty() {
                     let path = self.workspace_path.clone();
-                    Task::perform(
+                    Command::perform(
                         async move {
                             match files::list_directory(&path) {
                                 Ok(entries) => Message::WorkspaceLoaded(Ok(entries)),
@@ -204,7 +204,7 @@ impl iced::Application for App {
                         |result| result,
                     )
                 } else {
-                    Task::none()
+                    Command::none()
                 }
             }
         }

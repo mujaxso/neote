@@ -1,19 +1,19 @@
 use iced::{
-    widget::{button, column, container, row, scrollable, text, text_input},
+    widget::{button, column, container, row, text, text_input},
     Alignment, Element, Length,
 };
 
 use crate::app::Message;
 
-pub fn layout(
-    workspace_path: &str,
-    file_entries: &[crate::core_types::workspace::DirectoryEntry],
-    active_file_path: Option<&String>,
-    editor_content: &str,
+pub fn layout<'a>(
+    workspace_path: &'a str,
+    file_entries: &'a [core_types::workspace::DirectoryEntry],
+    active_file_path: Option<&'a String>,
+    editor_content: &'a str,
     is_dirty: bool,
-    status_message: &str,
-    error_message: Option<&String>,
-) -> Element<Message> {
+    status_message: &'a str,
+    error_message: Option<&'a String>,
+) -> Element<'a, Message> {
     let workspace_controls = row![
         text_input("Workspace path", workspace_path)
             .on_input(Message::WorkspacePathChanged)

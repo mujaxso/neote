@@ -5,7 +5,7 @@ use iced::{
 
 use crate::app::Message;
 
-pub fn header(active_file_path: Option<&String>, is_dirty: bool) -> Element<Message> {
+pub fn header<'a>(active_file_path: Option<&'a String>, is_dirty: bool) -> Element<'a, Message> {
     row![
         text(
             active_file_path
@@ -25,7 +25,7 @@ pub fn header(active_file_path: Option<&String>, is_dirty: bool) -> Element<Mess
     .into()
 }
 
-pub fn editor(editor_content: &str) -> Element<Message> {
+pub fn editor<'a>(editor_content: &'a str) -> Element<'a, Message> {
     scrollable(
         text_input("", editor_content)
             .on_input(Message::EditorContentChanged)

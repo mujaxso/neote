@@ -5,7 +5,7 @@ use iced::{
 
 use crate::app::Message;
 
-pub fn file_list(file_entries: &[crate::core_types::workspace::DirectoryEntry]) -> Element<Message> {
+pub fn file_list<'a>(file_entries: &'a [core_types::workspace::DirectoryEntry]) -> Element<'a, Message> {
     if file_entries.is_empty() {
         container(text("No files found").size(16))
             .width(Length::Fill)
