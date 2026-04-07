@@ -151,14 +151,20 @@ impl iced::Application for App {
             Message::FileLoaded(result) => {
                 match result {
                     Ok((path, content)) => {
-                        let buffer = TextBuffer::new(content.clone());
-                        self.editor_content = content.clone();
+                        // Update text editor content
                         self.text_editor = text_editor::Content::with_text(&content);
+                        self.editor_content = content.clone();
+                        
+                        // Create buffer
+                        let buffer = TextBuffer::new(content.clone());
                         self.editor_buffer = Some(buffer);
                         self.is_dirty = false;
                         
-                        let mut state = self.workspace_state.lock().unwrap();
-                        state.open_buffer(&path, self.editor_content.clone());
+                        // Update workspace state quickly
+                        {
+                            let mut state = self.workspace_state.lock().unwrap();
+                            state.open_buffer(&path, self.editor_content.clone());
+                        }
                         
                         self.status_message = format!("Loaded: {}", path);
                         self.error_message = None;

@@ -10,7 +10,11 @@ pub fn editor<'a>(editor_content: &'a iced::widget::text_editor::Content) -> Ele
     let content_text = editor_content.text();
     let line_count = content_text.lines().count().max(1);
     
-    let line_numbers: Vec<Element<_>> = (1..=line_count)
+    // Limit the number of lines to render to prevent performance issues
+    let max_lines_to_render = 1000;
+    let lines_to_render = line_count.min(max_lines_to_render);
+    
+    let line_numbers: Vec<Element<_>> = (1..=lines_to_render)
         .map(|i| {
             container(
                 text(format!("{:>4}", i))
@@ -29,20 +33,20 @@ pub fn editor<'a>(editor_content: &'a iced::widget::text_editor::Content) -> Ele
         .spacing(0)
         .width(Length::Fixed(60.0));
     
-    // Create a text editor
+    // Create a text editor with proper height
     let editor = text_editor::TextEditor::new(editor_content)
         .on_action(Message::EditorContentChanged)
         .font(Font::MONOSPACE)
         .height(Length::Fill);
     
-    // Wrap in a scrollable
-    let scrollable_editor = scrollable(
-        container(editor)
-            .padding(16)
-            .width(Length::Fill)
-            .height(Length::Fill)
-    )
-    .height(Length::Fill);
+    // Create a scrollable container for the editor
+    let editor_container = container(editor)
+        .padding(16)
+        .width(Length::Fill)
+        .height(Length::Fill);
+    
+    let scrollable_editor = scrollable(editor_container)
+        .height(Length::Fill);
     
     row![
         container(line_numbers_column)
