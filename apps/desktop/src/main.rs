@@ -18,6 +18,7 @@ struct NeoteApp {
     editor_text: String,
     dirty: bool,
     sidebar: crate::ui::sidebar::Sidebar,
+    pending_sidebar_events: Vec<crate::events::SidebarEvent>,
 }
 
 impl NeoteApp {
@@ -34,6 +35,7 @@ impl NeoteApp {
             editor_text: String::new(),
             dirty: false,
             sidebar: crate::ui::sidebar::Sidebar::default(),
+            pending_sidebar_events: Vec::new(),
         })
     }
 
@@ -46,6 +48,7 @@ impl NeoteApp {
             editor_text: String::new(),
             dirty: false,
             sidebar: crate::ui::sidebar::Sidebar::default(),
+            pending_sidebar_events: Vec::new(),
         }
     }
 
@@ -134,6 +137,72 @@ impl NeoteApp {
                     }
                     Err(e) => {
                         eprintln!("Failed to read file: {}", e);
+                    }
+                }
+            }
+        }
+    }
+
+    fn process_sidebar_events(&mut self) {
+        use crate::events::SidebarEvent;
+        
+        // Take all pending events to avoid borrowing issues
+        let events = std::mem::take(&mut self.pending_sidebar_events);
+        
+        for event in events {
+            match event {
+                SidebarEvent::OpenWorkspace => {
+                    if let Some(path) = rfd::FileDialog::new().pick_folder() {
+                        let path_str = path.to_string_lossy().to_string();
+                        if let Err(e) = self.open_workspace(path_str) {
+                            eprintln!("Failed to open workspace: {}", e);
+                        }
+                    }
+                }
+                SidebarEvent::CreateFile => {
+                    if let Some(path) = rfd::FileDialog::new().save_file() {
+                        let path_str = path.to_string_lossy().to_string();
+                        if let Err(e) = self.create_file(path_str) {
+                            eprintln!("Failed to create file: {}", e);
+                        }
+                    }
+                }
+                SidebarEvent::DeleteFile => {
+                    if let Some(path) = rfd::FileDialog::new().pick_file() {
+                        let path_str = path.to_string_lossy().to_string();
+                        if let Err(e) = self.delete_file(path_str) {
+                            eprintln!("Failed to delete file: {}", e);
+                        }
+                    }
+                }
+                SidebarEvent::OpenFile => {
+                    if let Some(path) = rfd::FileDialog::new().pick_file() {
+                        let path_str = path.to_string_lossy().to_string();
+                        // Find the index of this file in file_entries
+                        if let Some(index) = self.file_entries.iter().position(|entry| entry.path == path_str) {
+                            self.open_file(index);
+                        } else {
+                            // If not in current list, open it directly
+                            match files::read_file(&path_str) {
+                                Ok(content) => {
+                                    let mut state = self.workspace_state.lock().unwrap();
+                                    state.open_buffer(&path_str, content.clone());
+                                    self.editor_text = content;
+                                    self.dirty = false;
+                                    // If we have a workspace, refresh the file list to include the new file
+                                    if !self.workspace_path.is_empty() {
+                                        // Check if the file is within the workspace
+                                        if path_str.starts_with(&self.workspace_path) {
+                                            if let Ok(entries) = files::list_directory(&self.workspace_path) {
+                                                self.file_entries = entries;
+                                                state.set_file_tree(self.file_entries.clone());
+                                            }
+                                        }
+                                    }
+                                }
+                                Err(e) => eprintln!("Failed to read file: {}", e),
+                            }
+                        }
                     }
                 }
             }
