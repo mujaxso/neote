@@ -9,8 +9,12 @@ pub fn terminal<'a>(_content: &'a str) -> Element<'a, Message> {
         row![
             text("TERMINAL").size(12).style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 150))),
             iced::widget::horizontal_space(),
-            button("Clear").style(theme::Button::Secondary),
-            button("Run").style(theme::Button::Primary),
+            button("Clear")
+                .on_press(Message::PromptInputChanged("clear".to_string()))
+                .style(theme::Button::Secondary),
+            button("Run")
+                .on_press(Message::PromptInputChanged("cargo run".to_string()))
+                .style(theme::Button::Primary),
         ]
         .padding([8, 16])
         .align_items(iced::Alignment::Center),
@@ -29,6 +33,7 @@ pub fn terminal<'a>(_content: &'a str) -> Element<'a, Message> {
         row![
             text("❯").size(14).style(iced::theme::Text::Color(iced::Color::from_rgb8(0, 200, 0))),
             text_input("Type a command...", "")
+                .on_input(|cmd| Message::PromptInputChanged(format!("terminal: {}", cmd)))
                 .padding(8)
                 .width(Length::Fill),
         ]

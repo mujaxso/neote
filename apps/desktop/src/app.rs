@@ -20,7 +20,8 @@ pub enum Message {
     ActivitySelected(Activity),
     PromptInputChanged(String),
     SendPrompt,
-    KeyPressed(iced::keyboard::Key),
+    KeyPressed(iced::keyboard::Key, iced::keyboard::Modifiers),
+    ToggleDirectory(String),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -45,6 +46,7 @@ pub struct App {
     active_activity: Activity,
     ai_panel_visible: bool,
     prompt_input: String,
+    expanded_directories: std::collections::HashSet<String>,
 }
 
 impl iced::Application for App {
@@ -68,6 +70,7 @@ impl iced::Application for App {
                 active_activity: Activity::Explorer,
                 ai_panel_visible: true,
                 prompt_input: String::new(),
+                expanded_directories: std::collections::HashSet::new(),
             },
             Command::none(),
         )
@@ -251,15 +254,30 @@ impl iced::Application for App {
                 self.prompt_input.clear();
                 Command::none()
             }
-            Message::KeyPressed(key) => {
+            Message::KeyPressed(key, modifiers) => {
                 match key {
-                    iced::keyboard::Key::Character(c) if c == "s" => {
-                        // Check for Ctrl+S
-                        // We need to track modifier state, but for now just save
+                    iced::keyboard::Key::Character(c) if c == "s" && modifiers.control() => {
+                        // Ctrl+S to save
                         self.update(Message::SaveFile)
+                    }
+                    iced::keyboard::Key::Character(c) if c == "r" && modifiers.control() => {
+                        // Ctrl+R to refresh workspace
+                        self.update(Message::RefreshWorkspace)
+                    }
+                    iced::keyboard::Key::Character(c) if c == "o" && modifiers.control() => {
+                        // Ctrl+O to open workspace
+                        self.update(Message::OpenWorkspace)
                     }
                     _ => Command::none(),
                 }
+            }
+            Message::ToggleDirectory(path) => {
+                if self.expanded_directories.contains(&path) {
+                    self.expanded_directories.remove(&path);
+                } else {
+                    self.expanded_directories.insert(path);
+                }
+                Command::none()
             }
         }
     }
@@ -276,12 +294,13 @@ impl iced::Application for App {
             self.active_activity,
             self.ai_panel_visible,
             &self.prompt_input,
+            &self.expanded_directories,
         )
     }
 
     fn subscription(&self) -> iced::Subscription<Message> {
-        iced::keyboard::on_key_press(|key, _modifiers| {
-            Some(Message::KeyPressed(key))
+        iced::keyboard::on_key_press(|key, modifiers| {
+            Some(Message::KeyPressed(key, modifiers))
         })
     }
 }

@@ -20,6 +20,7 @@ pub fn ide_layout<'a>(
     active_activity: Activity,
     ai_panel_visible: bool,
     prompt_input: &'a str,
+    _expanded_directories: &'a std::collections::HashSet<String>,
 ) -> Element<'a, Message> {
     // Top bar
     let top_bar = top_bar(workspace_path, is_dirty);
@@ -402,7 +403,9 @@ fn search_panel<'a>() -> Element<'a, Message> {
         row![
             text("SEARCH").size(12).style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 150))),
             horizontal_space(),
-            button("⋯").style(theme::Button::Secondary),
+            button("⋯")
+                .on_press(Message::PromptInputChanged("Search options".to_string()))
+                .style(theme::Button::Secondary),
         ]
         .padding([12, 16])
         .align_items(Alignment::Center),
@@ -410,9 +413,11 @@ fn search_panel<'a>() -> Element<'a, Message> {
         container(
             column![
                 text_input("Search in workspace...", "")
+                    .on_input(|query| Message::PromptInputChanged(format!("search: {}", query)))
                     .padding(12)
                     .width(Length::Fill),
                 button("Find All")
+                    .on_press(Message::PromptInputChanged("Find all in workspace".to_string()))
                     .style(theme::Button::Primary)
                     .width(Length::Fill)
                     .padding(8),
@@ -443,7 +448,9 @@ fn settings_panel<'a>() -> Element<'a, Message> {
         row![
             text("SETTINGS").size(12).style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 150))),
             horizontal_space(),
-            button("Save").style(theme::Button::Primary),
+            button("Save")
+                .on_press(Message::PromptInputChanged("Settings saved".to_string()))
+                .style(theme::Button::Primary),
         ]
         .padding([12, 16])
         .align_items(Alignment::Center),
@@ -454,10 +461,16 @@ fn settings_panel<'a>() -> Element<'a, Message> {
                     column![
                         text("Editor").size(16),
                         text("Font size:").size(14),
-                        text_input("14", "14").padding(8),
+                        text_input("14", "14")
+                            .on_input(|size| Message::PromptInputChanged(format!("Font size: {}", size)))
+                            .padding(8),
                         text("Theme:").size(14),
-                        button("Dark").style(theme::Button::Secondary),
-                        button("Light").style(theme::Button::Secondary),
+                        button("Dark")
+                            .on_press(Message::PromptInputChanged("Theme set to Dark".to_string()))
+                            .style(theme::Button::Secondary),
+                        button("Light")
+                            .on_press(Message::PromptInputChanged("Theme set to Light".to_string()))
+                            .style(theme::Button::Secondary),
                     ]
                     .spacing(8)
                     .padding(16)
@@ -467,9 +480,13 @@ fn settings_panel<'a>() -> Element<'a, Message> {
                     column![
                         text("AI Settings").size(16),
                         text("Model:").size(14),
-                        text_input("gpt-4", "gpt-4").padding(8),
+                        text_input("gpt-4", "gpt-4")
+                            .on_input(|model| Message::PromptInputChanged(format!("AI model: {}", model)))
+                            .padding(8),
                         text("API Key:").size(14),
-                        text_input("••••••••", "").padding(8),
+                        text_input("••••••••", "")
+                            .on_input(|_| Message::PromptInputChanged("API key updated".to_string()))
+                            .padding(8),
                     ]
                     .spacing(8)
                     .padding(16)
