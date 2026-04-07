@@ -260,7 +260,9 @@ impl eframe::App for NeoteApp {
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Force X11 backend to avoid Wayland issues
-    std::env::set_var("WINIT_UNIX_BACKEND", "x11");
+    unsafe {
+        std::env::set_var("WINIT_UNIX_BACKEND", "x11");
+    }
     
     let args: Vec<String> = env::args().collect();
     let initial_workspace_path = if args.len() >= 2 {
