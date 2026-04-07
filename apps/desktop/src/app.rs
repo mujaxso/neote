@@ -133,15 +133,18 @@ impl iced::Application for App {
                         self.active_file_path = Some(path.clone());
                         self.status_message = format!("Loading {}... (this may take a moment for large files)", entry.name);
                         
+                        // Clone path for use in the async block
+                        let path_for_task = path.clone();
+                        
                         Command::perform(
                             async move {
                                 // Read file in a blocking task to avoid freezing the UI
                                 let content_result = tokio::task::spawn_blocking(move || {
-                                    files::read_file(&path)
+                                    files::read_file(&path_for_task)
                                 }).await;
                                 
                                 match content_result {
-                                    Ok(Ok(content)) => Message::FileLoaded(Ok((path, content))),
+                                    Ok(Ok(content)) => Message::FileLoaded(Ok((path_for_task, content))),
                                     Ok(Err(e)) => Message::FileLoaded(Err(format!("Failed to read file: {}", e))),
                                     Err(join_err) => Message::FileLoaded(Err(format!("Failed to join task: {}", join_err))),
                                 }
@@ -173,21 +176,11 @@ impl iced::Application for App {
                             return Command::none();
                         }
                         
-                        // Create text editor content in a background task to avoid freezing
-                        let content_clone = content.clone();
-                        let path_clone = path.clone();
-                        
                         // We'll update the UI immediately with a loading message
                         self.status_message = format!("Processing file content... ({} bytes)", file_size);
                         
-                        // Spawn a task to create the text editor content
-                        // This is a workaround since iced doesn't support async text editor creation
-                        // We'll use a simple approach: update in small chunks
-                        // But for now, we'll do it directly and hope it's fast enough
-                        // For better performance, we could use a virtualized text editor
-                        
                         // Update text editor content
-                        // This may still block, but with the 2MB limit it should be manageable
+                        // This may still block, but with the 1MB limit it should be manageable
                         self.text_editor = text_editor::Content::with_text(&content);
                         self.editor_content = content.clone();
                         
