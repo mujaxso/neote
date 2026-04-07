@@ -131,6 +131,7 @@ impl iced::Application for App {
                     if !entry.is_dir {
                         let path = entry.path.clone();
                         self.active_file_path = Some(path.clone());
+                        self.status_message = format!("Loading {}...", entry.name);
                         
                         Command::perform(
                             async move {
@@ -151,6 +152,13 @@ impl iced::Application for App {
             Message::FileLoaded(result) => {
                 match result {
                     Ok((path, content)) => {
+                        // Check file size to prevent freezing
+                        if content.len() > 1_000_000 { // 1MB limit
+                            self.error_message = Some("File too large (over 1MB)".to_string());
+                            self.status_message = "File too large to open".to_string();
+                            return Command::none();
+                        }
+                        
                         // Update text editor content
                         self.text_editor = text_editor::Content::with_text(&content);
                         self.editor_content = content.clone();
@@ -166,7 +174,7 @@ impl iced::Application for App {
                             state.open_buffer(&path, self.editor_content.clone());
                         }
                         
-                        self.status_message = format!("Loaded: {}", path);
+                        self.status_message = format!("Loaded: {} ({} bytes)", path, content.len());
                         self.error_message = None;
                     }
                     Err(e) => {

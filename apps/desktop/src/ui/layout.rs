@@ -332,20 +332,18 @@ fn editor_panel<'a>(
     } else {
         container(
             column![
-                text("Neote").size(48).style(iced::theme::Text::Color(iced::Color::from_rgb8(100, 150, 255))),
-                text("AI‑first IDE").size(20).style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 200))),
-                container(iced::widget::horizontal_rule(1)).width(200),
+                text("Neote").size(32).style(iced::theme::Text::Color(iced::Color::from_rgb8(100, 150, 255))),
+                text("AI‑first IDE").size(16).style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 200))),
+                container(iced::widget::horizontal_rule(1)).width(150),
                 column![
                     button("Open a file from the explorer").style(theme::Button::Secondary),
                     button("Ask AI about the workspace").style(theme::Button::Secondary),
-                    button("Create a new note").style(theme::Button::Secondary),
-                    button("Review project structure").style(theme::Button::Secondary),
                 ]
-                .spacing(12)
-                .padding(20),
+                .spacing(8)
+                .padding(16),
             ]
             .align_items(Alignment::Center)
-            .spacing(20),
+            .spacing(16),
         )
         .center_y()
         .center_x()
@@ -597,6 +595,18 @@ fn status_bar<'a>(
         "Plain Text"
     };
 
+    // Show a loading indicator if status contains "Loading"
+    let status_indicator = if status_message.contains("Loading") || status_message.contains("loading") {
+        row![
+            text("⏳").size(12),
+            text(status_message).size(12),
+        ]
+        .spacing(4)
+        .into()
+    } else {
+        text(status_message).size(12).into()
+    };
+
     row![
         text(format!("📁 {} files", file_count)).size(12),
         horizontal_space(),
@@ -608,7 +618,7 @@ fn status_bar<'a>(
             text("No active file").size(12).style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 150)))
         },
         horizontal_space(),
-        text(status_message).size(12),
+        status_indicator,
         error_widget,
         horizontal_space(),
         text("Ln 1, Col 1").size(12).style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 150))),
