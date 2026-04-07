@@ -239,18 +239,43 @@ impl iced::Application for App {
                         buffer.replace_all(self.text_editor.text());
                         self.is_dirty = buffer.is_dirty();
                     } else {
-                        // Try to apply the action incrementally
-                        match buffer.apply_iced_action(&action) {
-                            Ok(_) => {
-                                updated_incrementally = true;
-                                self.is_dirty = buffer.is_dirty();
+                        // Try to apply the action incrementally using iced's action
+                        use iced::widget::text_editor::{Action, EditAction};
+                        match &action {
+                            Action::Edit(edit_action) => {
+                                match edit_action {
+                                    EditAction::InsertText { char_idx, text } => {
+                                        if let Err(e) = buffer.insert_char_idx(*char_idx, text) {
+                                            eprintln!("Failed to insert text: {}", e);
+                                            // Fall back to full replacement
+                                            buffer.replace_all(self.text_editor.text());
+                                        } else {
+                                            updated_incrementally = true;
+                                        }
+                                    }
+                                    EditAction::DeleteRange { char_idx, len } => {
+                                        let start = *char_idx;
+                                        let end = start + *len;
+                                        if let Err(e) = buffer.delete_char_range(start, end) {
+                                            eprintln!("Failed to delete range: {}", e);
+                                            // Fall back to full replacement
+                                            buffer.replace_all(self.text_editor.text());
+                                        } else {
+                                            updated_incrementally = true;
+                                        }
+                                    }
+                                    _ => {
+                                        // For other edit actions, fall back to full replacement
+                                        buffer.replace_all(self.text_editor.text());
+                                    }
+                                }
                             }
-                            Err(_) => {
-                                // Fall back to full replacement
+                            _ => {
+                                // For non-edit actions, fall back to full replacement
                                 buffer.replace_all(self.text_editor.text());
-                                self.is_dirty = buffer.is_dirty();
                             }
                         }
+                        self.is_dirty = buffer.is_dirty();
                     }
                 }
                 
