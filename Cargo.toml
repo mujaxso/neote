@@ -29,3 +29,8 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros", "process", "sy
 tracing = "0.1"
 uuid = { version = "1", features = ["v4", "serde"] }
 thiserror = "2"
+
+# Patch git2 to a version that supports Git index version 3
+[patch.crates-io]
+git2 = { version = "0.21.0" }
+libgit2-sys = { version = "0.16.3" }
