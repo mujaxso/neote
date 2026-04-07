@@ -8,6 +8,7 @@ use iced::{
 };
 
 use crate::app::{Activity, Message};
+use editor_buffer::buffer::TextBuffer;
 
 pub fn ide_layout<'a>(
     workspace_path: &'a str,
@@ -22,6 +23,7 @@ pub fn ide_layout<'a>(
     prompt_input: &'a str,
     _expanded_directories: &'a std::collections::HashSet<String>,
     text_editor: &'a iced::widget::text_editor::Content,
+    editor_buffer: Option<&'a editor_buffer::buffer::TextBuffer>,
 ) -> Element<'a, Message> {
     // Top bar
     let top_bar = top_bar(workspace_path, is_dirty);
@@ -50,7 +52,7 @@ pub fn ide_layout<'a>(
             .height(Length::Fill),
         vertical_rule(1),
         // Editor area - takes most space
-        container(editor_panel(active_file_path, text_editor, is_dirty))
+        container(editor_panel(active_file_path, text_editor, is_dirty, editor_buffer))
             .width(Length::FillPortion(5))
             .height(Length::Fill),
         // AI panel (conditionally visible) - flexible width
@@ -302,22 +304,53 @@ fn editor_panel<'a>(
     active_file_path: Option<&'a String>,
     text_editor: &'a iced::widget::text_editor::Content,
     is_dirty: bool,
+    editor_buffer: Option<&'a editor_buffer::buffer::TextBuffer>,
 ) -> Element<'a, Message> {
     let header = if let Some(path) = active_file_path {
+        let mut status_elements = Vec::new();
+        
+        // File path
+        status_elements.push(
+            text(path)
+                .size(14)
+                .style(iced::theme::Text::Color(iced::Color::from_rgb8(200, 200, 200)))
+                .into()
+        );
+        
+        status_elements.push(horizontal_space().into());
+        
+        // Large file warning
+        if let Some(buffer) = editor_buffer {
+            if buffer.is_very_large() {
+                status_elements.push(
+                    text("⚠ Very Large (Read-Only)")
+                        .size(12)
+                        .style(iced::theme::Text::Color(iced::Color::from_rgb8(255, 100, 100)))
+                        .into()
+                );
+                status_elements.push(horizontal_space().width(Length::Fixed(10.0)).into());
+            } else if buffer.is_large() {
+                status_elements.push(
+                    text("⚠ Large")
+                        .size(12)
+                        .style(iced::theme::Text::Color(iced::Color::from_rgb8(255, 200, 0)))
+                        .into()
+                );
+                status_elements.push(horizontal_space().width(Length::Fixed(10.0)).into());
+            }
+        }
+        
+        // Dirty status
         let status_text = if is_dirty {
             text("● Unsaved").size(12).style(iced::theme::Text::Color(iced::Color::from_rgb8(255, 165, 0)))
         } else {
             text("✓ Saved").size(12).style(iced::theme::Text::Color(iced::Color::from_rgb8(0, 200, 0)))
         };
-        row![
-            text(path)
-                .size(14)
-                .style(iced::theme::Text::Color(iced::Color::from_rgb8(200, 200, 200))),
-            horizontal_space(),
-            status_text,
-        ]
-        .padding([12, 16])
-        .align_items(Alignment::Center)
+        status_elements.push(status_text.into());
+        
+        row(status_elements)
+            .padding([12, 16])
+            .align_items(Alignment::Center)
     } else {
         row![
             text("No file selected").size(14).style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 150))),

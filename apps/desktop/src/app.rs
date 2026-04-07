@@ -160,19 +160,33 @@ impl iced::Application for App {
             Message::FileLoaded(result) => {
                 match result {
                     Ok((path, content)) => {
-                        // Check file size to prevent UI freezing
-                        // iced text editor struggles with files larger than ~1MB
-                        const MAX_FILE_SIZE: usize = 1_000_000; // 1MB
+                        // Check file size to determine handling mode
                         let file_size = content.len();
+                        const WARNING_THRESHOLD: usize = 1_000_000; // 1MB
+                        const READ_ONLY_THRESHOLD: usize = 10_000_000; // 10MB
                         
-                        if file_size > MAX_FILE_SIZE {
-                            self.error_message = Some(format!(
-                                "File too large ({} MB). Maximum supported size is {} MB to prevent UI freezing.\n\nConsider:\n1. Using a dedicated text editor for large files\n2. Splitting the file into smaller parts\n3. Viewing only a portion of the file",
-                                file_size / 1_000_000,
-                                MAX_FILE_SIZE / 1_000_000
-                            ));
-                            self.status_message = "File too large to open in editor".to_string();
+                        if file_size > READ_ONLY_THRESHOLD {
+                            self.status_message = format!(
+                                "Opened very large file ({} MB) in read-only mode. Editing disabled.",
+                                file_size / 1_000_000
+                            );
+                            // Mark as read-only by not creating an editor buffer
+                            // But we still want to show the content
+                            self.text_editor = text_editor::Content::with_text(&content);
+                            self.editor_content = content.clone();
+                            self.editor_buffer = None;
+                            self.is_dirty = false;
+                            self.error_message = Some("File is very large - opened in read-only mode".to_string());
                             return Command::none();
+                        } else if file_size > WARNING_THRESHOLD {
+                            self.status_message = format!(
+                                "Opened large file ({} MB). Performance may be affected.",
+                                file_size / 1_000_000
+                            );
+                            self.error_message = Some("Large file - editing may be slow".to_string());
+                        } else {
+                            self.status_message = format!("Loaded: {} ({} bytes)", path, file_size);
+                            self.error_message = None;
                         }
                         
                         // We'll update the UI immediately with a loading message
@@ -210,14 +224,41 @@ impl iced::Application for App {
                 Command::none()
             }
             Message::EditorContentChanged(action) => {
+                // First, perform the action on the text editor
                 self.text_editor.perform(action);
-                self.editor_content = self.text_editor.text().to_string();
+                
+                // Try to update the buffer incrementally
+                let mut updated_incrementally = false;
                 if let Some(buffer) = &mut self.editor_buffer {
-                    // For now, replace all content to keep it simple
-                    // This matches the previous behavior
-                    buffer.replace_all(&self.editor_content);
-                    self.is_dirty = buffer.is_dirty();
+                    // Check if the buffer is too large for incremental updates
+                    if buffer.is_very_large() {
+                        // For very large files, we might want to mark them as read-only
+                        // But for now, we'll just update the status
+                        self.status_message = "Very large file - editing may be slow".to_string();
+                        // We'll still update, but with a full replacement
+                        buffer.replace_all(self.text_editor.text());
+                        self.is_dirty = buffer.is_dirty();
+                    } else {
+                        // Try to apply the action incrementally
+                        match buffer.apply_iced_action(&action) {
+                            Ok(_) => {
+                                updated_incrementally = true;
+                                self.is_dirty = buffer.is_dirty();
+                            }
+                            Err(_) => {
+                                // Fall back to full replacement
+                                buffer.replace_all(self.text_editor.text());
+                                self.is_dirty = buffer.is_dirty();
+                            }
+                        }
+                    }
                 }
+                
+                // Update the editor content string only if needed
+                if !updated_incrementally {
+                    self.editor_content = self.text_editor.text().to_string();
+                }
+                
                 self.status_message = if self.is_dirty {
                     "File has unsaved changes".to_string()
                 } else {
@@ -352,6 +393,7 @@ impl iced::Application for App {
             &self.prompt_input,
             &self.expanded_directories,
             &self.text_editor,
+            self.editor_buffer.as_ref(),
         )
     }
 
