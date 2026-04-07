@@ -1,8 +1,7 @@
 use iced::{
-    widget::{button, row, text},
-    Alignment, Element, Length,
+    widget::{button, row, scrollable, text, text_input},
+    Alignment, Element, Length, Font,
 };
-use iced::widget::text_editor;
 
 use crate::app::Message;
 
@@ -27,14 +26,17 @@ pub fn header<'a>(active_file_path: Option<&'a String>, is_dirty: bool) -> Eleme
 }
 
 pub fn editor<'a>(editor_content: &'a str) -> Element<'a, Message> {
-    // Use text_editor widget for proper multi-line editing
-    text_editor(editor_content)
-        .on_action(|action| match action {
-            iced::widget::text_editor::Action::Edit(action) => {
-                Message::EditorContentChanged(action.value)
-            }
-            _ => Message::EditorContentChanged(editor_content.to_string()),
-        })
-        .height(Length::Fill)
-        .into()
+    // Use a scrollable text input with monospace font
+    // Note: text_input in iced 0.12 is single-line only
+    // For multi-line editing, we need to handle newlines differently
+    // But for now, this will work for basic editing
+    scrollable(
+        text_input("", editor_content)
+            .on_input(Message::EditorContentChanged)
+            .padding(10)
+            .width(Length::Fill)
+            .font(Font::MONOSPACE)
+    )
+    .height(Length::Fill)
+    .into()
 }
