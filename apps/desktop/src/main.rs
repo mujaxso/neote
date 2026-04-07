@@ -77,9 +77,14 @@ impl eframe::App for NeoteApp {
             ui.horizontal(|ui| {
                 ui.label(format!("Workspace: {}", self.workspace_path));
                 if ui.button("Refresh").clicked() {
-                    if let Ok(entries) = files::list_directory(&self.workspace_path) {
-                        self.file_entries = entries;
-                        self.workspace_state.lock().unwrap().set_file_tree(self.file_entries.clone());
+                    match files::list_directory(&self.workspace_path) {
+                        Ok(entries) => {
+                            self.file_entries = entries;
+                            self.workspace_state.lock().unwrap().set_file_tree(self.file_entries.clone());
+                        }
+                        Err(e) => {
+                            eprintln!("Failed to refresh directory: {}", e);
+                        }
                     }
                 }
             });
