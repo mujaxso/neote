@@ -1,6 +1,6 @@
 use iced::{
     widget::{scrollable, text_input, column, container, row, text},
-    Element, Length, Font, Alignment,
+    Element, Length, Font,
 };
 
 use crate::app::Message;
@@ -36,12 +36,7 @@ pub fn editor<'a>(editor_content: &'a str) -> Element<'a, Message> {
     
     row![
         container(line_numbers_column)
-            .style(|theme| container::Style {
-                background: Some(iced::Background::Color(
-                    theme.extended_palette().background.weak.color,
-                )),
-                ..Default::default()
-            })
+            .style(iced::theme::Container::Box)
             .height(Length::Fill),
         scrollable(
             editor_input

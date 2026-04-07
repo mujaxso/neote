@@ -39,6 +39,9 @@ pub fn ide_layout<'a>(
     };
 
     let main_content = row![
+        // Activity rail
+        activity_rail,
+        vertical_rule(1),
         // Left panel (explorer)
         left_panel(file_entries, active_activity),
         vertical_rule(1),
