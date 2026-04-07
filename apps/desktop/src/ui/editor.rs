@@ -1,6 +1,6 @@
 use iced::{
     widget::{scrollable, text_input, column, container, row, text},
-    Element, Length, Font,
+    Element, Length, Font, Alignment,
 };
 
 use crate::app::Message;
@@ -18,11 +18,14 @@ pub fn editor<'a>(editor_content: &'a str) -> Element<'a, Message> {
             )
             .padding([0, 8, 0, 0])
             .width(Length::Fixed(50.0))
+            .align_x(iced::alignment::Horizontal::Right)
             .into()
         })
         .collect();
     
-    let line_numbers_column = column(line_numbers).spacing(0);
+    let line_numbers_column = column(line_numbers)
+        .spacing(0)
+        .width(Length::Fixed(60.0));
     
     let editor_input = text_input("", editor_content)
         .on_input(Message::EditorContentChanged)
@@ -32,7 +35,14 @@ pub fn editor<'a>(editor_content: &'a str) -> Element<'a, Message> {
         .size(14);
     
     row![
-        line_numbers_column,
+        container(line_numbers_column)
+            .style(|theme| container::Style {
+                background: Some(iced::Background::Color(
+                    theme.extended_palette().background.weak.color,
+                )),
+                ..Default::default()
+            })
+            .height(Length::Fill),
         scrollable(
             editor_input
         )

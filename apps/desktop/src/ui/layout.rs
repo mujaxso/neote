@@ -175,6 +175,9 @@ fn left_panel<'a>(
 ) -> Element<'a, Message> {
     match active_activity {
         Activity::Explorer => explorer_panel(file_entries),
+        Activity::Search => search_panel(),
+        Activity::SourceControl => terminal_panel(),
+        Activity::Settings => settings_panel(),
         _ => placeholder_panel(&format!("{} panel", format!("{:?}", active_activity))),
     }
 }
@@ -344,10 +347,22 @@ fn ai_panel<'a>(prompt_input: &'a str) -> Element<'a, Message> {
                 )
                 .style(theme::Container::Box),
                 column![
-                    button("Explain this file").on_press(Message::SendPrompt).padding(12),
-                    button("Refactor selection").on_press(Message::SendPrompt).padding(12),
-                    button("Find bugs").on_press(Message::SendPrompt).padding(12),
-                    button("Write tests").on_press(Message::SendPrompt).padding(12),
+                    button("Explain this file")
+                        .on_press(Message::PromptInputChanged("Explain the current file".to_string()))
+                        .padding(12)
+                        .style(theme::Button::Secondary),
+                    button("Refactor selection")
+                        .on_press(Message::PromptInputChanged("Refactor the selected code".to_string()))
+                        .padding(12)
+                        .style(theme::Button::Secondary),
+                    button("Find bugs")
+                        .on_press(Message::PromptInputChanged("Find potential bugs in this code".to_string()))
+                        .padding(12)
+                        .style(theme::Button::Secondary),
+                    button("Write tests")
+                        .on_press(Message::PromptInputChanged("Write unit tests for this code".to_string()))
+                        .padding(12)
+                        .style(theme::Button::Secondary),
                 ]
                 .spacing(8)
                 .padding(16),
@@ -375,6 +390,95 @@ fn ai_panel<'a>(prompt_input: &'a str) -> Element<'a, Message> {
         .padding([8, 16])
         .align_items(Alignment::Center),
     ]
+    .height(Length::Fill)
+    .into()
+}
+
+fn search_panel<'a>() -> Element<'a, Message> {
+    column![
+        row![
+            text("SEARCH").size(12).style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 150))),
+            horizontal_space(),
+            button("⋯").style(theme::Button::Secondary),
+        ]
+        .padding([12, 16])
+        .align_items(Alignment::Center),
+        iced::widget::horizontal_rule(1),
+        container(
+            column![
+                text_input("Search in workspace...", "")
+                    .padding(12)
+                    .width(Length::Fill),
+                button("Find All")
+                    .style(theme::Button::Primary)
+                    .width(Length::Fill)
+                    .padding(8),
+                container(
+                    text("No search results")
+                        .style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 150)))
+                )
+                .center_y()
+                .center_x()
+                .height(Length::Fill)
+            ]
+            .spacing(16)
+            .padding(16)
+        )
+        .height(Length::Fill)
+    ]
+    .width(Length::Fixed(250.0))
+    .height(Length::Fill)
+    .into()
+}
+
+fn terminal_panel<'a>() -> Element<'a, Message> {
+    super::terminal::terminal("")
+}
+
+fn settings_panel<'a>() -> Element<'a, Message> {
+    column![
+        row![
+            text("SETTINGS").size(12).style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 150))),
+            horizontal_space(),
+            button("Save").style(theme::Button::Primary),
+        ]
+        .padding([12, 16])
+        .align_items(Alignment::Center),
+        iced::widget::horizontal_rule(1),
+        scrollable(
+            column![
+                container(
+                    column![
+                        text("Editor").size(16),
+                        text("Font size:").size(14),
+                        text_input("14", "14").padding(8),
+                        text("Theme:").size(14),
+                        button("Dark").style(theme::Button::Secondary),
+                        button("Light").style(theme::Button::Secondary),
+                    ]
+                    .spacing(8)
+                    .padding(16)
+                )
+                .style(theme::Container::Box),
+                container(
+                    column![
+                        text("AI Settings").size(16),
+                        text("Model:").size(14),
+                        text_input("gpt-4", "gpt-4").padding(8),
+                        text("API Key:").size(14),
+                        text_input("••••••••", "").padding(8),
+                    ]
+                    .spacing(8)
+                    .padding(16)
+                )
+                .style(theme::Container::Box),
+            ]
+            .spacing(16)
+            .padding(16)
+        )
+        .height(Length::Fill)
+    ]
+    .width(Length::Fixed(250.0))
     .height(Length::Fill)
     .into()
 }

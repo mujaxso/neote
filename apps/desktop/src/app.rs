@@ -20,6 +20,7 @@ pub enum Message {
     ActivitySelected(Activity),
     PromptInputChanged(String),
     SendPrompt,
+    KeyPressed(iced::keyboard::Key),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -250,6 +251,16 @@ impl iced::Application for App {
                 self.prompt_input.clear();
                 Command::none()
             }
+            Message::KeyPressed(key) => {
+                match key {
+                    iced::keyboard::Key::Character(c) if c == "s" => {
+                        // Check for Ctrl+S
+                        // We need to track modifier state, but for now just save
+                        self.update(Message::SaveFile)
+                    }
+                    _ => Command::none(),
+                }
+            }
         }
     }
 
@@ -266,5 +277,11 @@ impl iced::Application for App {
             self.ai_panel_visible,
             &self.prompt_input,
         )
+    }
+
+    fn subscription(&self) -> iced::Subscription<Message> {
+        iced::keyboard::on_key_press(|key, _modifiers| {
+            Some(Message::KeyPressed(key))
+        })
     }
 }
