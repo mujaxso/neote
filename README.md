@@ -57,7 +57,7 @@ Modern versions of Git may create index version 3 when certain features are used
 
 ### Technical Details
 
-This repository includes a patch in `Cargo.toml` to use git2 version 0.21.0, which should better support index version 3. However, if you still encounter issues, downgrading the index version as shown above is the most reliable fix.
+The git2 library version 0.20.5 (used by dependencies) may not fully support Git index version 3. If you encounter issues with tools that use git2, downgrading your Git index version as shown above is the most reliable fix.
 
 ## 🏗️ Architecture
 
