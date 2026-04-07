@@ -3,7 +3,7 @@ use iced::{
         button, column, container, horizontal_space, row, scrollable, text,
         text_input, vertical_rule,
     },
-    Alignment, Element, Length, Theme,
+    Alignment, Element, Length,
     theme,
 };
 
@@ -28,6 +28,16 @@ pub fn ide_layout<'a>(
     let activity_rail = activity_rail(active_activity);
 
     // Main content area
+    let ai_panel_widget: Element<_> = if ai_panel_visible {
+        container(ai_panel(prompt_input))
+            .width(Length::Fixed(320.0))
+            .height(Length::Fill)
+            .style(theme::Container::Box)
+            .into()
+    } else {
+        container(horizontal_space()).width(Length::Fixed(0.0)).into()
+    };
+
     let main_content = row![
         // Left panel (explorer)
         left_panel(file_entries, active_activity),
@@ -35,15 +45,7 @@ pub fn ide_layout<'a>(
         // Editor area
         editor_panel(active_file_path, editor_content, is_dirty),
         // AI panel (conditionally visible)
-        if ai_panel_visible {
-            container(ai_panel(prompt_input))
-                .width(Length::Fixed(320.0))
-                .height(Length::Fill)
-                .style(theme::Container::Box)
-                .into()
-        } else {
-            container(horizontal_space()).width(Length::Fixed(0.0)).into()
-        }
+        ai_panel_widget,
     ]
     .height(Length::Fill);
 
@@ -73,6 +75,24 @@ pub fn ide_layout<'a>(
 }
 
 fn top_bar<'a>(workspace_path: &'a str, is_dirty: bool) -> Element<'a, Message> {
+    let status_indicator: Element<_> = if is_dirty {
+        row![
+            text("●").size(14).style(iced::theme::Text::Color(iced::Color::from_rgb8(255, 165, 0))),
+            text("Unsaved").size(14)
+        ]
+        .spacing(4)
+        .align_items(Alignment::Center)
+        .into()
+    } else {
+        row![
+            text("✓").size(14).style(iced::theme::Text::Color(iced::Color::from_rgb8(0, 200, 0))),
+            text("Saved").size(14)
+        ]
+        .spacing(4)
+        .align_items(Alignment::Center)
+        .into()
+    };
+
     row![
         text("Neote").size(20).style(iced::theme::Text::Color(iced::Color::from_rgb8(100, 150, 255))),
         horizontal_space(),
@@ -89,23 +109,7 @@ fn top_bar<'a>(workspace_path: &'a str, is_dirty: bool) -> Element<'a, Message> 
             .padding([8, 12])
             .style(theme::Button::Secondary),
         horizontal_space(),
-        if is_dirty {
-            row![
-                text("●").size(14).style(iced::Color::from_rgb8(255, 165, 0)),
-                text("Unsaved").size(14)
-            ]
-            .spacing(4)
-            .align_items(Alignment::Center)
-            .into()
-        } else {
-            row![
-                text("✓").size(14).style(iced::Color::from_rgb8(0, 200, 0)),
-                text("Saved").size(14)
-            ]
-            .spacing(4)
-            .align_items(Alignment::Center)
-            .into()
-        },
+        status_indicator,
         button("Save")
             .on_press(Message::SaveFile)
             .padding([8, 16])
@@ -125,38 +129,38 @@ fn activity_rail<'a>(active_activity: Activity) -> Element<'a, Message> {
         (Activity::Settings, "⚙️", "Settings"),
     ];
 
-    column(
-        activities
-            .iter()
-            .map(|&(activity, icon, label)| {
-                let is_active = activity == active_activity;
-                let button_style = if is_active {
-                    theme::Button::Primary
-                } else {
-                    theme::Button::Secondary
-                };
-                container(
-                    button(
-                        column![
-                            text(icon).size(20),
-                            text(label).size(12),
-                        ]
-                        .align_items(Alignment::Center)
-                        .spacing(4),
-                    )
-                    .on_press(Message::ActivitySelected(activity))
-                    .padding(12)
-                    .style(button_style),
+    let children: Vec<Element<_>> = activities
+        .iter()
+        .map(|&(activity, icon, label)| {
+            let is_active = activity == active_activity;
+            let button_style = if is_active {
+                theme::Button::Primary
+            } else {
+                theme::Button::Secondary
+            };
+            container(
+                button(
+                    column![
+                        text(icon).size(20),
+                        text(label).size(12),
+                    ]
+                    .align_items(Alignment::Center)
+                    .spacing(4),
                 )
-                .width(Length::Fixed(70.0))
-                .center_x()
-                .into()
-            })
-            .collect(),
-    )
-    .spacing(8)
-    .padding([16, 8])
-    .into()
+                .on_press(Message::ActivitySelected(activity))
+                .padding(12)
+                .style(button_style),
+            )
+            .width(Length::Fixed(70.0))
+            .center_x()
+            .into()
+        })
+        .collect();
+
+    column(children)
+        .spacing(8)
+        .padding([16, 8])
+        .into()
 }
 
 fn left_panel<'a>(
@@ -170,56 +174,58 @@ fn left_panel<'a>(
 }
 
 fn explorer_panel<'a>(file_entries: &'a [core_types::workspace::DirectoryEntry]) -> Element<'a, Message> {
+    let content: Element<_> = if file_entries.is_empty() {
+        container(
+            text("No files in workspace")
+                .style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 150)))
+        )
+        .center_y()
+        .center_x()
+        .height(Length::Fill)
+        .into()
+    } else {
+        let children: Vec<Element<_>> = file_entries
+            .iter()
+            .enumerate()
+            .map(|(i, entry)| {
+                let is_file = !entry.is_dir;
+                let icon = if is_file { "📄" } else { "📁" };
+                container(
+                    button(
+                        row![
+                            text(icon).size(14),
+                            text(&entry.name).size(14),
+                        ]
+                        .spacing(8)
+                        .align_items(Alignment::Center),
+                    )
+                    .on_press(Message::FileSelected(i))
+                    .padding([6, 12])
+                    .width(Length::Fill)
+                    .style(theme::Button::Secondary),
+                )
+                .into()
+            })
+            .collect();
+        
+        scrollable(
+            column(children)
+                .spacing(2),
+        )
+        .height(Length::Fill)
+        .into()
+    };
+
     column![
         row![
-            text("EXPLORER").size(12).style(iced::Color::from_rgb8(150, 150, 150)),
+            text("EXPLORER").size(12).style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 150))),
             horizontal_space(),
             button("⋯").style(theme::Button::Secondary),
         ]
         .padding([12, 16])
         .align_items(Alignment::Center),
         iced::widget::horizontal_rule(1),
-        if file_entries.is_empty() {
-            container(
-                text("No files in workspace")
-                    .style(iced::Color::from_rgb8(150, 150, 150))
-            )
-            .center_y()
-            .center_x()
-            .height(Length::Fill)
-            .into()
-        } else {
-            scrollable(
-                column(
-                    file_entries
-                        .iter()
-                        .enumerate()
-                        .map(|(i, entry)| {
-                            let is_file = !entry.is_dir;
-                            let icon = if is_file { "📄" } else { "📁" };
-                            container(
-                                button(
-                                    row![
-                                        text(icon).size(14),
-                                        text(&entry.name).size(14),
-                                    ]
-                                    .spacing(8)
-                                    .align_items(Alignment::Center),
-                                )
-                                .on_press(Message::FileSelected(i))
-                                .padding([6, 12])
-                                .width(Length::Fill)
-                                .style(theme::Button::Secondary),
-                            )
-                            .into()
-                        })
-                        .collect(),
-                )
-                .spacing(2),
-            )
-            .height(Length::Fill)
-            .into()
-        }
+        content,
     ]
     .width(Length::Fixed(250.0))
     .height(Length::Fill)
@@ -232,22 +238,23 @@ fn editor_panel<'a>(
     is_dirty: bool,
 ) -> Element<'a, Message> {
     let header = if let Some(path) = active_file_path {
+        let status_text = if is_dirty {
+            text("● Unsaved").size(12).style(iced::theme::Text::Color(iced::Color::from_rgb8(255, 165, 0)))
+        } else {
+            text("✓ Saved").size(12).style(iced::theme::Text::Color(iced::Color::from_rgb8(0, 200, 0)))
+        };
         row![
             text(path)
                 .size(14)
-                .style(iced::Color::from_rgb8(200, 200, 200)),
+                .style(iced::theme::Text::Color(iced::Color::from_rgb8(200, 200, 200))),
             horizontal_space(),
-            if is_dirty {
-                text("● Unsaved").size(12).style(iced::Color::from_rgb8(255, 165, 0))
-            } else {
-                text("✓ Saved").size(12).style(iced::Color::from_rgb8(0, 200, 0))
-            },
+            status_text,
         ]
         .padding([12, 16])
         .align_items(Alignment::Center)
     } else {
         row![
-            text("No file selected").size(14).style(iced::Color::from_rgb8(150, 150, 150)),
+            text("No file selected").size(14).style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 150))),
             horizontal_space(),
         ]
         .padding([12, 16])
@@ -259,8 +266,8 @@ fn editor_panel<'a>(
     } else {
         container(
             column![
-                text("Neote").size(48).style(iced::Color::from_rgb8(100, 150, 255)),
-                text("AI‑first IDE").size(20).style(iced::Color::from_rgb8(150, 150, 200)),
+                text("Neote").size(48).style(iced::theme::Text::Color(iced::Color::from_rgb8(100, 150, 255))),
+                text("AI‑first IDE").size(20).style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 200))),
                 container(iced::widget::horizontal_rule(1)).width(200),
                 column![
                     button("Open a file from the explorer").style(theme::Button::Secondary),
@@ -293,7 +300,7 @@ fn editor_panel<'a>(
 fn ai_panel<'a>(prompt_input: &'a str) -> Element<'a, Message> {
     column![
         row![
-            text("AI ASSISTANT").size(12).style(iced::Color::from_rgb8(150, 150, 150)),
+            text("AI ASSISTANT").size(12).style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 150))),
             horizontal_space(),
             button("⋯").style(theme::Button::Secondary),
         ]
@@ -307,7 +314,7 @@ fn ai_panel<'a>(prompt_input: &'a str) -> Element<'a, Message> {
                         text("Welcome to Neote AI").size(16),
                         text("Ask questions about your code, get explanations, refactor suggestions, and more.")
                             .size(14)
-                            .style(iced::Color::from_rgb8(180, 180, 180)),
+                            .style(iced::theme::Text::Color(iced::Color::from_rgb8(180, 180, 180))),
                     ]
                     .padding(16)
                     .spacing(8)
@@ -324,7 +331,7 @@ fn ai_panel<'a>(prompt_input: &'a str) -> Element<'a, Message> {
                 container(
                     text("AI features are coming soon. This is a placeholder for the AI assistant interface.")
                         .size(12)
-                        .style(iced::Color::from_rgb8(150, 150, 150))
+                        .style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 150)))
                 )
                 .padding(16),
             ]
@@ -352,7 +359,7 @@ fn ai_panel<'a>(prompt_input: &'a str) -> Element<'a, Message> {
 fn placeholder_panel<'a>(label: &str) -> Element<'a, Message> {
     container(
         text(label)
-            .style(iced::Color::from_rgb8(150, 150, 150))
+            .style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 150)))
     )
     .center_y()
     .center_x()
