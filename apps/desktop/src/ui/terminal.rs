@@ -1,4 +1,7 @@
-#[allow(dead_code)]
-pub struct Terminal;
+use iced::Element;
+use crate::app::Message;
 
-// TODO: implement terminal
+pub fn terminal() -> Element<Message> {
+    // Placeholder for terminal UI
+    iced::widget::text("Terminal placeholder").into()
+}
