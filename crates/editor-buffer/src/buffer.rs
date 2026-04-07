@@ -22,6 +22,7 @@ mod tests {
         assert_eq!(buffer.len_chars(), 13);
         assert_eq!(buffer.len_lines(), 1);
         assert_eq!(buffer.text(), "Hello, world!");
+        assert_eq!(buffer.to_string(), "Hello, world!");
         assert!(!buffer.is_dirty());
         assert_eq!(buffer.version(), 0);
     }
@@ -142,6 +143,10 @@ impl TextBuffer {
     }
 
     pub fn text(&self) -> String {
+        self.rope.to_string()
+    }
+
+    pub fn to_string(&self) -> String {
         self.rope.to_string()
     }
 

@@ -152,14 +152,9 @@ impl iced::Application for App {
             Message::FileLoaded(result) => {
                 match result {
                     Ok((path, content)) => {
-                        // Check file size to prevent freezing
-                        if content.len() > 1_000_000 { // 1MB limit
-                            self.error_message = Some("File too large (over 1MB)".to_string());
-                            self.status_message = "File too large to open".to_string();
-                            return Command::none();
-                        }
-                        
                         // Update text editor content
+                        // For large files, we need to be careful with the iced text editor
+                        // But ropey can handle large files efficiently
                         self.text_editor = text_editor::Content::with_text(&content);
                         self.editor_content = content.clone();
                         
@@ -174,7 +169,13 @@ impl iced::Application for App {
                             state.open_buffer(&path, self.editor_content.clone());
                         }
                         
-                        self.status_message = format!("Loaded: {} ({} bytes)", path, content.len());
+                        let file_size = content.len();
+                        if file_size > 10_000_000 { // 10MB
+                            self.status_message = format!("Loaded large file: {} ({} MB). Performance may be affected.", 
+                                path, file_size / 1_000_000);
+                        } else {
+                            self.status_message = format!("Loaded: {} ({} bytes)", path, file_size);
+                        }
                         self.error_message = None;
                     }
                     Err(e) => {

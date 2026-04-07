@@ -100,7 +100,7 @@ impl WorkspaceState {
         if let Some(buffer_id) = self.active_buffer_id {
             if let Some(open_buffer) = self.open_buffers.get_mut(&buffer_id) {
                 open_buffer.buffer.mark_saved();
-                let content = open_buffer.buffer.text().to_string();
+                let content = open_buffer.buffer.to_string();
                 let path = open_buffer.path.clone();
                 return Some((path, content));
             }
