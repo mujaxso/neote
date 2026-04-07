@@ -30,7 +30,3 @@ tracing = "0.1"
 uuid = { version = "1", features = ["v4", "serde"] }
 thiserror = "2"
 
-# Patch git2 to the latest version that might better support Git index version 3
-[patch.crates-io]
-git2 = { version = "0.20.4" }
-libgit2-sys = { version = "0.16.2" }
