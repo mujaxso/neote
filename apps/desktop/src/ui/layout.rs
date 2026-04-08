@@ -52,7 +52,7 @@ pub fn ide_layout<'a>(
             .height(Length::Fill),
         vertical_rule(1),
         // Editor area - takes most space
-        container(editor_panel(active_file_path, text_editor, is_dirty, editor_buffer, is_file_too_large_for_editor))
+        container(editor_panel(active_file_path, text_editor, is_dirty, editor_buffer, is_file_too_large_for_editor, file_loading_state))
             .width(Length::FillPortion(5))
             .height(Length::Fill),
         // AI panel (conditionally visible) - flexible width
@@ -294,6 +294,7 @@ fn editor_panel<'a>(
     is_dirty: bool,
     editor_buffer: Option<&'a editor_buffer::buffer::TextBuffer>,
     is_file_too_large_for_editor: bool,
+    file_loading_state: &'a crate::app::FileLoadingState,
 ) -> Element<'a, Message> {
     let header = if let Some(path) = active_file_path {
         let mut status_elements = Vec::new();
@@ -541,64 +542,6 @@ fn editor_panel<'a>(
                 .into()
             }
         }
-    };
-    } else if active_file_path.is_some() {
-        if is_file_too_large_for_editor {
-            // Show read-only text view for very large files
-            let content = if let Some(buffer) = editor_buffer {
-                if buffer.is_very_large() {
-                    // For very large files, show only first 100KB
-                    buffer.slice_char_range(0, 100_000.min(buffer.len_chars())).unwrap_or_else(|_| String::new())
-                } else {
-                    buffer.text()
-                }
-            } else {
-                String::new()
-            };
-            let warning = if let Some(buffer) = editor_buffer {
-                if buffer.is_very_large() {
-                    format!("\n\n--- File truncated ({} MB total, showing first 100KB) ---", 
-                           buffer.len_chars() / 1_000_000)
-                } else {
-                    String::new()
-                }
-            } else {
-                String::new()
-            };
-            scrollable(
-                column![
-                    text(content + &warning)
-                        .font(iced::Font::MONOSPACE)
-                        .size(14),
-                ]
-            )
-            .height(Length::Fill)
-            .into()
-        } else {
-            super::editor::editor(text_editor)
-        }
-    } else {
-        container(
-            column![
-                text("Neote").size(32).style(iced::theme::Text::Color(iced::Color::from_rgb8(100, 150, 255))),
-                text("AI‑first IDE").size(16).style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 200))),
-                container(iced::widget::horizontal_rule(1)).width(150),
-                column![
-                    button("Open a file from the explorer").style(theme::Button::Secondary),
-                    button("Ask AI about the workspace").style(theme::Button::Secondary),
-                ]
-                .spacing(8)
-                .padding(16),
-            ]
-            .align_items(Alignment::Center)
-            .spacing(16),
-        )
-        .center_y()
-        .center_x()
-        .width(Length::Fill)
-        .height(Length::Fill)
-        .into()
-    };
 
     column![
         header,
