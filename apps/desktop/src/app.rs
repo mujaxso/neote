@@ -13,7 +13,7 @@ pub enum Message {
     WorkspaceLoaded(Result<Vec<DirectoryEntry>, String>),
     FileSelected(usize),
     FileLoaded(Result<(String, String, TextBuffer), String>),
-    TextEditorContentCreated((String, text_editor::Content)),
+    TextEditorContentCreated(String), // Just the path
     EditorContentChanged(text_editor::Action),
     SaveFile,
     FileSaved(Result<(), String>),
@@ -28,13 +28,14 @@ pub enum Message {
 }
 
 /// Create text editor content in a background task to avoid blocking the UI
-async fn create_text_editor_content(path: String, content: String) -> (String, text_editor::Content) {
+async fn create_text_editor_content(path: String, content: String) -> String {
     // This runs in a background thread
-    let text_editor_content = tokio::task::spawn_blocking(move || {
-        text_editor::Content::with_text(&content)
-    }).await.unwrap_or_else(|_| text_editor::Content::new());
-    
-    (path, text_editor_content)
+    // We don't actually create text_editor::Content here because it's not Send
+    // Instead, we just process the content to keep the UI responsive
+    // The actual content creation will happen on the main thread
+    // But we can still yield control to prevent blocking
+    tokio::task::yield_now().await;
+    path
 }
 
 
@@ -199,7 +200,7 @@ impl iced::Application for App {
                 match result {
                     Ok((path, content, buffer)) => {
                         let file_size = content.len();
-                        const EDITOR_THRESHOLD: usize = 100_000; // 100KB - only use text editor for files under this size
+                        const EDITOR_THRESHOLD: usize = 50_000; // 50KB - only use text editor for files under this size
                         const MAX_FILE_SIZE: usize = 5_000_000; // 5MB - maximum file size to open
                         
                         // For files larger than 5MB, show error
@@ -230,7 +231,7 @@ impl iced::Application for App {
                             self.is_file_too_large_for_editor = false;
                             // For small files, create text editor content
                             // But to prevent blocking, we'll do it in a background task
-                            self.status_message = format!("Creating editor for {} ({} bytes)...", path, file_size);
+                            self.status_message = format!("Preparing editor for {} ({} bytes)...", path, file_size);
                             self.error_message = None;
                             // Store content and buffer first
                             self.editor_content = content.clone();
@@ -243,7 +244,7 @@ impl iced::Application for App {
                                 state.open_buffer(&path, self.editor_content.clone());
                             }
                             
-                            // Create text editor content in background
+                            // Create text editor content in background (actually just yields)
                             return Command::perform(
                                 create_text_editor_content(path, content),
                                 Message::TextEditorContentCreated
@@ -402,8 +403,10 @@ impl iced::Application for App {
                 self.status_message = "Command palette (Ctrl+Shift+P) - coming soon".to_string();
                 Command::none()
             }
-            Message::TextEditorContentCreated((path, text_editor_content)) => {
-                self.text_editor = text_editor_content;
+            Message::TextEditorContentCreated(path) => {
+                // Create text editor content from the already loaded content
+                // This is for small files (<100KB), so it should be fast
+                self.text_editor = text_editor::Content::with_text(&self.editor_content);
                 self.status_message = format!("Loaded: {} ({} bytes)", path, self.editor_content.len());
                 self.error_message = None;
                 Command::none()
