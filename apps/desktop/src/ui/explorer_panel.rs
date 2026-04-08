@@ -54,7 +54,7 @@ pub fn explorer_panel(app: &App) -> Element<'_, Message> {
                     style.colors.text_on_accent
                 } else if entry.is_dir {
                     // Make directories more visible
-                    Color::from_rgb(0.7, 0.8, 1.0)
+                    iced::Color::from_rgb(0.7, 0.8, 1.0)
                 } else {
                     // Make file text more readable
                     style.colors.text_secondary
@@ -80,29 +80,32 @@ pub fn explorer_panel(app: &App) -> Element<'_, Message> {
                     iced::theme::Button::Primary
                 } else {
                     // Create a custom style that's more IDE-like
-                    struct ExplorerButtonStyle;
+                    let colors = style.colors;
+                    struct ExplorerButtonStyle {
+                        colors: crate::theme::SemanticColors,
+                    }
                     impl iced::widget::button::StyleSheet for ExplorerButtonStyle {
                         type Style = iced::Theme;
                         
                         fn active(&self, _style: &Self::Style) -> iced::widget::button::Appearance {
                             iced::widget::button::Appearance {
-                                background: Some(iced::Background::Color(Color::TRANSPARENT)),
+                                background: Some(iced::Background::Color(iced::Color::TRANSPARENT)),
                                 border: iced::Border::default(),
-                                text_color: style.colors.text_secondary,
+                                text_color: self.colors.text_secondary,
                                 ..Default::default()
                             }
                         }
                         
                         fn hovered(&self, _style: &Self::Style) -> iced::widget::button::Appearance {
                             iced::widget::button::Appearance {
-                                background: Some(iced::Background::Color(style.colors.hover_background)),
+                                background: Some(iced::Background::Color(self.colors.hover_background)),
                                 border: iced::Border::default(),
-                                text_color: style.colors.text_primary,
+                                text_color: self.colors.text_primary,
                                 ..Default::default()
                             }
                         }
                     }
-                    iced::theme::Button::Custom(Box::new(ExplorerButtonStyle))
+                    iced::theme::Button::Custom(Box::new(ExplorerButtonStyle { colors }))
                 };
                 
                 container(

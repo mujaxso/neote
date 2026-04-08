@@ -87,11 +87,11 @@ pub fn ide_layout<'a>(
     container(content)
         .width(Length::Fill)
         .height(Length::Fill)
-        .style(iced::theme::Container::Custom(Box::new(move |theme| {
+        .style(iced::theme::Container::Custom(Box::new(move |&theme| {
             container::Appearance {
                 background: Some(iced::Background::Color(match theme {
-                    iced::Theme::Dark => Color::from_rgb(0.06, 0.06, 0.08),
-                    _ => Color::from_rgb(0.96, 0.96, 0.96),
+                    iced::Theme::Dark => iced::Color::from_rgb(0.06, 0.06, 0.08),
+                    _ => iced::Color::from_rgb(0.96, 0.96, 0.96),
                 })),
                 border: iced::Border::default(),
                 ..Default::default()

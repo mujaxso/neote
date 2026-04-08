@@ -29,27 +29,27 @@ pub fn assistant_panel(app: &App) -> Element<'_, Message> {
             row![
                 text("🤖").size(20),
                 text("Neote AI").size(16)
-                    .style(iced::theme::Text::Color(Color::from_rgb(0.9, 0.9, 1.0))),
+                    .style(iced::theme::Text::Color(iced::Color::from_rgb(0.9, 0.9, 1.0))),
             ]
             .spacing(8)
             .align_items(iced::Alignment::Center),
             text("Ask questions about your code, get explanations, refactor suggestions, and more.")
                 .size(13)
-                .style(iced::theme::Text::Color(Color::from_rgb(0.8, 0.85, 0.9))),
+                .style(iced::theme::Text::Color(iced::Color::from_rgb(0.8, 0.85, 0.9))),
         ]
         .spacing(10)
         .padding(20)
     )
-    .style(iced::theme::Container::Custom(Box::new(move |theme| {
+    .style(iced::theme::Container::Custom(Box::new(move |&theme| {
         container::Appearance {
             background: Some(iced::Background::Color(match theme {
-                iced::Theme::Dark => Color::from_rgb(0.12, 0.12, 0.16),
-                _ => Color::from_rgb(0.95, 0.95, 0.98),
+                iced::Theme::Dark => iced::Color::from_rgb(0.12, 0.12, 0.16),
+                _ => iced::Color::from_rgb(0.95, 0.95, 0.98),
             })),
             border: iced::Border {
                 color: match theme {
-                    iced::Theme::Dark => Color::from_rgb(0.25, 0.45, 0.85),
-                    _ => Color::from_rgb(0.6, 0.7, 1.0),
+                    iced::Theme::Dark => iced::Color::from_rgb(0.25, 0.45, 0.85),
+                    _ => iced::Color::from_rgb(0.6, 0.7, 1.0),
                 },
                 width: 1.0,
                 radius: 8.0.into(),
