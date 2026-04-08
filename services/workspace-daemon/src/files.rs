@@ -55,3 +55,17 @@ pub fn read_file(path: &str) -> Result<String, String> {
 pub fn write_file(path: &str, content: &str) -> Result<(), String> {
     fs::write(path, content).map_err(|e| format!("Failed to write file: {}", e))
 }
+
+#[allow(dead_code)]
+pub fn get_file_metadata(path: &str) -> Result<(u64, bool), String> {
+    let metadata = fs::metadata(path).map_err(|e| format!("Failed to get file metadata: {}", e))?;
+    let size = metadata.len();
+    
+    // Simple binary detection: check first 1KB for null bytes
+    let is_binary = match fs::read(path) {
+        Ok(bytes) => bytes.iter().take(1024).any(|&b| b == 0),
+        Err(_) => false,
+    };
+    
+    Ok((size, is_binary))
+}

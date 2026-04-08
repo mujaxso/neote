@@ -12,7 +12,18 @@ pub enum Message {
     OpenWorkspace,
     WorkspaceLoaded(Result<Vec<DirectoryEntry>, String>),
     FileSelected(usize),
+    // New: Request to open a file with metadata check first
+    FileOpenRequested(String),
+    // New: Metadata loaded (size, etc.)
+    FileMetadataLoaded(Result<FileMetadata, String>),
+    // New: File content loaded
     FileLoaded(Result<(String, String, TextBuffer), String>),
+    // New: Confirm opening a large file
+    ConfirmOpenLargeFile(String, u64),
+    // New: Open in read-only mode
+    OpenLargeFileReadOnly(String),
+    // New: Cancel file open
+    CancelOpenFile,
     TextEditorContentCreated(String), // Just the path
     EditorContentChanged(text_editor::Action),
     SaveFile,
@@ -25,6 +36,14 @@ pub enum Message {
     KeyPressed(iced::keyboard::Key, iced::keyboard::Modifiers),
     ToggleDirectory(String),
     ToggleCommandPalette,
+}
+
+// New: File metadata structure
+#[derive(Debug, Clone)]
+pub struct FileMetadata {
+    pub path: String,
+    pub size: u64,
+    pub is_binary: bool,
 }
 
 /// Create text editor content in a background task to avoid blocking the UI
@@ -168,7 +187,25 @@ pub struct App {
     text_editor: text_editor::Content,
     // Track if the current file is too large for the text editor
     is_file_too_large_for_editor: bool,
+    // New: File loading state
+    file_loading_state: FileLoadingState,
 }
+
+// New: File loading states
+#[derive(Debug, Clone)]
+pub enum FileLoadingState {
+    Idle,
+    LoadingMetadata { path: String },
+    LoadingContent { path: String, size: u64 },
+    LargeFileWarning { path: String, size: u64 },
+    VeryLargeFileWarning { path: String, size: u64 },
+    ReadOnlyPreview { path: String, size: u64 },
+}
+
+// New: File size thresholds
+const SMALL_FILE_THRESHOLD: u64 = 100 * 1024; // 100KB
+const LARGE_FILE_THRESHOLD: u64 = 5 * 1024 * 1024; // 5MB
+const VERY_LARGE_FILE_THRESHOLD: u64 = 50 * 1024 * 1024; // 50MB
 
 impl iced::Application for App {
     type Message = Message;
@@ -193,6 +230,7 @@ impl iced::Application for App {
                 expanded_directories: std::collections::HashSet::new(),
                 text_editor: text_editor::Content::new(),
                 is_file_too_large_for_editor: false,
+                file_loading_state: FileLoadingState::Idle,
             },
             Command::none(),
         )
@@ -248,97 +286,254 @@ impl iced::Application for App {
                     let entry = &self.file_entries[index];
                     if !entry.is_dir {
                         let path = entry.path.clone();
-                        self.active_file_path = Some(path.clone());
-                        // Clear current editor content to show loading state
-                        self.text_editor = text_editor::Content::new();
-                        self.editor_buffer = None;
-                        self.status_message = format!("Loading {}...", entry.name);
+                        // Start by loading metadata first
+                        self.file_loading_state = FileLoadingState::LoadingMetadata { 
+                            path: path.clone() 
+                        };
+                        self.status_message = format!("Checking {}...", entry.name);
                         self.error_message = None;
                         
-                        Command::perform(
-                            async move {
-                                // Clone path for use inside the async block
-                                let path_clone = path.clone();
-                                // Read file, create buffer, and text editor content in a blocking task
-                                let result = tokio::task::spawn_blocking(move || {
-                                    match files::read_file(&path_clone) {
-                                        Ok(content) => {
-                                            // Check file size before processing
-                                            const MAX_FILE_SIZE: usize = 5_000_000; // 5MB
-                                            if content.len() > MAX_FILE_SIZE {
-                                                return Err(format!(
-                                                    "File too large ({} MB). Maximum supported size is {} MB.",
-                                                    content.len() / 1_000_000,
-                                                    MAX_FILE_SIZE / 1_000_000
-                                                ));
-                                            }
-                                            // Create buffer in the background thread
-                                            let buffer = TextBuffer::new(content.clone());
-                                            Ok((path, content, buffer))
-                                        }
-                                        Err(e) => Err(format!("Failed to read file: {}", e)),
-                                    }
-                                }).await;
-                                
-                                match result {
-                                    Ok(Ok((path, content, buffer))) => {
-                                        Message::FileLoaded(Ok((path, content, buffer)))
-                                    }
-                                    Ok(Err(e)) => Message::FileLoaded(Err(e)),
-                                    Err(join_err) => Message::FileLoaded(Err(format!("Failed to join task: {}", join_err))),
-                                }
-                            },
-                            |result| result,
-                        )
+                        // Request metadata check
+                        Message::FileOpenRequested(path)
                     } else {
-                        Command::none()
+                        Message::ToggleDirectory(entry.path.clone())
                     }
                 } else {
-                    Command::none()
+                    Message::ToggleDirectory("".to_string())
                 }
+            }
+            Message::FileOpenRequested(path) => {
+                self.file_loading_state = FileLoadingState::LoadingMetadata { 
+                    path: path.clone() 
+                };
+                self.status_message = format!("Checking file size...");
+                
+                Command::perform(
+                    async move {
+                        // Get file metadata in a background task
+                        let result = tokio::task::spawn_blocking(move || {
+                            match std::fs::metadata(&path) {
+                                Ok(metadata) => {
+                                    // Simple binary detection: check first few bytes
+                                    let is_binary = match std::fs::read(&path) {
+                                        Ok(bytes) => bytes.iter().take(1024).any(|&b| b == 0),
+                                        Err(_) => false,
+                                    };
+                                    Ok(FileMetadata {
+                                        path: path.clone(),
+                                        size: metadata.len(),
+                                        is_binary,
+                                    })
+                                }
+                                Err(e) => Err(format!("Failed to read file metadata: {}", e)),
+                            }
+                        }).await;
+                        
+                        match result {
+                            Ok(Ok(metadata)) => Message::FileMetadataLoaded(Ok(metadata)),
+                            Ok(Err(e)) => Message::FileMetadataLoaded(Err(e)),
+                            Err(join_err) => Message::FileMetadataLoaded(Err(format!("Failed to join task: {}", join_err))),
+                        }
+                    },
+                    |result| result,
+                )
+            }
+            Message::FileMetadataLoaded(result) => {
+                match result {
+                    Ok(metadata) => {
+                        // Check file size thresholds
+                        if metadata.size > VERY_LARGE_FILE_THRESHOLD {
+                            self.file_loading_state = FileLoadingState::VeryLargeFileWarning {
+                                path: metadata.path.clone(),
+                                size: metadata.size,
+                            };
+                            self.status_message = format!("Very large file detected ({} MB)", metadata.size / (1024 * 1024));
+                            // For now, automatically open in read-only mode
+                            // In the future, we could ask for confirmation
+                            return Command::perform(
+                                async move {
+                                    // Small delay to show the warning
+                                    tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
+                                    Message::OpenLargeFileReadOnly(metadata.path)
+                                },
+                                |msg| msg,
+                            );
+                        } else if metadata.size > LARGE_FILE_THRESHOLD {
+                            self.file_loading_state = FileLoadingState::LargeFileWarning {
+                                path: metadata.path.clone(),
+                                size: metadata.size,
+                            };
+                            self.status_message = format!("Large file detected ({} KB)", metadata.size / 1024);
+                            // Automatically proceed with loading, but show warning
+                            return Command::perform(
+                                async move {
+                                    Message::ConfirmOpenLargeFile(metadata.path, metadata.size)
+                                },
+                                |msg| msg,
+                            );
+                        } else {
+                            // Small file, proceed with normal loading
+                            self.file_loading_state = FileLoadingState::LoadingContent {
+                                path: metadata.path.clone(),
+                                size: metadata.size,
+                            };
+                            self.status_message = format!("Loading file...");
+                            
+                            return Command::perform(
+                                async move {
+                                    let path = metadata.path;
+                                    let result = tokio::task::spawn_blocking(move || {
+                                        match files::read_file(&path) {
+                                            Ok(content) => {
+                                                let buffer = TextBuffer::new(content.clone());
+                                                Ok((path, content, buffer))
+                                            }
+                                            Err(e) => Err(format!("Failed to read file: {}", e)),
+                                        }
+                                    }).await;
+                                    
+                                    match result {
+                                        Ok(Ok((path, content, buffer))) => {
+                                            Message::FileLoaded(Ok((path, content, buffer)))
+                                        }
+                                        Ok(Err(e)) => Message::FileLoaded(Err(e)),
+                                        Err(join_err) => Message::FileLoaded(Err(format!("Failed to join task: {}", join_err))),
+                                    }
+                                },
+                                |result| result,
+                            );
+                        }
+                    }
+                    Err(e) => {
+                        self.file_loading_state = FileLoadingState::Idle;
+                        self.error_message = Some(e);
+                        self.status_message = "Failed to load file metadata".to_string();
+                    }
+                }
+                Command::none()
+            }
+            Message::ConfirmOpenLargeFile(path, size) => {
+                self.file_loading_state = FileLoadingState::LoadingContent {
+                    path: path.clone(),
+                    size,
+                };
+                self.status_message = format!("Loading large file...");
+                
+                Command::perform(
+                    async move {
+                        let result = tokio::task::spawn_blocking(move || {
+                            match files::read_file(&path) {
+                                Ok(content) => {
+                                    let buffer = TextBuffer::new(content.clone());
+                                    Ok((path, content, buffer))
+                                }
+                                Err(e) => Err(format!("Failed to read file: {}", e)),
+                            }
+                        }).await;
+                        
+                        match result {
+                            Ok(Ok((path, content, buffer))) => {
+                                Message::FileLoaded(Ok((path, content, buffer)))
+                            }
+                            Ok(Err(e)) => Message::FileLoaded(Err(e)),
+                            Err(join_err) => Message::FileLoaded(Err(format!("Failed to join task: {}", join_err))),
+                        }
+                    },
+                    |result| result,
+                )
+            }
+            Message::OpenLargeFileReadOnly(path) => {
+                self.file_loading_state = FileLoadingState::ReadOnlyPreview {
+                    path: path.clone(),
+                    size: 0, // We'll get this from metadata
+                };
+                self.status_message = format!("Opening in read-only mode...");
+                self.active_file_path = Some(path.clone());
+                self.is_file_too_large_for_editor = true;
+                
+                // For very large files, only load a preview
+                Command::perform(
+                    async move {
+                        let result = tokio::task::spawn_blocking(move || {
+                            // Only read first 100KB for preview
+                            use std::fs::File;
+                            use std::io::Read;
+                            
+                            let mut file = match File::open(&path) {
+                                Ok(f) => f,
+                                Err(e) => return Err(format!("Failed to open file: {}", e)),
+                            };
+                            
+                            let mut buffer = vec![0; 100 * 1024]; // 100KB
+                            match file.read(&mut buffer) {
+                                Ok(bytes_read) => {
+                                    // Convert to string, but be careful about binary files
+                                    let content = String::from_utf8_lossy(&buffer[..bytes_read]).to_string();
+                                    let text_buffer = TextBuffer::new(content.clone());
+                                    Ok((path, content, text_buffer))
+                                }
+                                Err(e) => Err(format!("Failed to read file: {}", e)),
+                            }
+                        }).await;
+                        
+                        match result {
+                            Ok(Ok((path, content, buffer))) => {
+                                Message::FileLoaded(Ok((path, content, buffer)))
+                            }
+                            Ok(Err(e)) => Message::FileLoaded(Err(e)),
+                            Err(join_err) => Message::FileLoaded(Err(format!("Failed to join task: {}", join_err))),
+                        }
+                    },
+                    |result| result,
+                )
+            }
+            Message::CancelOpenFile => {
+                self.file_loading_state = FileLoadingState::Idle;
+                self.status_message = "File open cancelled".to_string();
+                Command::none()
             }
             Message::FileLoaded(result) => {
                 match result {
                     Ok((path, content, buffer)) => {
                         self.active_file_path = Some(path.clone());
                         self.editor_buffer = Some(buffer);
+                        self.file_loading_state = FileLoadingState::Idle;
                         
-                        // Check file size thresholds
                         let file_size = content.len();
-                        const LARGE_THRESHOLD: usize = 100_000; // 100KB
-                        const VERY_LARGE_THRESHOLD: usize = 5_000_000; // 5MB
                         
-                        // For very large files, show a warning and potentially limit functionality
-                        if file_size > VERY_LARGE_THRESHOLD {
-                            self.status_message = format!(
-                                "Very large file opened ({} MB) - editing may be limited",
-                                file_size / 1_000_000
-                            );
-                            self.is_file_too_large_for_editor = true;
-                        } else if file_size > LARGE_THRESHOLD {
-                            self.status_message = format!(
-                                "Large file opened ({} KB) - performance may be affected",
-                                file_size / 1_000
-                            );
-                            self.is_file_too_large_for_editor = false;
-                        } else {
-                            self.status_message = format!("File loaded: {} ({} bytes)", path, file_size);
-                            self.is_file_too_large_for_editor = false;
-                        }
-                        
-                        // Initialize the text editor content from the buffer
-                        // For large files, this is a one-time cost on file open
-                        if let Some(ref buffer) = self.editor_buffer {
-                            // Only load the full text if the file is not too large
-                            if file_size <= VERY_LARGE_THRESHOLD {
-                                let text = buffer.text();
-                                self.text_editor = text_editor::Content::with_text(&text);
-                            } else {
-                                // For very large files, load an empty editor with a message
-                                self.text_editor = text_editor::Content::with_text(
-                                    &format!("// File too large to display ({} MB)\n// Open in external editor for full content", 
-                                    file_size / 1_000_000)
+                        // Determine if we're in read-only mode based on the loading state
+                        match &self.file_loading_state {
+                            FileLoadingState::ReadOnlyPreview { .. } => {
+                                self.is_file_too_large_for_editor = true;
+                                self.status_message = format!(
+                                    "Very large file opened in read-only preview ({} bytes shown)",
+                                    file_size
                                 );
+                                // For read-only preview, show the content directly
+                                self.text_editor = text_editor::Content::with_text(&format!(
+                                    "// Read-only preview (first 100KB)\n// File is very large\n\n{}",
+                                    content
+                                ));
+                            }
+                            _ => {
+                                // Check thresholds for normal files
+                                if file_size > LARGE_FILE_THRESHOLD as usize {
+                                    self.status_message = format!(
+                                        "Large file opened ({} MB) - editing enabled",
+                                        file_size / (1024 * 1024)
+                                    );
+                                    self.is_file_too_large_for_editor = false;
+                                } else {
+                                    self.status_message = format!("File loaded: {} ({} bytes)", path, file_size);
+                                    self.is_file_too_large_for_editor = false;
+                                }
+                                
+                                // Initialize editor content, but do it in a way that doesn't block
+                                // This is still synchronous, but for files under the threshold it should be fine
+                                if let Some(ref buffer) = self.editor_buffer {
+                                    let text = buffer.text();
+                                    self.text_editor = text_editor::Content::with_text(&text);
+                                }
                             }
                         }
                         
@@ -352,6 +547,7 @@ impl iced::Application for App {
                         }
                     }
                     Err(e) => {
+                        self.file_loading_state = FileLoadingState::Idle;
                         self.error_message = Some(e);
                         self.status_message = "Failed to load file".to_string();
                     }
@@ -543,6 +739,7 @@ impl iced::Application for App {
             &self.text_editor,
             self.editor_buffer.as_ref(),
             self.is_file_too_large_for_editor,
+            &self.file_loading_state,
         )
     }
 

@@ -23,6 +23,7 @@ pub fn ide_layout<'a>(
     text_editor: &'a iced::widget::text_editor::Content,
     editor_buffer: Option<&'a editor_buffer::buffer::TextBuffer>,
     is_file_too_large_for_editor: bool,
+    file_loading_state: &'a crate::app::FileLoadingState,
 ) -> Element<'a, Message> {
     // Top bar
     let top_bar = top_bar(workspace_path, is_dirty);
@@ -361,31 +362,186 @@ fn editor_panel<'a>(
         .align_items(Alignment::Center)
     };
 
-    // Check if we're loading a file
-    // Loading if: no buffer yet, OR buffer exists but text editor is empty and file is not too large for editor
-    let is_loading = active_file_path.is_some() && 
-        (editor_buffer.is_none() || 
-         (editor_buffer.is_some() && !is_file_too_large_for_editor && text_editor.text().is_empty()));
-    
-    let editor_content = if is_loading {
-        // Show loading indicator
-        container(
-            column![
-                text("Loading file...")
-                    .size(16)
-                    .style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 255))),
-                text("Please wait")
-                    .size(12)
-                    .style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 150))),
-            ]
-            .align_items(Alignment::Center)
-            .spacing(16),
-        )
-        .center_y()
-        .center_x()
-        .width(Length::Fill)
-        .height(Length::Fill)
-        .into()
+    // Check loading state
+    let editor_content = match file_loading_state {
+        crate::app::FileLoadingState::LoadingMetadata { path } => {
+            container(
+                column![
+                    text("Checking file size...")
+                        .size(16)
+                        .style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 255))),
+                    text(format!("Path: {}", path))
+                        .size(12)
+                        .style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 150))),
+                ]
+                .align_items(Alignment::Center)
+                .spacing(16),
+            )
+            .center_y()
+            .center_x()
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .into()
+        }
+        crate::app::FileLoadingState::LoadingContent { path, size } => {
+            let size_mb = size / (1024 * 1024);
+            let size_kb = size / 1024;
+            let size_str = if size_mb > 0 {
+                format!("{} MB", size_mb)
+            } else {
+                format!("{} KB", size_kb)
+            };
+            container(
+                column![
+                    text("Loading file...")
+                        .size(16)
+                        .style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 255))),
+                    text(format!("{} ({})", path, size_str))
+                        .size(12)
+                        .style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 150))),
+                    text("This may take a moment for large files")
+                        .size(10)
+                        .style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 150))),
+                ]
+                .align_items(Alignment::Center)
+                .spacing(16),
+            )
+            .center_y()
+            .center_x()
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .into()
+        }
+        crate::app::FileLoadingState::LargeFileWarning { path, size } => {
+            let size_mb = size / (1024 * 1024);
+            container(
+                column![
+                    text("⚠ Large File Detected")
+                        .size(16)
+                        .style(iced::theme::Text::Color(iced::Color::from_rgb8(255, 200, 0))),
+                    text(format!("{} ({} MB)", path, size_mb))
+                        .size(12)
+                        .style(iced::theme::Text::Color(iced::Color::from_rgb8(200, 200, 200))),
+                    text("Opening in editable mode...")
+                        .size(10)
+                        .style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 150))),
+                ]
+                .align_items(Alignment::Center)
+                .spacing(16),
+            )
+            .center_y()
+            .center_x()
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .into()
+        }
+        crate::app::FileLoadingState::VeryLargeFileWarning { path, size } => {
+            let size_mb = size / (1024 * 1024);
+            container(
+                column![
+                    text("⚠ Very Large File Detected")
+                        .size(16)
+                        .style(iced::theme::Text::Color(iced::Color::from_rgb8(255, 100, 100))),
+                    text(format!("{} ({} MB)", path, size_mb))
+                        .size(12)
+                        .style(iced::theme::Text::Color(iced::Color::from_rgb8(200, 200, 200))),
+                    text("Opening in read-only preview mode")
+                        .size(10)
+                        .style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 150))),
+                ]
+                .align_items(Alignment::Center)
+                .spacing(16),
+            )
+            .center_y()
+            .center_x()
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .into()
+        }
+        crate::app::FileLoadingState::ReadOnlyPreview { path, size } => {
+            let size_mb = size / (1024 * 1024);
+            container(
+                column![
+                    text("📖 Read-Only Preview")
+                        .size(16)
+                        .style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 200, 255))),
+                    text(format!("{} ({} MB total)", path, size_mb))
+                        .size(12)
+                        .style(iced::theme::Text::Color(iced::Color::from_rgb8(200, 200, 200))),
+                    text("Only first 100KB shown. Editing disabled.")
+                        .size(10)
+                        .style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 150))),
+                ]
+                .align_items(Alignment::Center)
+                .spacing(16),
+            )
+            .center_y()
+            .center_x()
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .into()
+        }
+        crate::app::FileLoadingState::Idle => {
+            // Original logic for when not loading
+            if active_file_path.is_some() {
+                if is_file_too_large_for_editor {
+                    // Show read-only text view for very large files
+                    let content = if let Some(buffer) = editor_buffer {
+                        if buffer.is_very_large() {
+                            // For very large files, show only first 100KB
+                            buffer.slice_char_range(0, 100_000.min(buffer.len_chars())).unwrap_or_else(|_| String::new())
+                        } else {
+                            buffer.text()
+                        }
+                    } else {
+                        String::new()
+                    };
+                    let warning = if let Some(buffer) = editor_buffer {
+                        if buffer.is_very_large() {
+                            format!("\n\n--- File truncated ({} MB total, showing first 100KB) ---", 
+                                   buffer.len_chars() / 1_000_000)
+                        } else {
+                            String::new()
+                        }
+                    } else {
+                        String::new()
+                    };
+                    scrollable(
+                        column![
+                            text(content + &warning)
+                                .font(iced::Font::MONOSPACE)
+                                .size(14),
+                        ]
+                    )
+                    .height(Length::Fill)
+                    .into()
+                } else {
+                    super::editor::editor(text_editor)
+                }
+            } else {
+                container(
+                    column![
+                        text("Neote").size(32).style(iced::theme::Text::Color(iced::Color::from_rgb8(100, 150, 255))),
+                        text("AI‑first IDE").size(16).style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 200))),
+                        container(iced::widget::horizontal_rule(1)).width(150),
+                        column![
+                            button("Open a file from the explorer").style(theme::Button::Secondary),
+                            button("Ask AI about the workspace").style(theme::Button::Secondary),
+                        ]
+                        .spacing(8)
+                        .padding(16),
+                    ]
+                    .align_items(Alignment::Center)
+                    .spacing(16),
+                )
+                .center_y()
+                .center_x()
+                .width(Length::Fill)
+                .height(Length::Fill)
+                .into()
+            }
+        }
+    };
     } else if active_file_path.is_some() {
         if is_file_too_large_for_editor {
             // Show read-only text view for very large files
