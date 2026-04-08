@@ -881,78 +881,72 @@ fn explorer_panel_with_expanded<'a>(
     expanded_directories: &'a std::collections::HashSet<String>,
     workspace_path: &'a str,
 ) -> Element<'a, Message> {
-    // Build a tree structure from the flat list of entries
-    // We'll use indices to avoid lifetime issues
-    let mut root_indices = Vec::new();
-    let mut children_map: std::collections::HashMap<String, Vec<usize>> = 
+    // First, organize entries by their parent directory
+    let mut children_by_parent: std::collections::HashMap<String, Vec<&core_types::workspace::DirectoryEntry>> = 
         std::collections::HashMap::new();
     
-    // Use the provided workspace path
+    // Also track all entries by their path for quick lookup
+    let mut entries_by_path: std::collections::HashMap<String, &core_types::workspace::DirectoryEntry> = 
+        std::collections::HashMap::new();
+    
+    for entry in file_entries {
+        entries_by_path.insert(entry.path.clone(), entry);
+        
+        // Get parent path
+        let parent = std::path::Path::new(&entry.path)
+            .parent()
+            .and_then(|p| p.to_str())
+            .map(|s| s.to_string())
+            .unwrap_or_else(|| "".to_string());
+        
+        children_by_parent.entry(parent).or_insert_with(Vec::new).push(entry);
+    }
+    
+    // Find root entries (those with parent equal to workspace_path or empty)
     let workspace_root = if workspace_path.is_empty() {
-        String::new()
+        "".to_string()
     } else {
-        normalize_path(workspace_path)
+        // Normalize the workspace path
+        let path = std::path::Path::new(workspace_path);
+        path.to_string_lossy().to_string()
     };
     
-    // Build children map: parent path -> indices of children
-    for (i, entry) in file_entries.iter().enumerate() {
-        let path = std::path::Path::new(&entry.path);
-        if let Some(parent) = path.parent() {
-            let parent_str = normalize_path(&parent.to_string_lossy());
-            children_map.entry(parent_str).or_insert_with(Vec::new).push(i);
-        } else {
-            // Entry has no parent (root of filesystem)
-            root_indices.push(i);
+    // Get entries at the workspace root
+    let root_entries: Vec<&core_types::workspace::DirectoryEntry> = children_by_parent
+        .get(&workspace_root)
+        .cloned()
+        .unwrap_or_else(Vec::new);
+    
+    // Also include entries with parent "." or empty string if workspace_root is empty
+    let mut all_root_entries = root_entries;
+    if workspace_root.is_empty() {
+        if let Some(dot_entries) = children_by_parent.get(".") {
+            all_root_entries.extend(dot_entries.iter().cloned());
+        }
+        if let Some(empty_entries) = children_by_parent.get("") {
+            all_root_entries.extend(empty_entries.iter().cloned());
         }
     }
     
-    // Identify root entries: those whose parent is the workspace root
-    // Also include entries with no parent (already added above)
-    for (i, entry) in file_entries.iter().enumerate() {
-        let path = std::path::Path::new(&entry.path);
-        if let Some(parent) = path.parent() {
-            let parent_str = normalize_path(&parent.to_string_lossy());
-            if parent_str == workspace_root {
-                if !root_indices.contains(&i) {
-                    root_indices.push(i);
-                }
-            }
+    // Remove duplicates
+    let mut seen_paths = std::collections::HashSet::new();
+    let mut unique_root_entries = Vec::new();
+    for entry in all_root_entries {
+        if seen_paths.insert(entry.path.clone()) {
+            unique_root_entries.push(entry);
         }
     }
     
-    // If we still have no root entries, maybe all files are at workspace root
-    // Add entries whose parent is empty or "."
-    if root_indices.is_empty() {
-        for (i, entry) in file_entries.iter().enumerate() {
-            let path = std::path::Path::new(&entry.path);
-            if let Some(parent) = path.parent() {
-                let parent_str = parent.to_string_lossy();
-                if parent_str == "." || parent_str == "" {
-                    if !root_indices.contains(&i) {
-                        root_indices.push(i);
-                    }
-                }
-            }
-        }
-    }
-    
-    // Final fallback: if still empty, add all entries
-    if root_indices.is_empty() {
-        root_indices = (0..file_entries.len()).collect();
-    }
-    
-    // Sort indices: directories first, then files, both alphabetically
-    root_indices.sort_by(|&a_idx, &b_idx| {
-        let a = &file_entries[a_idx];
-        let b = &file_entries[b_idx];
+    // Sort root entries: directories first, then alphabetically
+    unique_root_entries.sort_by(|a, b| {
         if a.is_dir != b.is_dir {
-            b.is_dir.cmp(&a.is_dir) // Directories first (true > false)
+            b.is_dir.cmp(&a.is_dir) // Directories first
         } else {
             a.name.cmp(&b.name)
         }
     });
     
-    // Render the tree
+    // Render the tree starting from root entries
     let content: Element<_> = if file_entries.is_empty() {
         container(
             column![
@@ -971,24 +965,16 @@ fn explorer_panel_with_expanded<'a>(
         .height(Length::Fill)
         .into()
     } else {
-        // Collect all elements first to avoid lifetime issues
         let mut all_elements = Vec::new();
-        for &idx in &root_indices {
-            let entry = &file_entries[idx];
-            let mut elements = render_directory_entry_with_indices(
+        
+        for entry in unique_root_entries {
+            render_directory_entry(
                 entry,
-                idx,
-                file_entries,
-                &children_map,
+                &children_by_parent,
                 expanded_directories,
                 0,
+                &mut all_elements,
             );
-            all_elements.append(&mut elements);
-        }
-        
-        // If no elements were generated (tree building failed), fall back to flat list
-        if all_elements.is_empty() {
-            return explorer_panel(file_entries);
         }
         
         scrollable(
@@ -1017,37 +1003,16 @@ fn explorer_panel_with_expanded<'a>(
     .into()
 }
 
-
-// Helper function to normalize paths for consistent comparison
-fn normalize_path(path: &str) -> String {
-    let path = std::path::Path::new(path);
-    // Convert to absolute path if possible
-    let path = if path.is_absolute() {
-        path.to_path_buf()
-    } else {
-        // Try to canonicalize to get absolute path
-        match std::fs::canonicalize(path) {
-            Ok(p) => p,
-            Err(_) => path.to_path_buf(),
-        }
-    };
-    // Convert to string and remove trailing separator if present
-    let s = path.to_string_lossy().to_string();
-    // Remove any trailing separator
-    s.trim_end_matches(std::path::MAIN_SEPARATOR).to_string()
-}
-
-fn render_directory_entry_with_indices<'a, 'b>(
+fn render_directory_entry<'a>(
     entry: &'a core_types::workspace::DirectoryEntry,
-    _idx: usize,
-    file_entries: &'a [core_types::workspace::DirectoryEntry],
-    children_map: &'b std::collections::HashMap<String, Vec<usize>>,
+    children_by_parent: &'a std::collections::HashMap<String, Vec<&'a core_types::workspace::DirectoryEntry>>,
     expanded_directories: &'a std::collections::HashSet<String>,
     depth: usize,
-) -> Vec<Element<'a, Message>> {
-    let mut elements = Vec::new();
-    
+    elements: &mut Vec<Element<'a, Message>>,
+) {
     let is_expanded = expanded_directories.contains(&entry.path);
+    
+    // Determine icon based on whether it's a directory and expanded
     let icon = if entry.is_dir {
         if is_expanded { "📂" } else { "📁" }
     } else {
@@ -1102,15 +1067,10 @@ fn render_directory_entry_with_indices<'a, 'b>(
     
     // If this is a directory and it's expanded, render its children
     if entry.is_dir && is_expanded {
-        // Normalize the path for lookup
-        let normalized_path = normalize_path(&entry.path);
-        // Try to find children in the map
-        if let Some(child_indices) = children_map.get(&normalized_path) {
-            // Sort child indices: directories first, then files
-            let mut sorted_child_indices: Vec<usize> = child_indices.clone();
-            sorted_child_indices.sort_by(|&a_idx, &b_idx| {
-                let a = &file_entries[a_idx];
-                let b = &file_entries[b_idx];
+        if let Some(children) = children_by_parent.get(&entry.path) {
+            // Sort children: directories first, then alphabetically
+            let mut sorted_children: Vec<&core_types::workspace::DirectoryEntry> = children.clone();
+            sorted_children.sort_by(|a, b| {
                 if a.is_dir != b.is_dir {
                     b.is_dir.cmp(&a.is_dir) // Directories first
                 } else {
@@ -1118,16 +1078,14 @@ fn render_directory_entry_with_indices<'a, 'b>(
                 }
             });
             
-            for &child_idx in &sorted_child_indices {
-                let child_entry = &file_entries[child_idx];
-                elements.extend(render_directory_entry_with_indices(
-                    child_entry,
-                    child_idx,
-                    file_entries,
-                    children_map,
+            for child in sorted_children {
+                render_directory_entry(
+                    child,
+                    children_by_parent,
                     expanded_directories,
                     depth + 1,
-                ));
+                    elements,
+                );
             }
         } else {
             // Directory is empty
@@ -1141,9 +1099,28 @@ fn render_directory_entry_with_indices<'a, 'b>(
             elements.push(placeholder);
         }
     }
-    
-    elements
 }
+
+
+// Helper function to normalize paths for consistent comparison
+fn normalize_path(path: &str) -> String {
+    let path = std::path::Path::new(path);
+    // Convert to absolute path if possible
+    let path = if path.is_absolute() {
+        path.to_path_buf()
+    } else {
+        // Try to canonicalize to get absolute path
+        match std::fs::canonicalize(path) {
+            Ok(p) => p,
+            Err(_) => path.to_path_buf(),
+        }
+    };
+    // Convert to string and remove trailing separator if present
+    let s = path.to_string_lossy().to_string();
+    // Remove any trailing separator
+    s.trim_end_matches(std::path::MAIN_SEPARATOR).to_string()
+}
+
 
 fn placeholder_panel<'a>(label: &str) -> Element<'a, Message> {
     container(
