@@ -40,14 +40,34 @@ pub fn build_tree(
     
     for entry in &sorted_entries {
         let entry_path = std::path::Path::new(&entry.path);
-        if let Some(parent) = entry_path.parent() {
+        let parent = entry_path.parent();
+        
+        let parent_key = if let Some(parent) = parent {
             let parent_str = parent.to_string_lossy().to_string();
-            let normalized_parent = normalize_path(&parent_str);
-            children_by_parent.entry(normalized_parent).or_insert_with(Vec::new).push(entry.clone());
+            normalize_path(&parent_str)
         } else {
             // Entry has no parent (root)
-            children_by_parent.entry("".to_string()).or_insert_with(Vec::new).push(entry.clone());
-        }
+            // If it's directly in the workspace root, use workspace_root
+            // Otherwise, use empty string
+            "".to_string()
+        };
+        
+        // Also check if the entry is directly in the workspace root
+        // by comparing its parent with workspace_root
+        let entry_parent_normalized = if let Some(parent) = parent {
+            let parent_str = parent.to_string_lossy().to_string();
+            normalize_path(&parent_str)
+        } else {
+            "".to_string()
+        };
+        
+        let actual_key = if entry_parent_normalized == workspace_root {
+            workspace_root.clone()
+        } else {
+            parent_key
+        };
+        
+        children_by_parent.entry(actual_key).or_insert_with(Vec::new).push(entry.clone());
     }
     
     // Recursive function to build tree
@@ -60,7 +80,8 @@ pub fn build_tree(
         if let Some(children) = children_by_parent.get(parent_path) {
             for child in children {
                 let child_path = &child.path;
-                let child_nodes = build_subtree(child_path, children_by_parent);
+                let normalized_child_path = normalize_path(child_path);
+                let child_nodes = build_subtree(&normalized_child_path, children_by_parent);
                 nodes.push(TreeNode {
                     entry: child.clone(),
                     children: child_nodes,
