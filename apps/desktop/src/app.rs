@@ -270,6 +270,7 @@ impl iced::Application for App {
             Message::FileSelected(index) => {
                 if index < self.file_entries.len() {
                     let entry = &self.file_entries[index];
+                    // Only handle files, not directories
                     if !entry.is_dir {
                         let path = entry.path.clone();
                         // Start by loading metadata first
@@ -305,26 +306,12 @@ impl iced::Application for App {
                             |result| result,
                         )
                     } else {
-                        // For directories, toggle expansion
-                        let path = entry.path.clone();
-                        if self.expanded_directories.contains(&path) {
-                            self.expanded_directories.remove(&path);
-                        } else {
-                            self.expanded_directories.insert(path.clone());
-                        }
+                        // Directories are handled by Message::ToggleDirectory
                         Command::none()
                     }
                 } else {
                     Command::none()
                 }
-            }
-            Message::ToggleDirectory(path) => {
-                if self.expanded_directories.contains(&path) {
-                    self.expanded_directories.remove(&path);
-                } else {
-                    self.expanded_directories.insert(path);
-                }
-                Command::none()
             }
             Message::FileSelectedByPath(path) => {
                 // Find the index of the file in file_entries
@@ -697,14 +684,6 @@ impl iced::Application for App {
             Message::ToggleCommandPalette => {
                 // For now, just show a status message
                 self.status_message = "Command palette (Ctrl+Shift+P) - coming soon".to_string();
-                Command::none()
-            }
-            Message::ToggleDirectory(path) => {
-                if self.expanded_directories.contains(&path) {
-                    self.expanded_directories.remove(&path);
-                } else {
-                    self.expanded_directories.insert(path);
-                }
                 Command::none()
             }
         }

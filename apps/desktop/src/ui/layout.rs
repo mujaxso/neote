@@ -756,7 +756,9 @@ fn explorer_panel_with_expanded<'a>(
         let path = std::path::Path::new(&entry.path);
         if let Some(parent) = path.parent() {
             if parent.to_string_lossy() == "" || parent.to_string_lossy() == "." {
-                if !root_entries.contains(&entry) {
+                // Check if this entry is already in root_entries by comparing paths
+                let already_exists = root_entries.iter().any(|e| e.path == entry.path);
+                if !already_exists {
                     root_entries.push(entry);
                 }
             }
