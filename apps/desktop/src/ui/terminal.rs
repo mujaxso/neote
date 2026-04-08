@@ -1,6 +1,6 @@
 use iced::{
     widget::{column, container, row, scrollable, text, text_input, button},
-    Element, Length, theme,
+    Element, Length,
 };
 use crate::app::Message;
 
@@ -11,10 +11,10 @@ pub fn terminal<'a>(_content: &'a str) -> Element<'a, Message> {
             iced::widget::horizontal_space(),
             button("Clear")
                 .on_press(Message::PromptInputChanged("clear".to_string()))
-                .style(Button::Secondary),
+                .style(iced::theme::Button::Secondary),
             button("Run")
                 .on_press(Message::PromptInputChanged("cargo run".to_string()))
-                .style(Button::Primary),
+                .style(iced::theme::Button::Primary),
         ]
         .padding([8, 16])
         .align_items(iced::Alignment::Center),

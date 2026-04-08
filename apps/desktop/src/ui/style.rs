@@ -1,6 +1,6 @@
 use iced::{Color, Theme};
 use iced::widget::{button, container, text, text_input};
-use iced::theme::{self, Button, Container, TextInput};
+use iced::theme::{self as iced_theme, Button, Container, TextInput};
 
 use crate::theme::{current_colors, NeoteTheme, SemanticColors};
 
@@ -27,10 +27,13 @@ impl StyleHelpers {
     pub fn panel_container(&self) -> container::Appearance {
         container::Appearance {
             background: Some(self.colors.panel_background.into()),
-            border_color: self.colors.border,
-            border_width: self.tokens.border_width,
-            border_radius: self.tokens.radius_sm.into(),
+            border: iced::Border {
+                color: self.colors.border,
+                width: self.tokens.border_width,
+                radius: self.tokens.radius_sm.into(),
+            },
             text_color: None,
+            shadow: Default::default(),
         }
     }
     
@@ -38,10 +41,13 @@ impl StyleHelpers {
     pub fn elevated_container(&self) -> container::Appearance {
         container::Appearance {
             background: Some(self.colors.elevated_panel_background.into()),
-            border_color: self.colors.border,
-            border_width: self.tokens.border_width,
-            border_radius: self.tokens.radius_md.into(),
+            border: iced::Border {
+                color: self.colors.border,
+                width: self.tokens.border_width,
+                radius: self.tokens.radius_md.into(),
+            },
             text_color: None,
+            shadow: Default::default(),
         }
     }
     
@@ -49,10 +55,13 @@ impl StyleHelpers {
     pub fn status_bar_container(&self) -> container::Appearance {
         container::Appearance {
             background: Some(self.colors.status_bar_background.into()),
-            border_color: self.colors.divider,
-            border_width: 0.0,
-            border_radius: 0.0.into(),
+            border: iced::Border {
+                color: self.colors.divider,
+                width: 0.0,
+                radius: 0.0.into(),
+            },
             text_color: None,
+            shadow: Default::default(),
         }
     }
     
@@ -60,11 +69,13 @@ impl StyleHelpers {
     pub fn primary_button(&self) -> button::Appearance {
         button::Appearance {
             background: Some(self.colors.accent.into()),
-            border_color: self.colors.accent,
-            border_width: self.tokens.border_width,
-            border_radius: self.tokens.radius_sm.into(),
+            border: iced::Border {
+                color: self.colors.accent,
+                width: self.tokens.border_width,
+                radius: self.tokens.radius_sm.into(),
+            },
             text_color: self.colors.text_on_accent,
-            ..Default::default()
+            shadow: Default::default(),
         }
     }
     
@@ -72,11 +83,13 @@ impl StyleHelpers {
     pub fn secondary_button(&self) -> button::Appearance {
         button::Appearance {
             background: Some(Color::TRANSPARENT.into()),
-            border_color: self.colors.border,
-            border_width: self.tokens.border_width,
-            border_radius: self.tokens.radius_sm.into(),
+            border: iced::Border {
+                color: self.colors.border,
+                width: self.tokens.border_width,
+                radius: self.tokens.radius_sm.into(),
+            },
             text_color: self.colors.text_secondary,
-            ..Default::default()
+            shadow: Default::default(),
         }
     }
     
@@ -84,9 +97,11 @@ impl StyleHelpers {
     pub fn text_input(&self) -> text_input::Appearance {
         text_input::Appearance {
             background: self.colors.elevated_panel_background.into(),
-            border_color: self.colors.border,
-            border_width: self.tokens.border_width,
-            border_radius: self.tokens.radius_sm.into(),
+            border: iced::Border {
+                color: self.colors.border,
+                width: self.tokens.border_width,
+                radius: self.tokens.radius_sm.into(),
+            },
             icon_color: self.colors.text_muted,
         }
     }
@@ -135,10 +150,8 @@ impl StyleHelpers {
 }
 
 /// Custom theme implementations
-pub mod theme {
-    use iced::{Color, Theme};
+pub mod custom_theme {
     use iced::theme::{Button, Container, TextInput};
-    use iced::widget::{button, container, text_input};
     
     use super::StyleHelpers;
     use crate::theme::NeoteTheme;
@@ -146,33 +159,33 @@ pub mod theme {
     /// Create a custom button style
     pub fn primary_button(theme: NeoteTheme) -> Button {
         let helpers = StyleHelpers::new(theme);
-        Button::Custom(Box::new(move |_| helpers.primary_button()))
+        Button::Custom(Box::new(move |_theme| helpers.primary_button()))
     }
     
     pub fn secondary_button(theme: NeoteTheme) -> Button {
         let helpers = StyleHelpers::new(theme);
-        Button::Custom(Box::new(move |_| helpers.secondary_button()))
+        Button::Custom(Box::new(move |_theme| helpers.secondary_button()))
     }
     
     /// Create a custom container style
     pub fn panel_container(theme: NeoteTheme) -> Container {
         let helpers = StyleHelpers::new(theme);
-        Container::Custom(Box::new(move |_| helpers.panel_container()))
+        Container::Custom(Box::new(move |_theme| helpers.panel_container()))
     }
     
     pub fn elevated_container(theme: NeoteTheme) -> Container {
         let helpers = StyleHelpers::new(theme);
-        Container::Custom(Box::new(move |_| helpers.elevated_container()))
+        Container::Custom(Box::new(move |_theme| helpers.elevated_container()))
     }
     
     pub fn status_bar_container(theme: NeoteTheme) -> Container {
         let helpers = StyleHelpers::new(theme);
-        Container::Custom(Box::new(move |_| helpers.status_bar_container()))
+        Container::Custom(Box::new(move |_theme| helpers.status_bar_container()))
     }
     
     /// Create a custom text input style
     pub fn custom_text_input(theme: NeoteTheme) -> TextInput {
         let helpers = StyleHelpers::new(theme);
-        TextInput::Custom(Box::new(move |_| helpers.text_input()))
+        TextInput::Custom(Box::new(move |_theme| helpers.text_input()))
     }
 }

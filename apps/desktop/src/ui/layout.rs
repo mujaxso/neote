@@ -3,8 +3,7 @@ use iced::{
         button, column, container, horizontal_space, row, scrollable, text,
         text_input, vertical_rule, Space,
     },
-    Alignment, Color, Element, Length,
-    theme::{self, Button, Container},
+    Alignment, Element, Length,
 };
 
 use crate::state::{Activity, FileLoadingState};
@@ -80,7 +79,7 @@ pub fn ide_layout<'a>(
     // Combine everything
     let content = column![
         top_bar,
-        iced::widget::horizontal_rule(1).style(iced::theme::Rule::Custom(Box::new(move || {
+        iced::widget::horizontal_rule(1).style(iced::theme::Rule::Custom(Box::new(move |_theme| {
             iced::widget::rule::Appearance {
                 color: colors.divider,
                 width: 1,
@@ -89,7 +88,7 @@ pub fn ide_layout<'a>(
             }
         }))),
         main_content,
-        iced::widget::horizontal_rule(1).style(iced::theme::Rule::Custom(Box::new(move || {
+        iced::widget::horizontal_rule(1).style(iced::theme::Rule::Custom(Box::new(move |_theme| {
             iced::widget::rule::Appearance {
                 color: colors.divider,
                 width: 1,
@@ -167,9 +166,9 @@ fn activity_rail<'a>(active_activity: Activity) -> Element<'a, Message> {
         .map(|&(activity, icon, label)| {
             let is_active = activity == active_activity;
             let button_style = if is_active {
-                Button::Primary
+                iced::theme::Button::Primary
             } else {
-                Button::Secondary
+                iced::theme::Button::Secondary
             };
             // For AI activity, we want to toggle the panel visibility
             let message = if activity == Activity::Ai {
@@ -227,7 +226,7 @@ fn explorer_panel<'a>(file_entries: &'a [core_types::workspace::DirectoryEntry])
                 button("Open Workspace")
                     .on_press(Message::OpenWorkspace)
                     .padding(8)
-                    .style(Button::Secondary),
+                    .style(iced::theme::Button::Secondary),
             ]
             .spacing(10)
             .align_items(Alignment::Center)
@@ -256,7 +255,7 @@ fn explorer_panel<'a>(file_entries: &'a [core_types::workspace::DirectoryEntry])
                                 // Add a toggle button for directories
                                 let btn: Element<_> = button("▶")
                                     .on_press(Message::ToggleDirectory(entry.path.clone()))
-                                    .style(Button::Text)
+                                    .style(iced::theme::Button::Text)
                                     .padding(0)
                                     .into();
                                 btn
@@ -278,7 +277,7 @@ fn explorer_panel<'a>(file_entries: &'a [core_types::workspace::DirectoryEntry])
                     })
                     .padding([6, 12])
                     .width(Length::Fill)
-                    .style(Button::Secondary),
+                    .style(iced::theme::Button::Secondary),
                 )
                 .padding(iced::Padding::new(padding_left as f32))
                 .into()
@@ -300,7 +299,7 @@ fn explorer_panel<'a>(file_entries: &'a [core_types::workspace::DirectoryEntry])
             button("Refresh")
                 .on_press(Message::RefreshWorkspace)
                 .padding([4, 8])
-                .style(Button::Secondary),
+                .style(iced::theme::Button::Secondary),
         ]
         .padding([12, 16])
         .align_items(Alignment::Center),
@@ -564,8 +563,8 @@ fn editor_panel<'a>(
                         text("AI‑first IDE").size(16).style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 200))),
                         container(iced::widget::horizontal_rule(1)).width(150),
                         column![
-                            button("Open a file from the explorer").style(Button::Secondary),
-                            button("Ask AI about the workspace").style(Button::Secondary),
+                            button("Open a file from the explorer").style(iced::theme::Button::Secondary),
+                            button("Ask AI about the workspace").style(iced::theme::Button::Secondary),
                         ]
                         .spacing(8)
                         .padding(16),
@@ -596,7 +595,7 @@ fn ai_panel<'a>(prompt_input: &'a str) -> Element<'a, Message> {
         row![
             text("AI ASSISTANT").size(12).style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 150))),
             horizontal_space(),
-            button("⋯").style(Button::Secondary),
+            button("⋯").style(iced::theme::Button::Secondary),
         ]
         .padding([12, 16])
         .align_items(Alignment::Center),
@@ -613,24 +612,24 @@ fn ai_panel<'a>(prompt_input: &'a str) -> Element<'a, Message> {
                     .padding(16)
                     .spacing(8)
                 )
-                .style(Container::Box),
+                .style(iced::theme::Container::Box),
                 column![
                     button("Explain this file")
                         .on_press(Message::PromptInputChanged("Explain the current file".to_string()))
                         .padding(12)
-                        .style(Button::Secondary),
+                        .style(iced::theme::Button::Secondary),
                     button("Refactor selection")
                         .on_press(Message::PromptInputChanged("Refactor the selected code".to_string()))
                         .padding(12)
-                        .style(Button::Secondary),
+                        .style(iced::theme::Button::Secondary),
                     button("Find bugs")
                         .on_press(Message::PromptInputChanged("Find potential bugs in this code".to_string()))
                         .padding(12)
-                        .style(Button::Secondary),
+                        .style(iced::theme::Button::Secondary),
                     button("Write tests")
                         .on_press(Message::PromptInputChanged("Write unit tests for this code".to_string()))
                         .padding(12)
-                        .style(Button::Secondary),
+                        .style(iced::theme::Button::Secondary),
                 ]
                 .spacing(8)
                 .padding(16),
@@ -653,7 +652,7 @@ fn ai_panel<'a>(prompt_input: &'a str) -> Element<'a, Message> {
             button("Send")
                 .on_press(Message::SendPrompt)
                 .padding([12, 16])
-                .style(Button::Primary),
+                .style(iced::theme::Button::Primary),
         ]
         .padding([8, 16])
         .align_items(Alignment::Center),
@@ -669,7 +668,7 @@ fn search_panel<'a>() -> Element<'a, Message> {
             horizontal_space(),
             button("⋯")
                 .on_press(Message::PromptInputChanged("Search options".to_string()))
-                .style(Button::Secondary),
+                .style(iced::theme::Button::Secondary),
         ]
         .padding([12, 16])
         .align_items(Alignment::Center),
@@ -682,7 +681,7 @@ fn search_panel<'a>() -> Element<'a, Message> {
                     .width(Length::Fill),
                 button("Find All")
                     .on_press(Message::PromptInputChanged("Find all in workspace".to_string()))
-                    .style(Button::Primary)
+                    .style(iced::theme::Button::Primary)
                     .width(Length::Fill)
                     .padding(8),
                 container(
@@ -723,7 +722,7 @@ fn settings_panel<'a>() -> Element<'a, Message> {
             horizontal_space(),
             button("Save")
                 .on_press(Message::PromptInputChanged("Settings saved".to_string()))
-                .style(Button::Primary),
+                .style(iced::theme::Button::Primary),
         ]
         .padding([12, 16])
         .align_items(Alignment::Center),
@@ -740,15 +739,15 @@ fn settings_panel<'a>() -> Element<'a, Message> {
                         text("Theme:").size(14),
                         button("Dark")
                             .on_press(Message::PromptInputChanged("Theme set to Dark".to_string()))
-                            .style(Button::Secondary),
+                            .style(iced::theme::Button::Secondary),
                         button("Light")
                             .on_press(Message::PromptInputChanged("Theme set to Light".to_string()))
-                            .style(Button::Secondary),
+                            .style(iced::theme::Button::Secondary),
                     ]
                     .spacing(8)
                     .padding(16)
                 )
-                .style(Container::Box),
+                .style(iced::theme::Container::Box),
                 container(
                     column![
                         text("AI Settings").size(16),
@@ -764,7 +763,7 @@ fn settings_panel<'a>() -> Element<'a, Message> {
                     .spacing(8)
                     .padding(16)
                 )
-                .style(Container::Box),
+                .style(iced::theme::Container::Box),
             ]
             .spacing(16)
             .padding(16)
@@ -906,7 +905,7 @@ fn explorer_panel_with_expanded<'a>(
             button("Refresh")
                 .on_press(Message::RefreshWorkspace)
                 .padding([4, 8])
-                .style(Button::Secondary),
+                .style(iced::theme::Button::Secondary),
         ]
         .padding([12, 16])
         .align_items(Alignment::Center),
@@ -971,7 +970,7 @@ fn render_directory_entry_with_indices<'a, 'b>(
                     let btn_icon = if is_expanded { "▼" } else { "▶" };
                     let btn: Element<_> = button(btn_icon)
                         .on_press(Message::ToggleDirectory(entry.path.clone()))
-                        .style(Button::Text)
+                        .style(iced::theme::Button::Text)
                         .padding(0)
                         .into();
                     btn
@@ -993,7 +992,7 @@ fn render_directory_entry_with_indices<'a, 'b>(
         })
         .padding([6, 12])
         .width(Length::Fill)
-        .style(Button::Secondary),
+        .style(iced::theme::Button::Secondary),
     )
     .padding(iced::Padding::new(padding_left as f32))
     .into();

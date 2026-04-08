@@ -10,7 +10,7 @@ mod update;
 mod view;
 
 use app::App;
-use iced::{Application, Settings, Theme};
+use iced::{Application, Settings};
 
 fn main() -> iced::Result {
     // Force X11 backend to avoid Wayland issues

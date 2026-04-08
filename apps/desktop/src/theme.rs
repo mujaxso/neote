@@ -171,17 +171,4 @@ impl SemanticColors {
     }
 }
 
-/// Helper to get current theme colors from app state
-pub fn current_colors(theme: NeoteTheme) -> SemanticColors {
-    theme.colors()
-}
-
-```
-Now, let's run a quick test to see if there are any remaining issues. However, I can't run commands, so I'll trust these changes should fix most compilation errors.
-
-Let me also check if there are any other references to `theme::Button::` in layout.rs that need to be fixed. Since there are many, I'll create a few more SEARCH/REPLACE blocks for common patterns:
-
-apps/desktop/src/ui/layout.rs
-```rust
-<<<<<<< SEARCH
-                theme::Button::Primary
+                Button::Primary
