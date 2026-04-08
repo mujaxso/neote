@@ -51,11 +51,31 @@ pub fn build_tree(
             "".to_string()
         };
         
-        // Adjust parent for workspace root
-        let parent_key = if parent == workspace_root {
+        // For root entries, we need to check if they're directly under workspace root
+        // or if workspace root is empty
+        let parent_key = if parent.is_empty() {
+            // Entry has no parent in its path
+            // Check if it's directly in workspace root by comparing paths
+            let entry_normalized = normalize_path(&entry.path);
+            if workspace_root.is_empty() || entry_normalized == workspace_root {
+                workspace_root.clone()
+            } else {
+                // Check if entry path starts with workspace root
+                if entry_normalized.starts_with(&workspace_root) {
+                    // Get the part after workspace root
+                    let remaining = entry_normalized.trim_start_matches(&workspace_root);
+                    // If there's no additional path separator or it's at the start, it's a direct child
+                    if remaining.is_empty() || remaining.starts_with(std::path::MAIN_SEPARATOR) {
+                        workspace_root.clone()
+                    } else {
+                        parent
+                    }
+                } else {
+                    parent
+                }
+            }
+        } else if parent == workspace_root {
             workspace_root.clone()
-        } else if parent.is_empty() && workspace_root.is_empty() {
-            "".to_string()
         } else {
             parent
         };
@@ -72,9 +92,8 @@ pub fn build_tree(
         
         if let Some(children) = children_by_parent.get(parent_path) {
             for child in children {
-                let child_path = &child.path;
-                let normalized_child_path = normalize_path(child_path);
-                let child_nodes = build_subtree(&normalized_child_path, children_by_parent);
+                let child_path = normalize_path(&child.path);
+                let child_nodes = build_subtree(&child_path, children_by_parent);
                 nodes.push(TreeNode {
                     entry: child.clone(),
                     children: child_nodes,

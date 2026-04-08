@@ -894,12 +894,7 @@ pub fn explorer_panel_with_expanded<'a>(
     expanded_directories: &'a std::collections::HashSet<String>,
     workspace_path: &'a str,
 ) -> Element<'a, Message> {
-    // Use the explorer module to build a proper tree
-    let tree = crate::ui::explorer::build_tree(file_entries, workspace_path);
-    
-    // Always use get_visible_nodes, even if tree is empty (it will return empty)
-    let visible_nodes = crate::ui::explorer::get_visible_nodes(&tree, expanded_directories, 0);
-    
+    // Always show at least a flat list if tree building fails
     let content: Element<_> = if file_entries.is_empty() {
         container(
             column![
@@ -918,66 +913,12 @@ pub fn explorer_panel_with_expanded<'a>(
         .height(Length::Fill)
         .into()
     } else {
+        // Try to build tree, but if it fails, use simple approach
+        let tree = crate::ui::explorer::build_tree(file_entries, workspace_path);
         let mut elements = Vec::new();
         
-        for (depth, node) in visible_nodes {
-            let entry = &node.entry;
-            
-            // Check if this directory is expanded
-            let normalized_path = normalize_path(&entry.path);
-            let is_expanded = expanded_directories.contains(&normalized_path);
-            
-            // Determine icon
-            let icon = if entry.is_dir {
-                if is_expanded { "📂" } else { "📁" }
-            } else {
-                "📄"
-            };
-            
-            let text_color = if entry.is_dir {
-                iced::Color::from_rgb8(180, 180, 255)
-            } else {
-                iced::Color::from_rgb8(220, 220, 220)
-            };
-            
-            let padding_left = depth * 20;
-            
-            // Create the entry element
-            let entry_element = container(
-                button(
-                    row![
-                        if entry.is_dir {
-                            let chevron = if is_expanded { "▼" } else { "▶" };
-                            text(chevron).size(12)
-                                .style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 150)))
-                        } else {
-                            text("  ").size(12)
-                        },
-                        text(icon).size(14),
-                        text(&entry.name).size(14)
-                            .style(iced::theme::Text::Color(text_color)),
-                    ]
-                    .spacing(8)
-                    .align_items(Alignment::Center),
-                )
-                .on_press(if entry.is_dir {
-                    Message::ToggleDirectory(entry.path.clone())
-                } else {
-                    Message::FileSelectedByPath(entry.path.clone())
-                })
-                .padding([6, 12])
-                .width(Length::Fill)
-                .style(iced::theme::Button::Secondary),
-            )
-            .padding(iced::Padding::new(padding_left as f32))
-            .into();
-            
-            elements.push(entry_element);
-        }
-        
-        // If no elements were generated but we have files, show a flat list
-        if elements.is_empty() && !file_entries.is_empty() {
-            // Fall back to simple flat list
+        if tree.is_empty() {
+            // Simple flat list approach
             for entry in file_entries {
                 let normalized_path = normalize_path(&entry.path);
                 let is_expanded = expanded_directories.contains(&normalized_path);
@@ -993,6 +934,10 @@ pub fn explorer_panel_with_expanded<'a>(
                 } else {
                     iced::Color::from_rgb8(220, 220, 220)
                 };
+                
+                // Simple depth calculation: count path separators
+                let depth = entry.path.matches(std::path::MAIN_SEPARATOR).count();
+                let padding_left = depth * 20;
                 
                 let entry_element = container(
                     button(
@@ -1020,7 +965,62 @@ pub fn explorer_panel_with_expanded<'a>(
                     .width(Length::Fill)
                     .style(iced::theme::Button::Secondary),
                 )
-                .padding(iced::Padding::new(0.0))
+                .padding(iced::Padding::new(padding_left as f32))
+                .into();
+                
+                elements.push(entry_element);
+            }
+        } else {
+            // Use tree-based approach
+            let visible_nodes = crate::ui::explorer::get_visible_nodes(&tree, expanded_directories, 0);
+            
+            for (depth, node) in visible_nodes {
+                let entry = &node.entry;
+                
+                let normalized_path = normalize_path(&entry.path);
+                let is_expanded = expanded_directories.contains(&normalized_path);
+                
+                let icon = if entry.is_dir {
+                    if is_expanded { "📂" } else { "📁" }
+                } else {
+                    "📄"
+                };
+                
+                let text_color = if entry.is_dir {
+                    iced::Color::from_rgb8(180, 180, 255)
+                } else {
+                    iced::Color::from_rgb8(220, 220, 220)
+                };
+                
+                let padding_left = depth * 20;
+                
+                let entry_element = container(
+                    button(
+                        row![
+                            if entry.is_dir {
+                                let chevron = if is_expanded { "▼" } else { "▶" };
+                                text(chevron).size(12)
+                                    .style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 150)))
+                            } else {
+                                text("  ").size(12)
+                            },
+                            text(icon).size(14),
+                            text(&entry.name).size(14)
+                                .style(iced::theme::Text::Color(text_color)),
+                        ]
+                        .spacing(8)
+                        .align_items(Alignment::Center),
+                    )
+                    .on_press(if entry.is_dir {
+                        Message::ToggleDirectory(entry.path.clone())
+                    } else {
+                        Message::FileSelectedByPath(entry.path.clone())
+                    })
+                    .padding([6, 12])
+                    .width(Length::Fill)
+                    .style(iced::theme::Button::Secondary),
+                )
+                .padding(iced::Padding::new(padding_left as f32))
                 .into();
                 
                 elements.push(entry_element);
