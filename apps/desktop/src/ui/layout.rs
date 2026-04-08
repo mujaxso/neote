@@ -311,21 +311,32 @@ fn editor_panel<'a>(
         if let Some(buffer) = editor_buffer {
             if buffer.is_very_large() {
                 status_elements.push(
-                    text("⚠ Very Large (Read-Only)")
+                    text("⚠ Very Large (Limited Editing)")
                         .size(12)
                         .style(iced::theme::Text::Color(iced::Color::from_rgb8(255, 100, 100)))
                         .into()
                 );
                 status_elements.push(horizontal_space().width(Length::Fixed(10.0)).into());
-            } else if buffer.is_large() || is_file_too_large_for_editor {
+            } else if buffer.is_large() {
                 status_elements.push(
-                    text("⚠ Large (Read-Only)")
+                    text("⚠ Large (Performance may be affected)")
                         .size(12)
                         .style(iced::theme::Text::Color(iced::Color::from_rgb8(255, 200, 0)))
                         .into()
                 );
                 status_elements.push(horizontal_space().width(Length::Fixed(10.0)).into());
             }
+        }
+        
+        // Show if file is too large for editor
+        if is_file_too_large_for_editor {
+            status_elements.push(
+                text("⚠ Too Large for Editor (Read-Only)")
+                    .size(12)
+                    .style(iced::theme::Text::Color(iced::Color::from_rgb8(255, 50, 50)))
+                    .into()
+            );
+            status_elements.push(horizontal_space().width(Length::Fixed(10.0)).into());
         }
         
         // Dirty status (only show if not read-only)
@@ -377,12 +388,33 @@ fn editor_panel<'a>(
         .into()
     } else if active_file_path.is_some() {
         if is_file_too_large_for_editor {
-            // Show read-only text view for large files
-            let content = editor_buffer.map(|b| b.text()).unwrap_or_default();
+            // Show read-only text view for very large files
+            let content = if let Some(buffer) = editor_buffer {
+                if buffer.is_very_large() {
+                    // For very large files, show only first 100KB
+                    buffer.slice_char_range(0, 100_000.min(buffer.len_chars())).unwrap_or_else(|_| String::new())
+                } else {
+                    buffer.text()
+                }
+            } else {
+                String::new()
+            };
+            let warning = if let Some(buffer) = editor_buffer {
+                if buffer.is_very_large() {
+                    format!("\n\n--- File truncated ({} MB total, showing first 100KB) ---", 
+                           buffer.len_chars() / 1_000_000)
+                } else {
+                    String::new()
+                }
+            } else {
+                String::new()
+            };
             scrollable(
-                text(content)
-                    .font(iced::Font::MONOSPACE)
-                    .size(14)
+                column![
+                    text(content + &warning)
+                        .font(iced::Font::MONOSPACE)
+                        .size(14),
+                ]
             )
             .height(Length::Fill)
             .into()

@@ -38,6 +38,109 @@ async fn create_text_editor_content(path: String, _content: String) -> String {
     path
 }
 
+// Helper to extract edit information from text editor action
+fn extract_edit_info(action: &text_editor::Action) -> Option<EditInfo> {
+    use std::mem::discriminant;
+    
+    // Get discriminant of the action
+    let action_disc = discriminant(action);
+    
+    // We need to compare with discriminants of Action variants
+    // Create dummy values to get discriminants
+    let dummy_insert = text_editor::Action::Edit(
+        // We can't create EditAction directly, but we can use a match
+        // Let's use a different approach
+    );
+    
+    // Instead, let's use pattern matching with placeholders
+    match action {
+        text_editor::Action::Edit(edit_action) => {
+            // Convert to string and parse (temporary solution)
+            let debug_str = format!("{:?}", edit_action);
+            if debug_str.starts_with("InsertText") {
+                // Parse using a simple regex-like approach
+                if let Some((char_idx, text)) = parse_insert_text(&debug_str) {
+                    return Some(EditInfo::Insert { char_idx, text });
+                }
+            } else if debug_str.starts_with("DeleteRange") {
+                if let Some((start, end)) = parse_delete_range(&debug_str) {
+                    return Some(EditInfo::Delete { start, end });
+                }
+            }
+        }
+        _ => {}
+    }
+    None
+}
+
+// Parse InsertText from debug string
+fn parse_insert_text(debug_str: &str) -> Option<(usize, String)> {
+    // Example: "InsertText { char_idx: 5, text: \"hello\" }"
+    let mut chars = debug_str.chars();
+    let mut char_idx_str = String::new();
+    let mut text_str = String::new();
+    
+    // Find char_idx
+    if let Some(idx) = debug_str.find("char_idx: ") {
+        let rest = &debug_str[idx + 10..];
+        if let Some(end) = rest.find(',') {
+            char_idx_str = rest[..end].trim().to_string();
+        }
+    }
+    
+    // Find text
+    if let Some(idx) = debug_str.find("text: \"") {
+        let rest = &debug_str[idx + 7..];
+        if let Some(end) = rest.find('\"') {
+            text_str = rest[..end].to_string();
+        }
+    }
+    
+    if char_idx_str.is_empty() || text_str.is_empty() {
+        return None;
+    }
+    
+    let char_idx = char_idx_str.parse::<usize>().ok()?;
+    Some((char_idx, text_str))
+}
+
+// Parse DeleteRange from debug string
+fn parse_delete_range(debug_str: &str) -> Option<(usize, usize)> {
+    // Example: "DeleteRange { start: 5, end: 10 }"
+    let mut start_str = String::new();
+    let mut end_str = String::new();
+    
+    // Find start
+    if let Some(idx) = debug_str.find("start: ") {
+        let rest = &debug_str[idx + 7..];
+        if let Some(end) = rest.find(',') {
+            start_str = rest[..end].trim().to_string();
+        }
+    }
+    
+    // Find end
+    if let Some(idx) = debug_str.find("end: ") {
+        let rest = &debug_str[idx + 5..];
+        if let Some(end) = rest.find('}') {
+            end_str = rest[..end].trim().to_string();
+        }
+    }
+    
+    if start_str.is_empty() || end_str.is_empty() {
+        return None;
+    }
+    
+    let start = start_str.parse::<usize>().ok()?;
+    let end = end_str.parse::<usize>().ok()?;
+    Some((start, end))
+}
+
+// Edit information enum
+enum EditInfo {
+    Insert { char_idx: usize, text: String },
+    Delete { start: usize, end: usize },
+}
+
 
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -265,13 +368,37 @@ impl iced::Application for App {
                 // First, perform the action on the text editor
                 self.text_editor.perform(action.clone());
                 
-                // Update the canonical buffer with full update for now
-                // TODO: Implement incremental updates when EditAction is accessible
+                // Update the canonical buffer incrementally
                 if let Some(ref mut buffer) = self.editor_buffer {
-                    let current_text = self.text_editor.text();
-                    buffer.replace_all(&current_text);
+                    match extract_edit_info(&action) {
+                        Some(EditInfo::Insert { char_idx, text }) => {
+                            if buffer.insert_char_idx(char_idx, &text).is_ok() {
+                                self.status_message = "Inserted text".to_string();
+                            } else {
+                                // Fall back to full update
+                                let current_text = self.text_editor.text();
+                                buffer.replace_all(&current_text);
+                                self.status_message = "Fallback: full update after insert error".to_string();
+                            }
+                        }
+                        Some(EditInfo::Delete { start, end }) => {
+                            if buffer.delete_char_range(start, end).is_ok() {
+                                self.status_message = "Deleted range".to_string();
+                            } else {
+                                // Fall back to full update
+                                let current_text = self.text_editor.text();
+                                buffer.replace_all(&current_text);
+                                self.status_message = "Fallback: full update after delete error".to_string();
+                            }
+                        }
+                        None => {
+                            // For other actions, fall back to full update
+                            let current_text = self.text_editor.text();
+                            buffer.replace_all(&current_text);
+                            self.status_message = "Full update for other action".to_string();
+                        }
+                    }
                     self.is_dirty = buffer.is_dirty();
-                    self.status_message = "Updated buffer".to_string();
                 }
                 Command::none()
             }
