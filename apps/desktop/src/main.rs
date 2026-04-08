@@ -3,6 +3,10 @@ mod bootstrap;
 mod commands;
 mod ui;
 mod events;
+mod message;
+mod state;
+mod update;
+mod view;
 
 use app::App;
 use iced::{Application, Settings};

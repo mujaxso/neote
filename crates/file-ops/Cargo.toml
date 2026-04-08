@@ -1,0 +1,12 @@
+[package]
+name = "file-ops"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+tokio = { workspace = true, features = ["full"] }
+thiserror = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+core-types = { path = "../core-types" }
+editor-buffer = { path = "../editor-buffer" }
