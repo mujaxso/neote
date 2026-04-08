@@ -13,7 +13,6 @@ pub fn ide_layout<'a>(
     workspace_path: &'a str,
     file_entries: &'a [core_types::workspace::DirectoryEntry],
     active_file_path: Option<&'a String>,
-    _editor_content: &'a str,
     is_dirty: bool,
     status_message: &'a str,
     error_message: Option<&'a String>,
