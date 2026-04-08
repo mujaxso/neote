@@ -1,4 +1,4 @@
-use iced::{Color, widget::{button, container, text, text_input}};
+use iced::{Color, widget::{button, container, text_input}};
 use crate::theme::{current_colors, NeoteTheme, SemanticColors};
 use super::common;
 
@@ -8,6 +8,7 @@ pub fn colors(theme: NeoteTheme) -> SemanticColors {
 }
 
 /// Style helpers for UI components - designed for both core and extensions
+#[derive(Debug, Clone, Copy)]
 pub struct StyleHelpers {
     pub colors: SemanticColors,
     pub tokens: crate::theme::DesignTokens,
@@ -27,8 +28,8 @@ impl StyleHelpers {
     }
     
     /// Implement ThemeConsumer trait for extensions
-    pub fn as_theme_consumer(&self) -> impl common::ThemeConsumer {
-        self
+    pub fn as_theme_consumer(&self) -> StyleHelpers {
+        *self
     }
 }
 
