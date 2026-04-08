@@ -731,12 +731,190 @@ fn settings_panel<'a>() -> Element<'a, Message> {
 
 fn explorer_panel_with_expanded<'a>(
     file_entries: &'a [core_types::workspace::DirectoryEntry],
-    _expanded_directories: &'a std::collections::HashSet<String>,
+    expanded_directories: &'a std::collections::HashSet<String>,
 ) -> Element<'a, Message> {
-    // Filter files based on expanded directories
-    // For simplicity, show all entries for now
-    // In a real implementation, you would filter based on directory structure
-    explorer_panel(file_entries)
+    // Build a tree structure from the flat list of entries
+    let mut root_entries = Vec::new();
+    let mut children_map: std::collections::HashMap<String, Vec<&core_types::workspace::DirectoryEntry>> = 
+        std::collections::HashMap::new();
+    
+    // First, collect all entries
+    for entry in file_entries {
+        // Find the parent path
+        let path = std::path::Path::new(&entry.path);
+        if let Some(parent) = path.parent() {
+            let parent_str = parent.to_string_lossy().to_string();
+            children_map.entry(parent_str).or_insert_with(Vec::new).push(entry);
+        } else {
+            // This is a root entry
+            root_entries.push(entry);
+        }
+    }
+    
+    // Also add entries that are in the workspace root
+    for entry in file_entries {
+        let path = std::path::Path::new(&entry.path);
+        if let Some(parent) = path.parent() {
+            if parent.to_string_lossy() == "" || parent.to_string_lossy() == "." {
+                if !root_entries.contains(&entry) {
+                    root_entries.push(entry);
+                }
+            }
+        }
+    }
+    
+    // Sort entries: directories first, then files, both alphabetically
+    root_entries.sort_by(|a, b| {
+        if a.is_dir != b.is_dir {
+            b.is_dir.cmp(&a.is_dir) // Directories first (true > false)
+        } else {
+            a.name.cmp(&b.name)
+        }
+    });
+    
+    // Render the tree
+    let content = if root_entries.is_empty() {
+        container(
+            column![
+                text("No files in workspace")
+                    .style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 150))),
+                button("Open Workspace")
+                    .on_press(Message::OpenWorkspace)
+                    .padding(8)
+                    .style(theme::Button::Secondary),
+            ]
+            .spacing(10)
+            .align_items(Alignment::Center)
+        )
+        .center_y()
+        .center_x()
+        .height(Length::Fill)
+        .into()
+    } else {
+        let children: Vec<Element<_>> = root_entries
+            .iter()
+            .flat_map(|entry| {
+                render_directory_entry(
+                    entry,
+                    &children_map,
+                    expanded_directories,
+                    0,
+                )
+            })
+            .collect();
+        
+        scrollable(
+            column(children)
+                .spacing(2),
+        )
+        .height(Length::Fill)
+        .into()
+    };
+
+    column![
+        row![
+            text("EXPLORER").size(12).style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 150))),
+            horizontal_space(),
+            button("Refresh")
+                .on_press(Message::RefreshWorkspace)
+                .padding([4, 8])
+                .style(theme::Button::Secondary),
+        ]
+        .padding([12, 16])
+        .align_items(Alignment::Center),
+        iced::widget::horizontal_rule(1),
+        content,
+    ]
+    .height(Length::Fill)
+    .into()
+}
+
+fn render_directory_entry<'a>(
+    entry: &'a core_types::workspace::DirectoryEntry,
+    children_map: &'a std::collections::HashMap<String, Vec<&'a core_types::workspace::DirectoryEntry>>,
+    expanded_directories: &'a std::collections::HashSet<String>,
+    depth: usize,
+) -> Vec<Element<'a, Message>> {
+    let mut elements = Vec::new();
+    
+    let is_expanded = expanded_directories.contains(&entry.path);
+    let icon = if entry.is_dir {
+        if is_expanded { "📂" } else { "📁" }
+    } else {
+        "📄"
+    };
+    
+    let text_color = if entry.is_dir {
+        iced::Color::from_rgb8(180, 180, 255)
+    } else {
+        iced::Color::from_rgb8(220, 220, 220)
+    };
+    
+    let padding_left = depth * 20;
+    
+    // Create the entry element
+    let entry_element = container(
+        button(
+            row![
+                if entry.is_dir {
+                    // Add a toggle button for directories
+                    let btn_icon = if is_expanded { "▼" } else { "▶" };
+                    let btn: Element<_> = button(btn_icon)
+                        .on_press(Message::ToggleDirectory(entry.path.clone()))
+                        .style(theme::Button::Text)
+                        .padding(0)
+                        .into();
+                    btn
+                } else {
+                    let space: Element<_> = horizontal_space().width(20).into();
+                    space
+                },
+                text(icon).size(14),
+                text(&entry.name).size(14)
+                    .style(iced::theme::Text::Color(text_color)),
+            ]
+            .spacing(8)
+            .align_items(Alignment::Center),
+        )
+        .on_press(if entry.is_dir {
+            Message::ToggleDirectory(entry.path.clone())
+        } else {
+            Message::FileSelectedByPath(entry.path.clone())
+        })
+        .padding([6, 12])
+        .width(Length::Fill)
+        .style(theme::Button::Secondary),
+    )
+    .padding(iced::Padding::new(padding_left as f32))
+    .into();
+    
+    elements.push(entry_element);
+    
+    // If this is a directory and it's expanded, render its children
+    if entry.is_dir && is_expanded {
+        if let Some(children) = children_map.get(&entry.path) {
+            let mut sorted_children: Vec<_> = children.iter().copied().collect();
+            // Sort children: directories first, then files
+            sorted_children.sort_by(|a, b| {
+                if a.is_dir != b.is_dir {
+                    b.is_dir.cmp(&a.is_dir) // Directories first
+                } else {
+                    a.name.cmp(&b.name)
+                }
+            });
+            
+            for child in sorted_children {
+                elements.extend(render_directory_entry(
+                    child,
+                    children_map,
+                    expanded_directories,
+                    depth + 1,
+                ));
+            }
+        }
+    }
+    
+    elements
 }
 
 fn placeholder_panel<'a>(label: &str) -> Element<'a, Message> {

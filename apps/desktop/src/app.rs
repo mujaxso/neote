@@ -12,6 +12,7 @@ pub enum Message {
     OpenWorkspace,
     WorkspaceLoaded(Result<Vec<DirectoryEntry>, String>),
     FileSelected(usize),
+    FileSelectedByPath(String),
     // Metadata loaded (size, etc.)
     FileMetadataLoaded(Result<FileMetadata, String>),
     // File content loaded
@@ -313,6 +314,23 @@ impl iced::Application for App {
                         }
                         Command::none()
                     }
+                } else {
+                    Command::none()
+                }
+            }
+            Message::ToggleDirectory(path) => {
+                if self.expanded_directories.contains(&path) {
+                    self.expanded_directories.remove(&path);
+                } else {
+                    self.expanded_directories.insert(path);
+                }
+                Command::none()
+            }
+            Message::FileSelectedByPath(path) => {
+                // Find the index of the file in file_entries
+                let index = self.file_entries.iter().position(|entry| entry.path == path);
+                if let Some(index) = index {
+                    self.update(Message::FileSelected(index))
                 } else {
                     Command::none()
                 }
