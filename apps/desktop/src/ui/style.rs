@@ -104,42 +104,40 @@ impl StyleHelpers {
     }
 }
 
-// Text styles
+// Text colors
 impl StyleHelpers {
-    /// Primary text style
-    pub fn text_primary(&self) -> text::Appearance {
-        common::texts::primary(&self.colors)
+    /// Primary text color
+    pub fn text_primary(&self) -> iced::Color {
+        self.colors.text_primary
     }
     
-    /// Secondary text style
-    pub fn text_secondary(&self) -> text::Appearance {
-        common::texts::secondary(&self.colors)
+    /// Secondary text color
+    pub fn text_secondary(&self) -> iced::Color {
+        self.colors.text_secondary
     }
     
-    /// Muted text style
-    pub fn text_muted(&self) -> text::Appearance {
-        common::texts::muted(&self.colors)
+    /// Muted text color
+    pub fn text_muted(&self) -> iced::Color {
+        self.colors.text_muted
     }
     
-    /// Success text style
-    pub fn text_success(&self) -> text::Appearance {
-        common::texts::success(&self.colors)
+    /// Success text color
+    pub fn text_success(&self) -> iced::Color {
+        self.colors.success
     }
     
-    /// Warning text style
-    pub fn text_warning(&self) -> text::Appearance {
-        common::texts::warning(&self.colors)
+    /// Warning text color
+    pub fn text_warning(&self) -> iced::Color {
+        self.colors.warning
     }
     
-    /// Error text style
-    pub fn text_error(&self) -> text::Appearance {
-        common::texts::error(&self.colors)
+    /// Error text color
+    pub fn text_error(&self) -> iced::Color {
+        self.colors.error
     }
     
-    /// Text on accent style
-    pub fn text_on_accent(&self) -> text::Appearance {
-        text::Appearance {
-            color: Some(self.colors.text_on_accent),
-        }
+    /// Text on accent color
+    pub fn text_on_accent(&self) -> iced::Color {
+        self.colors.text_on_accent
     }
 }

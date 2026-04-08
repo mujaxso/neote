@@ -10,29 +10,29 @@ pub fn explorer_panel(app: &App) -> Element<'_, Message> {
         row![
             text("EXPLORER")
                 .size(11)
-                .style(style.text_muted()),
-            iced::widget::horizontal_space(Length::Fill),
+                .style(iced::theme::Text::Color(style.colors.text_muted)),
+            iced::widget::horizontal_space(),
             button(
                 text("⟳").size(14)
             )
             .on_press(Message::RefreshWorkspace)
             .padding([4, 8])
-            .style(iced::theme::Button::Custom(Box::new(move || style.secondary_button())))
+            .style(iced::theme::Button::Secondary)
         ]
         .align_items(iced::Alignment::Center)
     )
     .padding([12, 16])
     .width(Length::Fill);
     
-    let content = if app.file_entries.is_empty() {
+    let content: Element<_> = if app.file_entries.is_empty() {
         container(
             column![
                 text("No files in workspace")
-                    .style(style.text_muted()),
+                    .style(iced::theme::Text::Color(style.colors.text_muted)),
                 button("Open Workspace")
                     .on_press(Message::OpenWorkspace)
                     .padding(8)
-                    .style(iced::theme::Button::Custom(Box::new(move || style.secondary_button())))
+                    .style(iced::theme::Button::Secondary)
             ]
             .spacing(12)
             .align_items(iced::Alignment::Center)
@@ -41,6 +41,7 @@ pub fn explorer_panel(app: &App) -> Element<'_, Message> {
         .center_x()
         .width(Length::Fill)
         .height(Length::Fill)
+        .into()
     } else {
         let entries: Vec<Element<_>> = app.file_entries
             .iter()
@@ -50,18 +51,18 @@ pub fn explorer_panel(app: &App) -> Element<'_, Message> {
                 
                 let icon = if entry.is_dir { "📁" } else { "📄" };
                 let text_color = if is_selected {
-                    style.text_on_accent()
+                    style.colors.text_on_accent
                 } else if entry.is_dir {
-                    style.text_primary()
+                    style.colors.text_primary
                 } else {
-                    style.text_secondary()
+                    style.colors.text_secondary
                 };
                 
                 let row_content = row![
                     text(icon).size(14),
                     text(&entry.name)
                         .size(13)
-                        .style(text_color),
+                        .style(iced::theme::Text::Color(text_color)),
                 ]
                 .spacing(8)
                 .align_items(iced::Alignment::Center);
@@ -72,23 +73,18 @@ pub fn explorer_panel(app: &App) -> Element<'_, Message> {
                     Message::FileSelected(idx)
                 };
                 
+                let button_style = if is_selected {
+                    iced::theme::Button::Primary
+                } else {
+                    iced::theme::Button::Secondary
+                };
+                
                 container(
                     button(row_content)
                         .on_press(message)
                         .padding([6, 12])
                         .width(Length::Fill)
-                        .style(iced::theme::Button::Custom(Box::new({
-                            let style = StyleHelpers::new(app.theme);
-                            let is_selected = is_selected;
-                            move || {
-                                let mut appearance = style.secondary_button();
-                                appearance.border.width = 0.0;
-                                if is_selected {
-                                    appearance.background = Some(style.colors.selected_background.into());
-                                }
-                                appearance
-                            }
-                        })))
+                        .style(button_style)
                 )
                 .into()
             })
@@ -100,16 +96,19 @@ pub fn explorer_panel(app: &App) -> Element<'_, Message> {
                 .width(Length::Fill)
         )
         .height(Length::Fill)
+        .into()
     };
     
     container(
         column![
             header,
-            content.height(Length::Fill),
+            container(content)
+                .height(Length::Fill)
+                .width(Length::Fill),
         ]
     )
     .width(Length::Fill)
     .height(Length::Fill)
-    .style(iced::theme::Container::Custom(Box::new(move || style.panel_container())))
+    .style(iced::theme::Container::Box)
     .into()
 }

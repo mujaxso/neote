@@ -33,8 +33,8 @@ pub fn top_bar(app: &App) -> Element<'_, Message> {
     let status_indicator = if app.is_dirty {
         container(
             row![
-                text("●").size(12).style(style.text_warning()),
-                text("Unsaved").size(12).style(style.text_secondary()),
+                text("●").size(12).style(iced::theme::Text::Color(style.colors.warning)),
+                text("Unsaved").size(12).style(iced::theme::Text::Color(style.colors.text_secondary)),
             ]
             .spacing(4)
             .align_items(iced::Alignment::Center)
@@ -43,8 +43,8 @@ pub fn top_bar(app: &App) -> Element<'_, Message> {
     } else {
         container(
             row![
-                text("✓").size(12).style(style.text_success()),
-                text("Saved").size(12).style(style.text_muted()),
+                text("✓").size(12).style(iced::theme::Text::Color(style.colors.success)),
+                text("Saved").size(12).style(iced::theme::Text::Color(style.colors.text_muted)),
             ]
             .spacing(4)
             .align_items(iced::Alignment::Center)
@@ -57,14 +57,14 @@ pub fn top_bar(app: &App) -> Element<'_, Message> {
             // Logo/brand
             container(
                 row![
-                    text("N").size(20).style(style.text_primary()),
-                    text("eote").size(20).style(style.text_secondary()),
+                    text("N").size(20).style(iced::theme::Text::Color(style.colors.text_primary)),
+                    text("eote").size(20).style(iced::theme::Text::Color(style.colors.text_secondary)),
                 ]
                 .spacing(0)
             )
             .padding([0, 16]),
             
-            iced::widget::horizontal_space(Length::Fill),
+            iced::widget::horizontal_space(),
             
             // Workspace controls
             container(
@@ -82,7 +82,7 @@ pub fn top_bar(app: &App) -> Element<'_, Message> {
             )
             .width(Length::FillPortion(2)),
             
-            iced::widget::horizontal_space(Length::Fill),
+            iced::widget::horizontal_space(),
             
             // Status and save
             container(
@@ -98,11 +98,6 @@ pub fn top_bar(app: &App) -> Element<'_, Message> {
     )
     .width(Length::Fill)
     .height(Length::Fill)
-    .style(iced::theme::Container::Custom(Box::new(move || {
-        let mut appearance = style.elevated_container();
-        appearance.border.width = 0.0;
-        appearance.border.radius = 0.0.into();
-        appearance
-    })))
+    .style(iced::theme::Container::Box)
     .into()
 }

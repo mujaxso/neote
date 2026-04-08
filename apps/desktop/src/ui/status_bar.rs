@@ -8,15 +8,15 @@ pub fn status_bar(app: &App) -> Element<'_, Message> {
     
     let left_status = if let Some(error) = &app.error_message {
         row![
-            text("⚠").size(12).style(style.text_error()),
-            text(error).size(11).style(style.text_error()),
+            text("⚠").size(12).style(iced::theme::Text::Color(style.colors.error)),
+            text(error).size(11).style(iced::theme::Text::Color(style.colors.error)),
         ]
         .spacing(4)
         .align_items(iced::Alignment::Center)
     } else {
         row![
-            text("✓").size(12).style(style.text_success()),
-            text(&app.status_message).size(11).style(style.text_secondary()),
+            text("✓").size(12).style(iced::theme::Text::Color(style.colors.success)),
+            text(&app.status_message).size(11).style(iced::theme::Text::Color(style.colors.text_secondary)),
         ]
         .spacing(4)
         .align_items(iced::Alignment::Center)
@@ -26,20 +26,20 @@ pub fn status_bar(app: &App) -> Element<'_, Message> {
         let file_name = active_path.split('/').last().unwrap_or(active_path);
         row![
             text("📄").size(12),
-            text(file_name).size(11).style(style.text_muted()),
+            text(file_name).size(11).style(iced::theme::Text::Color(style.colors.text_muted)),
         ]
         .spacing(4)
         .align_items(iced::Alignment::Center)
     } else {
         row![
-            text("No file open").size(11).style(style.text_muted()),
+            text("No file open").size(11).style(iced::theme::Text::Color(style.colors.text_muted)),
         ]
         .align_items(iced::Alignment::Center)
     };
     
     let right_status = row![
-        text(format!("{} files", app.file_entries.len())).size(11).style(style.text_muted()),
-        text("Ln 1, Col 1").size(11).style(style.text_muted()),
+        text(format!("{} files", app.file_entries.len())).size(11).style(iced::theme::Text::Color(style.colors.text_muted)),
+        text("Ln 1, Col 1").size(11).style(iced::theme::Text::Color(style.colors.text_muted)),
     ]
     .spacing(8)
     .align_items(iced::Alignment::Center);
@@ -47,9 +47,9 @@ pub fn status_bar(app: &App) -> Element<'_, Message> {
     container(
         row![
             container(left_status).padding([0, 12]),
-            iced::widget::horizontal_space(Length::Fill),
+            iced::widget::horizontal_space(),
             container(center_status),
-            iced::widget::horizontal_space(Length::Fill),
+            iced::widget::horizontal_space(),
             container(right_status).padding([0, 12]),
         ]
         .align_items(iced::Alignment::Center)
@@ -58,6 +58,6 @@ pub fn status_bar(app: &App) -> Element<'_, Message> {
     )
     .width(Length::Fill)
     .height(Length::Fill)
-    .style(iced::theme::Container::Custom(Box::new(move || style.status_bar_container())))
+    .style(iced::theme::Container::Box)
     .into()
 }

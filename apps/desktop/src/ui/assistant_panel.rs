@@ -10,14 +10,14 @@ pub fn assistant_panel(app: &App) -> Element<'_, Message> {
         row![
             text("AI ASSISTANT")
                 .size(11)
-                .style(style.text_muted()),
-            iced::widget::horizontal_space(Length::Fill),
+                .style(iced::theme::Text::Color(style.colors.text_muted)),
+            iced::widget::horizontal_space(),
             button(
                 text("⋯").size(14)
             )
             .on_press(Message::PromptInputChanged("AI options".to_string()))
             .padding([4, 8])
-            .style(iced::theme::Button::Custom(Box::new(move || style.secondary_button())))
+            .style(iced::theme::Button::Secondary)
         ]
         .align_items(iced::Alignment::Center)
     )
@@ -28,39 +28,40 @@ pub fn assistant_panel(app: &App) -> Element<'_, Message> {
         column![
             row![
                 text("🤖").size(20),
-                text("Neote AI").size(16).style(style.text_primary()),
+                text("Neote AI").size(16)
+                    .style(iced::theme::Text::Color(style.colors.text_primary)),
             ]
             .spacing(8)
             .align_items(iced::Alignment::Center),
             text("Ask questions about your code, get explanations, refactor suggestions, and more.")
                 .size(13)
-                .style(style.text_secondary()),
+                .style(iced::theme::Text::Color(style.colors.text_secondary)),
         ]
         .spacing(10)
         .padding(20)
     )
-    .style(iced::theme::Container::Custom(Box::new(move || style.elevated_container())));
+    .style(iced::theme::Container::Box);
     
     let quick_actions = container(
         column![
             text("Quick Actions").size(13)
-                .style(style.text_muted()),
+                .style(iced::theme::Text::Color(style.colors.text_muted)),
             column![
                 button("Explain this file")
                     .on_press(Message::PromptInputChanged("Explain the current file".to_string()))
                     .padding([10, 12])
                     .width(Length::Fill)
-                    .style(iced::theme::Button::Custom(Box::new(move || style.secondary_button()))),
+                    .style(iced::theme::Button::Secondary),
                 button("Refactor selection")
                     .on_press(Message::PromptInputChanged("Refactor the selected code".to_string()))
                     .padding([10, 12])
                     .width(Length::Fill)
-                    .style(iced::theme::Button::Custom(Box::new(move || style.secondary_button()))),
+                    .style(iced::theme::Button::Secondary),
                 button("Find bugs")
                     .on_press(Message::PromptInputChanged("Find potential bugs in this code".to_string()))
                     .padding([10, 12])
                     .width(Length::Fill)
-                    .style(iced::theme::Button::Custom(Box::new(move || style.secondary_button()))),
+                    .style(iced::theme::Button::Secondary),
             ]
             .spacing(6),
         ]
@@ -78,7 +79,7 @@ pub fn assistant_panel(app: &App) -> Element<'_, Message> {
                 button("Send")
                     .on_press(Message::SendPrompt)
                     .padding([12, 18])
-                    .style(iced::theme::Button::Custom(Box::new(move || style.primary_button()))),
+                    .style(iced::theme::Button::Primary),
             ]
             .spacing(8)
         ]
@@ -105,6 +106,6 @@ pub fn assistant_panel(app: &App) -> Element<'_, Message> {
     )
     .width(Length::Fill)
     .height(Length::Fill)
-    .style(iced::theme::Container::Custom(Box::new(move || style.panel_container())))
+    .style(iced::theme::Container::Box)
     .into()
 }

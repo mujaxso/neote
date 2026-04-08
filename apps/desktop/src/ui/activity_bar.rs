@@ -25,6 +25,12 @@ pub fn activity_bar(app: &App) -> Element<'_, Message> {
                 Message::ActivitySelected(*activity)
             };
             
+            let button_style = if is_active {
+                iced::theme::Button::Primary
+            } else {
+                iced::theme::Button::Secondary
+            };
+            
             let button = button(
                 container(
                     text(*icon).size(18)
@@ -37,23 +43,7 @@ pub fn activity_bar(app: &App) -> Element<'_, Message> {
             .width(Length::Fill)
             .height(Length::Fixed(48.0))
             .on_press(message)
-            .style(iced::theme::Button::Custom(Box::new({
-                let style = StyleHelpers::new(app.theme);
-                let is_active = is_active;
-                move || {
-                    let mut appearance = if is_active {
-                        style.primary_button()
-                    } else {
-                        style.secondary_button()
-                    };
-                    appearance.border.width = 0.0;
-                    appearance.border.radius = 0.0.into();
-                    if is_active {
-                        appearance.background = Some(style.colors.selected_background.into());
-                    }
-                    appearance
-                }
-            })));
+            .style(button_style);
             
             button.into()
         })
@@ -66,11 +56,6 @@ pub fn activity_bar(app: &App) -> Element<'_, Message> {
     )
     .width(Length::Fill)
     .height(Length::Fill)
-    .style(iced::theme::Container::Custom(Box::new(move || {
-        let mut appearance = style.panel_container();
-        appearance.border.width = 0.0;
-        appearance.border.radius = 0.0.into();
-        appearance
-    })))
+    .style(iced::theme::Container::Box)
     .into()
 }

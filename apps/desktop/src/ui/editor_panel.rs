@@ -1,4 +1,4 @@
-use iced::{Element, Length, widget::{column, container, row, scrollable, text}};
+use iced::{Element, Length, widget::{column, container, row, text}};
 use crate::message::Message;
 use crate::state::App;
 use super::style::StyleHelpers;
@@ -14,12 +14,14 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
                 text("📄").size(14),
                 text(file_name)
                     .size(13)
-                    .style(style.text_primary()),
-                iced::widget::horizontal_space(Length::Fill),
+                    .style(iced::theme::Text::Color(style.colors.text_primary)),
+                iced::widget::horizontal_space(),
                 if app.is_dirty {
-                    text("● Unsaved").size(11).style(style.text_warning())
+                    text("● Unsaved").size(11)
+                        .style(iced::theme::Text::Color(style.colors.warning))
                 } else {
-                    text("✓ Saved").size(11).style(style.text_success())
+                    text("✓ Saved").size(11)
+                        .style(iced::theme::Text::Color(style.colors.success))
                 }
             ]
             .spacing(8)
@@ -30,7 +32,7 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
     } else {
         container(
             text("No file selected")
-                .style(style.text_muted())
+                .style(iced::theme::Text::Color(style.colors.text_muted))
         )
         .padding([12, 16])
         .width(Length::Fill)
@@ -43,12 +45,16 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
         // Welcome screen
         container(
             column![
-                text("Neote").size(32).style(style.text_primary()),
-                text("AI‑first IDE").size(16).style(style.text_secondary()),
+                text("Neote").size(32)
+                    .style(iced::theme::Text::Color(style.colors.text_primary)),
+                text("AI‑first IDE").size(16)
+                    .style(iced::theme::Text::Color(style.colors.text_secondary)),
                 container(iced::widget::horizontal_rule(1)).width(150),
                 column![
-                    text("Open a file from the explorer").style(style.text_muted()),
-                    text("Ask AI about the workspace").style(style.text_muted()),
+                    text("Open a file from the explorer")
+                        .style(iced::theme::Text::Color(style.colors.text_muted)),
+                    text("Ask AI about the workspace")
+                        .style(iced::theme::Text::Color(style.colors.text_muted)),
                 ]
                 .spacing(8)
                 .padding(16),
@@ -60,20 +66,19 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
         .center_x()
         .width(Length::Fill)
         .height(Length::Fill)
+        .into()
     };
     
     container(
         column![
             header,
-            editor_content.height(Length::Fill),
+            container(editor_content)
+                .width(Length::Fill)
+                .height(Length::Fill),
         ]
     )
     .width(Length::Fill)
     .height(Length::Fill)
-    .style(iced::theme::Container::Custom(Box::new(move || {
-        let mut appearance = style.panel_container();
-        appearance.border.width = 0.0;
-        appearance
-    })))
+    .style(iced::theme::Container::Box)
     .into()
 }
