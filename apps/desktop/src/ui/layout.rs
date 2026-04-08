@@ -892,12 +892,15 @@ pub fn explorer_panel_with_expanded<'a>(
     let root_entries: Vec<&core_types::workspace::DirectoryEntry> = file_entries
         .iter()
         .filter(|entry| {
-            let parent = std::path::Path::new(&entry.path)
-                .parent()
-                .and_then(|p| p.to_str())
-                .map(|s| normalize_path(s))
-                .unwrap_or_else(|| "".to_string());
-            parent == workspace_root || parent == "." || parent == ""
+            let entry_path = std::path::Path::new(&entry.path);
+            if let Some(parent) = entry_path.parent() {
+                let parent_str = parent.to_string_lossy();
+                let normalized_parent = normalize_path(&parent_str);
+                normalized_parent == workspace_root || normalized_parent == "." || normalized_parent == ""
+            } else {
+                // Entry has no parent (should be at root)
+                true
+            }
         })
         .collect();
     
@@ -983,8 +986,9 @@ fn render_directory_entry_simple<'a>(
     depth: usize,
     elements: &mut Vec<Element<'a, Message>>,
 ) {
-    // Use the exact path for comparison
-    let is_expanded = expanded_directories.contains(&entry.path);
+    // Normalize the path for comparison to match update.rs
+    let normalized_path = normalize_path(&entry.path);
+    let is_expanded = expanded_directories.contains(&normalized_path);
     
     // Determine icon based on whether it's a directory and expanded
     let icon = if entry.is_dir {
@@ -1037,16 +1041,23 @@ fn render_directory_entry_simple<'a>(
     // If this is a directory and it's expanded, render its children
     if entry.is_dir && is_expanded {
         // Find children whose parent is this entry's path
-        let parent_path = normalize_path(&entry.path);
+        // We need to compare paths carefully
+        let parent_path = &entry.path;
         let mut children: Vec<&core_types::workspace::DirectoryEntry> = all_entries
             .iter()
             .filter(|child| {
-                let child_parent = std::path::Path::new(&child.path)
-                    .parent()
-                    .and_then(|p| p.to_str())
-                    .map(|s| normalize_path(s))
-                    .unwrap_or_else(|| "".to_string());
-                child_parent == parent_path
+                // Get the parent directory of the child
+                let child_path = std::path::Path::new(&child.path);
+                if let Some(child_parent) = child_path.parent() {
+                    // Convert to string and normalize
+                    let child_parent_str = child_parent.to_string_lossy();
+                    // Normalize both for comparison
+                    let normalized_child_parent = normalize_path(&child_parent_str);
+                    let normalized_parent = normalize_path(parent_path);
+                    normalized_child_parent == normalized_parent
+                } else {
+                    false
+                }
             })
             .collect();
         
