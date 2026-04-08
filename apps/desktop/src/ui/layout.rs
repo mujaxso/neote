@@ -4,7 +4,6 @@ use iced::{
         text_input, vertical_rule, Space,
     },
     Alignment, Element, Length,
-    theme::Text,
 };
 
 use crate::state::{Activity, FileLoadingState};
@@ -31,7 +30,7 @@ pub fn ide_layout<'a>(
 ) -> Element<'a, Message> {
     let style = StyleHelpers::new(theme);
     let colors = style.colors;
-    let tokens = style.tokens;
+    let _tokens = style.tokens;
     
     // Top bar
     let top_bar = top_bar(workspace_path, is_dirty);
@@ -80,23 +79,9 @@ pub fn ide_layout<'a>(
     // Combine everything
     let content = column![
         top_bar,
-        iced::widget::horizontal_rule(1).style(iced::theme::Rule::Custom(Box::new(move |_theme| {
-            iced::widget::rule::Appearance {
-                color: colors.divider,
-                width: 1,
-                radius: 0.0.into(),
-                fill_mode: iced::widget::rule::FillMode::Full,
-            }
-        }))),
+        iced::widget::horizontal_rule(1),
         main_content,
-        iced::widget::horizontal_rule(1).style(iced::theme::Rule::Custom(Box::new(move |_theme| {
-            iced::widget::rule::Appearance {
-                color: colors.divider,
-                width: 1,
-                radius: 0.0.into(),
-                fill_mode: iced::widget::rule::FillMode::Full,
-            }
-        }))),
+        iced::widget::horizontal_rule(1),
         status_bar,
     ]
     .height(Length::Fill);

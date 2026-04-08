@@ -1,7 +1,4 @@
-use iced::{Color, Theme};
-use iced::widget::{button, container, text, text_input};
-use iced::theme::{self as iced_theme, Button, Container, TextInput};
-
+use iced::{Color, Vector, widget::{button, container, text, text_input}};
 use crate::theme::{current_colors, NeoteTheme, SemanticColors};
 
 /// Get current theme colors from app state
@@ -76,6 +73,7 @@ impl StyleHelpers {
             },
             text_color: self.colors.text_on_accent,
             shadow: Default::default(),
+            shadow_offset: iced::Vector::default(),
         }
     }
     
@@ -90,6 +88,7 @@ impl StyleHelpers {
             },
             text_color: self.colors.text_secondary,
             shadow: Default::default(),
+            shadow_offset: iced::Vector::default(),
         }
     }
     
@@ -146,46 +145,5 @@ impl StyleHelpers {
         text::Appearance {
             color: Some(self.colors.error),
         }
-    }
-}
-
-/// Custom theme implementations
-pub mod custom_theme {
-    use iced::theme::{Button, Container, TextInput};
-    
-    use super::StyleHelpers;
-    use crate::theme::NeoteTheme;
-    
-    /// Create a custom button style
-    pub fn primary_button(theme: NeoteTheme) -> Button {
-        let helpers = StyleHelpers::new(theme);
-        Button::Custom(Box::new(move |_theme| helpers.primary_button()))
-    }
-    
-    pub fn secondary_button(theme: NeoteTheme) -> Button {
-        let helpers = StyleHelpers::new(theme);
-        Button::Custom(Box::new(move |_theme| helpers.secondary_button()))
-    }
-    
-    /// Create a custom container style
-    pub fn panel_container(theme: NeoteTheme) -> Container {
-        let helpers = StyleHelpers::new(theme);
-        Container::Custom(Box::new(move |_theme| helpers.panel_container()))
-    }
-    
-    pub fn elevated_container(theme: NeoteTheme) -> Container {
-        let helpers = StyleHelpers::new(theme);
-        Container::Custom(Box::new(move |_theme| helpers.elevated_container()))
-    }
-    
-    pub fn status_bar_container(theme: NeoteTheme) -> Container {
-        let helpers = StyleHelpers::new(theme);
-        Container::Custom(Box::new(move |_theme| helpers.status_bar_container()))
-    }
-    
-    /// Create a custom text input style
-    pub fn custom_text_input(theme: NeoteTheme) -> TextInput {
-        let helpers = StyleHelpers::new(theme);
-        TextInput::Custom(Box::new(move |_theme| helpers.text_input()))
     }
 }
