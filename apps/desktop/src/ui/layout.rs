@@ -734,39 +734,42 @@ fn explorer_panel_with_expanded<'a>(
     expanded_directories: &'a std::collections::HashSet<String>,
 ) -> Element<'a, Message> {
     // Build a tree structure from the flat list of entries
-    let mut root_entries = Vec::new();
-    let mut children_map: std::collections::HashMap<String, Vec<&core_types::workspace::DirectoryEntry>> = 
+    // We'll use indices to avoid lifetime issues
+    let mut root_indices = Vec::new();
+    let mut children_map: std::collections::HashMap<String, Vec<usize>> = 
         std::collections::HashMap::new();
     
     // First, collect all entries
-    for entry in file_entries {
+    for (i, entry) in file_entries.iter().enumerate() {
         // Find the parent path
         let path = std::path::Path::new(&entry.path);
         if let Some(parent) = path.parent() {
             let parent_str = parent.to_string_lossy().to_string();
-            children_map.entry(parent_str).or_insert_with(Vec::new).push(entry);
+            children_map.entry(parent_str).or_insert_with(Vec::new).push(i);
         } else {
             // This is a root entry
-            root_entries.push(entry);
+            root_indices.push(i);
         }
     }
     
     // Also add entries that are in the workspace root
-    for entry in file_entries {
+    for (i, entry) in file_entries.iter().enumerate() {
         let path = std::path::Path::new(&entry.path);
         if let Some(parent) = path.parent() {
             if parent.to_string_lossy() == "" || parent.to_string_lossy() == "." {
                 // Check if this entry is already in root_entries by comparing paths
-                let already_exists = root_entries.iter().any(|e| e.path == entry.path);
+                let already_exists = root_indices.iter().any(|&idx| file_entries[idx].path == entry.path);
                 if !already_exists {
-                    root_entries.push(entry);
+                    root_indices.push(i);
                 }
             }
         }
     }
     
-    // Sort entries: directories first, then files, both alphabetically
-    root_entries.sort_by(|a, b| {
+    // Sort indices: directories first, then files, both alphabetically
+    root_indices.sort_by(|&a_idx, &b_idx| {
+        let a = &file_entries[a_idx];
+        let b = &file_entries[b_idx];
         if a.is_dir != b.is_dir {
             b.is_dir.cmp(&a.is_dir) // Directories first (true > false)
         } else {
@@ -775,7 +778,7 @@ fn explorer_panel_with_expanded<'a>(
     });
     
     // Render the tree
-    let content: Element<_> = if root_entries.is_empty() {
+    let content: Element<_> = if root_indices.is_empty() {
         container(
             column![
                 text("No files in workspace")
@@ -795,9 +798,12 @@ fn explorer_panel_with_expanded<'a>(
     } else {
         // Collect all elements first to avoid lifetime issues
         let mut all_elements = Vec::new();
-        for entry in root_entries.iter() {
-            let mut elements = render_directory_entry(
+        for &idx in &root_indices {
+            let entry = &file_entries[idx];
+            let mut elements = render_directory_entry_with_indices(
                 entry,
+                idx,
+                file_entries,
                 &children_map,
                 expanded_directories,
                 0,
@@ -831,9 +837,11 @@ fn explorer_panel_with_expanded<'a>(
     .into()
 }
 
-fn render_directory_entry<'a>(
+fn render_directory_entry_with_indices<'a>(
     entry: &'a core_types::workspace::DirectoryEntry,
-    children_map: &'a std::collections::HashMap<String, Vec<&'a core_types::workspace::DirectoryEntry>>,
+    idx: usize,
+    file_entries: &'a [core_types::workspace::DirectoryEntry],
+    children_map: &'a std::collections::HashMap<String, Vec<usize>>,
     expanded_directories: &'a std::collections::HashSet<String>,
     depth: usize,
 ) -> Vec<Element<'a, Message>> {
@@ -894,10 +902,12 @@ fn render_directory_entry<'a>(
     
     // If this is a directory and it's expanded, render its children
     if entry.is_dir && is_expanded {
-        if let Some(children) = children_map.get(&entry.path) {
-            let mut sorted_children: Vec<_> = children.iter().copied().collect();
-            // Sort children: directories first, then files
-            sorted_children.sort_by(|a, b| {
+        if let Some(child_indices) = children_map.get(&entry.path) {
+            // Sort child indices: directories first, then files
+            let mut sorted_child_indices: Vec<usize> = child_indices.clone();
+            sorted_child_indices.sort_by(|&a_idx, &b_idx| {
+                let a = &file_entries[a_idx];
+                let b = &file_entries[b_idx];
                 if a.is_dir != b.is_dir {
                     b.is_dir.cmp(&a.is_dir) // Directories first
                 } else {
@@ -905,9 +915,12 @@ fn render_directory_entry<'a>(
                 }
             });
             
-            for child in sorted_children {
-                elements.extend(render_directory_entry(
-                    child,
+            for &child_idx in &sorted_child_indices {
+                let child_entry = &file_entries[child_idx];
+                elements.extend(render_directory_entry_with_indices(
+                    child_entry,
+                    child_idx,
+                    file_entries,
                     children_map,
                     expanded_directories,
                     depth + 1,
