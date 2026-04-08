@@ -793,24 +793,20 @@ fn explorer_panel_with_expanded<'a>(
         .height(Length::Fill)
         .into()
     } else {
-        // Clone the maps to move into the closure
-        let children_map_clone = children_map.clone();
-        let expanded_directories_clone = expanded_directories.clone();
-        
-        let children: Vec<Element<_>> = root_entries
-            .iter()
-            .flat_map(move |entry| {
-                render_directory_entry(
-                    entry,
-                    &children_map_clone,
-                    &expanded_directories_clone,
-                    0,
-                )
-            })
-            .collect();
+        // Collect all elements first to avoid lifetime issues
+        let mut all_elements = Vec::new();
+        for entry in root_entries.iter() {
+            let mut elements = render_directory_entry(
+                entry,
+                &children_map,
+                expanded_directories,
+                0,
+            );
+            all_elements.append(&mut elements);
+        }
         
         scrollable(
-            column(children)
+            column(all_elements)
                 .spacing(2),
         )
         .height(Length::Fill)
