@@ -1154,6 +1154,23 @@ fn status_bar<'a>(
     file_count: usize,
 ) -> Element<'a, Message> {
     let error_widget: Element<_> = if let Some(err) = error_message {
+        struct ErrorWidgetStyle;
+        impl iced::widget::container::StyleSheet for ErrorWidgetStyle {
+            type Style = iced::Theme;
+            
+            fn appearance(&self, _style: &Self::Style) -> iced::widget::container::Appearance {
+                iced::widget::container::Appearance {
+                    background: Some(iced::Color::from_rgba(255.0/255.0, 120.0/255.0, 120.0/255.0, 0.1).into()),
+                    border: iced::Border {
+                        color: iced::Color::from_rgb(255.0/255.0, 120.0/255.0, 120.0/255.0),
+                        width: 1.0,
+                        radius: 4.0.into(),
+                    },
+                    shadow: Default::default(),
+                    text_color: None,
+                }
+            }
+        }
         container(
             row![
                 text("⚠").size(12).style(iced::theme::Text::Color(iced::Color::from_rgb8(255, 120, 120))),
@@ -1163,26 +1180,7 @@ fn status_bar<'a>(
             .align_items(Alignment::Center)
         )
         .padding([4, 8])
-        {
-            struct ErrorWidgetStyle;
-            impl iced::widget::container::StyleSheet for ErrorWidgetStyle {
-                type Style = iced::Theme;
-                
-                fn appearance(&self, _style: &Self::Style) -> iced::widget::container::Appearance {
-                    iced::widget::container::Appearance {
-                        background: Some(iced::Color::from_rgba(255.0/255.0, 120.0/255.0, 120.0/255.0, 0.1).into()),
-                        border: iced::Border {
-                            color: iced::Color::from_rgb(255.0/255.0, 120.0/255.0, 120.0/255.0),
-                            width: 1.0,
-                            radius: 4.0.into(),
-                        },
-                        shadow: Default::default(),
-                        text_color: None,
-                    }
-                }
-            }
-            .style(iced::theme::Container::Custom(Box::new(ErrorWidgetStyle)))
-        }
+        .style(iced::theme::Container::Custom(Box::new(ErrorWidgetStyle)))
         .into()
     } else {
         horizontal_space().into()
