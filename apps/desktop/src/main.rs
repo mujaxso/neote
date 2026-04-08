@@ -22,7 +22,8 @@ fn main() -> iced::Result {
     // This might help with scrolling crashes
     App::run(Settings {
         window: iced::window::Settings {
-            size: iced::Size::new(1200.0, 800.0),
+            size: iced::Size::new(1400.0, 900.0),
+            min_size: Some(iced::Size::new(800.0, 600.0)),
             ..Default::default()
         },
         // Enable antialiasing for better text rendering

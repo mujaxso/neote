@@ -576,70 +576,115 @@ fn editor_panel<'a>(
 
 fn ai_panel<'a>(prompt_input: &'a str) -> Element<'a, Message> {
     column![
-        row![
-            text("AI ASSISTANT").size(12).style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 150))),
-            horizontal_space(),
-            button("⋯").style(iced::theme::Button::Secondary),
-        ]
-        .padding([12, 16])
-        .align_items(Alignment::Center),
+        container(
+            row![
+                text("AI ASSISTANT").size(11)
+                    .style(iced::theme::Text::Color(iced::Color::from_rgb8(160, 160, 170)))
+                    .font(iced::Font::with_weight(iced::Font::DEFAULT, iced::font::Weight::Bold)),
+                horizontal_space(),
+                button("⋯")
+                    .on_press(Message::PromptInputChanged("AI options".to_string()))
+                    .padding([6, 8])
+                    .style(iced::theme::Button::Secondary),
+            ]
+            .align_items(Alignment::Center)
+        )
+        .padding([14, 16])
+        .width(Length::Fill),
         iced::widget::horizontal_rule(1),
         scrollable(
             column![
+                // Welcome card
                 container(
                     column![
-                        text("Welcome to Neote AI").size(16),
+                        row![
+                            text("🤖").size(20),
+                            text("Neote AI").size(16)
+                                .font(iced::Font::with_weight(iced::Font::DEFAULT, iced::font::Weight::Bold)),
+                        ]
+                        .spacing(8)
+                        .align_items(Alignment::Center),
                         text("Ask questions about your code, get explanations, refactor suggestions, and more.")
-                            .size(14)
-                            .style(iced::theme::Text::Color(iced::Color::from_rgb8(180, 180, 180))),
+                            .size(13)
+                            .style(iced::theme::Text::Color(iced::Color::from_rgb8(180, 180, 190))),
                     ]
+                    .spacing(10)
+                    .padding(20)
+                )
+                .style(iced::theme::Container::Custom(Box::new(|| {
+                    iced::widget::container::Appearance {
+                        background: Some(iced::Color::from_rgba(100, 160, 255, 0.08).into()),
+                        border: iced::Border {
+                            color: iced::Color::from_rgb8(100, 160, 255),
+                            width: 1.0,
+                            radius: 8.0.into(),
+                        },
+                        shadow: Default::default(),
+                        text_color: None,
+                    }
+                }))),
+                // Quick actions
+                container(
+                    column![
+                        text("Quick Actions").size(13)
+                            .style(iced::theme::Text::Color(iced::Color::from_rgb8(160, 160, 170)))
+                            .font(iced::Font::with_weight(iced::Font::DEFAULT, iced::font::Weight::Bold)),
+                        column![
+                            button("Explain this file")
+                                .on_press(Message::PromptInputChanged("Explain the current file".to_string()))
+                                .padding([10, 12])
+                                .width(Length::Fill)
+                                .style(iced::theme::Button::Secondary),
+                            button("Refactor selection")
+                                .on_press(Message::PromptInputChanged("Refactor the selected code".to_string()))
+                                .padding([10, 12])
+                                .width(Length::Fill)
+                                .style(iced::theme::Button::Secondary),
+                            button("Find bugs")
+                                .on_press(Message::PromptInputChanged("Find potential bugs in this code".to_string()))
+                                .padding([10, 12])
+                                .width(Length::Fill)
+                                .style(iced::theme::Button::Secondary),
+                            button("Write tests")
+                                .on_press(Message::PromptInputChanged("Write unit tests for this code".to_string()))
+                                .padding([10, 12])
+                                .width(Length::Fill)
+                                .style(iced::theme::Button::Secondary),
+                        ]
+                        .spacing(6),
+                    ]
+                    .spacing(12)
                     .padding(16)
-                    .spacing(8)
                 )
                 .style(iced::theme::Container::Box),
-                column![
-                    button("Explain this file")
-                        .on_press(Message::PromptInputChanged("Explain the current file".to_string()))
-                        .padding(12)
-                        .style(iced::theme::Button::Secondary),
-                    button("Refactor selection")
-                        .on_press(Message::PromptInputChanged("Refactor the selected code".to_string()))
-                        .padding(12)
-                        .style(iced::theme::Button::Secondary),
-                    button("Find bugs")
-                        .on_press(Message::PromptInputChanged("Find potential bugs in this code".to_string()))
-                        .padding(12)
-                        .style(iced::theme::Button::Secondary),
-                    button("Write tests")
-                        .on_press(Message::PromptInputChanged("Write unit tests for this code".to_string()))
-                        .padding(12)
-                        .style(iced::theme::Button::Secondary),
-                ]
-                .spacing(8)
-                .padding(16),
+                // Info note
                 container(
                     text("AI features are coming soon. This is a placeholder for the AI assistant interface.")
-                        .size(12)
-                        .style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 150)))
+                        .size(11)
+                        .style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 160)))
                 )
                 .padding(16),
             ]
             .spacing(16)
+            .padding([0, 16])
         )
         .height(Length::Fill),
         iced::widget::horizontal_rule(1),
-        row![
-            text_input("Ask Neote AI...", prompt_input)
-                .on_input(Message::PromptInputChanged)
-                .padding(12)
-                .width(Length::Fill),
-            button("Send")
-                .on_press(Message::SendPrompt)
-                .padding([12, 16])
-                .style(iced::theme::Button::Primary),
-        ]
-        .padding([8, 16])
-        .align_items(Alignment::Center),
+        container(
+            row![
+                text_input("Ask Neote AI...", prompt_input)
+                    .on_input(Message::PromptInputChanged)
+                    .padding([12, 14])
+                    .width(Length::Fill),
+                button("Send")
+                    .on_press(Message::SendPrompt)
+                    .padding([12, 18])
+                    .style(iced::theme::Button::Primary),
+            ]
+            .align_items(Alignment::Center)
+        )
+        .padding([12, 16])
+        .width(Length::Fill),
     ]
     .height(Length::Fill)
     .into()
