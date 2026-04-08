@@ -281,27 +281,11 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
             app.text_editor.perform(action.clone());
             
             // Check if this action modifies the text content
-            // We need to update our buffer only for edit actions, not for scroll/move/selection actions
+            // In Iced, only Action::Edit actually modifies the text
+            // All other actions (Scroll, MoveCursor, Select, etc.) are navigation/selection
             let should_update_buffer = match &action {
                 iced::widget::text_editor::Action::Edit(_) => true,
-                iced::widget::text_editor::Action::Paste(_) => true,
-                iced::widget::text_editor::Action::Insert(_) => true,
-                iced::widget::text_editor::Action::Backspace => true,
-                iced::widget::text_editor::Action::Delete => true,
-                iced::widget::text_editor::Action::Newline => true,
-                iced::widget::text_editor::Action::Indent => true,
-                iced::widget::text_editor::Action::Outdent => true,
-                iced::widget::text_editor::Action::Tab => true,
-                // These actions don't modify text content
-                iced::widget::text_editor::Action::Scroll { .. } => false,
-                iced::widget::text_editor::Action::Move { .. } => false,
-                iced::widget::text_editor::Action::Select { .. } => false,
-                iced::widget::text_editor::Action::SelectAll => false,
-                iced::widget::text_editor::Action::Copy => false,
-                iced::widget::text_editor::Action::Cut => false,
-                iced::widget::text_editor::Action::Undo => false,
-                iced::widget::text_editor::Action::Redo => false,
-                // Default case: assume it doesn't modify text
+                // All other actions don't modify text
                 _ => false,
             };
             
