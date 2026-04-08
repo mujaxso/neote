@@ -2,6 +2,7 @@ use iced::{Element, Length, widget::{button, column, container, text}, Color};
 use crate::message::Message;
 use crate::state::{App, Activity};
 use super::style::StyleHelpers;
+use crate::theme::SemanticColors;
 
 pub fn activity_bar(app: &App) -> Element<'_, Message> {
     let style = StyleHelpers::new(app.theme);
@@ -24,25 +25,63 @@ pub fn activity_bar(app: &App) -> Element<'_, Message> {
                 Message::ActivitySelected(*activity)
             };
             
-            // Active state styling
-            let button_appearance = if is_active {
-                iced::widget::button::Appearance {
-                    background: Some(style.colors.accent_soft_background.into()),
-                    border: iced::Border {
-                        color: style.colors.accent,
-                        width: 1.0,
-                        radius: 0.0.into(),
-                    },
-                    text_color: style.colors.accent,
-                    ..Default::default()
+            // Create a custom style sheet for the button
+            struct ActivityButtonStyle {
+                is_active: bool,
+                colors: SemanticColors,
+            }
+            
+            impl iced::widget::button::StyleSheet for ActivityButtonStyle {
+                type Style = iced::Theme;
+                
+                fn active(&self, _style: &Self::Style) -> iced::widget::button::Appearance {
+                    if self.is_active {
+                        iced::widget::button::Appearance {
+                            background: Some(self.colors.accent_soft_background.into()),
+                            border: iced::Border {
+                                color: self.colors.accent,
+                                width: 1.0,
+                                radius: 0.0.into(),
+                            },
+                            text_color: self.colors.accent,
+                            ..Default::default()
+                        }
+                    } else {
+                        iced::widget::button::Appearance {
+                            background: Some(Color::TRANSPARENT.into()),
+                            border: iced::Border::default(),
+                            text_color: self.colors.text_muted,
+                            ..Default::default()
+                        }
+                    }
                 }
-            } else {
-                iced::widget::button::Appearance {
-                    background: Some(Color::TRANSPARENT.into()),
-                    border: iced::Border::default(),
-                    text_color: style.colors.text_muted,
-                    ..Default::default()
+                
+                fn hovered(&self, _style: &Self::Style) -> iced::widget::button::Appearance {
+                    if self.is_active {
+                        iced::widget::button::Appearance {
+                            background: Some(self.colors.accent_soft_background.into()),
+                            border: iced::Border {
+                                color: self.colors.accent_hover,
+                                width: 1.0,
+                                radius: 0.0.into(),
+                            },
+                            text_color: self.colors.accent_hover,
+                            ..Default::default()
+                        }
+                    } else {
+                        iced::widget::button::Appearance {
+                            background: Some(self.colors.hover_background.into()),
+                            border: iced::Border::default(),
+                            text_color: self.colors.text_primary,
+                            ..Default::default()
+                        }
+                    }
                 }
+            }
+            
+            let button_style = ActivityButtonStyle {
+                is_active,
+                colors: style.colors,
             };
             
             let button = button(
@@ -57,7 +96,7 @@ pub fn activity_bar(app: &App) -> Element<'_, Message> {
             .width(Length::Fill)
             .height(Length::Fixed(40.0)) // Compact height
             .on_press(message)
-            .style(iced::theme::Button::Custom(Box::new(move |_| button_appearance)));
+            .style(iced::theme::Button::Custom(Box::new(button_style)));
             
             button.into()
         })

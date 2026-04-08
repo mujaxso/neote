@@ -2,9 +2,59 @@ use iced::{Element, Length, widget::{button, container, row, text, text_input}};
 use crate::message::Message;
 use crate::state::App;
 use super::style::StyleHelpers;
+use crate::theme::SemanticColors;
 
 pub fn top_bar(app: &App) -> Element<'_, Message> {
     let style = StyleHelpers::new(app.theme);
+    
+    // Create a custom style sheet for the text input
+    struct WorkspaceInputStyle {
+        colors: SemanticColors,
+    }
+    
+    impl iced::widget::text_input::StyleSheet for WorkspaceInputStyle {
+        type Style = iced::Theme;
+        
+        fn active(&self, _style: &Self::Style) -> iced::widget::text_input::Appearance {
+            iced::widget::text_input::Appearance {
+                background: self.colors.input_background.into(),
+                border: iced::Border {
+                    color: self.colors.border,
+                    width: 1.0,
+                    radius: crate::ui::common::RADIUS_SM.into(),
+                },
+                icon_color: self.colors.text_muted,
+            }
+        }
+        
+        fn focused(&self, _style: &Self::Style) -> iced::widget::text_input::Appearance {
+            iced::widget::text_input::Appearance {
+                background: self.colors.input_background.into(),
+                border: iced::Border {
+                    color: self.colors.accent,
+                    width: 1.0,
+                    radius: crate::ui::common::RADIUS_SM.into(),
+                },
+                icon_color: self.colors.text_muted,
+            }
+        }
+        
+        fn placeholder_color(&self, _style: &Self::Style) -> Color {
+            self.colors.text_muted
+        }
+        
+        fn value_color(&self, _style: &Self::Style) -> Color {
+            self.colors.text_primary
+        }
+        
+        fn selection_color(&self, _style: &Self::Style) -> Color {
+            self.colors.accent_soft_background
+        }
+    }
+    
+    let input_style = WorkspaceInputStyle {
+        colors: style.colors,
+    };
     
     // Compact workspace path input
     let workspace_input = text_input(
@@ -14,17 +64,7 @@ pub fn top_bar(app: &App) -> Element<'_, Message> {
     .on_input(Message::WorkspacePathChanged)
     .padding([6, 10])
     .width(Length::FillPortion(3))
-    .style(iced::theme::TextInput::Custom(Box::new(move |_theme| {
-        iced::widget::text_input::Appearance {
-            background: style.colors.input_background.into(),
-            border: iced::Border {
-                color: style.colors.border,
-                width: 1.0,
-                radius: crate::ui::common::RADIUS_SM.into(),
-            },
-            icon_color: style.colors.text_muted,
-        }
-    })));
+    .style(iced::theme::TextInput::Custom(Box::new(input_style)));
     
     // Compact buttons
     let open_button = button(
@@ -134,16 +174,30 @@ pub fn top_bar(app: &App) -> Element<'_, Message> {
     )
     .width(Length::Fill)
     .height(Length::Fill)
-    .style(iced::theme::Container::Custom(Box::new(move |_theme| {
-        container::Appearance {
-            background: Some(style.colors.shell_background.into()),
-            border: iced::Border {
-                color: style.colors.border,
-                width: 0.0,
-                radius: 0.0.into(),
-            },
-            ..Default::default()
+    struct TopBarStyle {
+        colors: SemanticColors,
+    }
+    
+    impl iced::widget::container::StyleSheet for TopBarStyle {
+        type Style = iced::Theme;
+        
+        fn appearance(&self, _style: &Self::Style) -> iced::widget::container::Appearance {
+            container::Appearance {
+                background: Some(self.colors.shell_background.into()),
+                border: iced::Border {
+                    color: self.colors.border,
+                    width: 0.0,
+                    radius: 0.0.into(),
+                },
+                ..Default::default()
+            }
         }
-    })))
+    }
+    
+    let top_bar_style = TopBarStyle {
+        colors: style.colors,
+    };
+    
+    .style(iced::theme::Container::Custom(Box::new(top_bar_style)))
     .into()
 }

@@ -2,6 +2,7 @@ use iced::{Element, Length, widget::{container, row, text}};
 use crate::message::Message;
 use crate::state::App;
 use super::style::StyleHelpers;
+use crate::theme::SemanticColors;
 
 pub fn status_bar(app: &App) -> Element<'_, Message> {
     let style = StyleHelpers::new(app.theme);
@@ -44,6 +45,30 @@ pub fn status_bar(app: &App) -> Element<'_, Message> {
     .spacing(6)
     .align_items(iced::Alignment::Center);
     
+    struct StatusBarStyle {
+        colors: SemanticColors,
+    }
+    
+    impl iced::widget::container::StyleSheet for StatusBarStyle {
+        type Style = iced::Theme;
+        
+        fn appearance(&self, _style: &Self::Style) -> iced::widget::container::Appearance {
+            container::Appearance {
+                background: Some(self.colors.status_bar_background.into()),
+                border: iced::Border {
+                    color: self.colors.border,
+                    width: 0.0,
+                    radius: 0.0.into(),
+                },
+                ..Default::default()
+            }
+        }
+    }
+    
+    let status_bar_style = StatusBarStyle {
+        colors: style.colors,
+    };
+    
     container(
         row![
             container(left_status).padding([0, 8]),
@@ -58,16 +83,6 @@ pub fn status_bar(app: &App) -> Element<'_, Message> {
     )
     .width(Length::Fill)
     .height(Length::Fill)
-    .style(iced::theme::Container::Custom(Box::new(move |_theme| {
-        container::Appearance {
-            background: Some(style.colors.status_bar_background.into()),
-            border: iced::Border {
-                color: style.colors.border,
-                width: 0.0,
-                radius: 0.0.into(),
-            },
-            ..Default::default()
-        }
-    })))
+    .style(iced::theme::Container::Custom(Box::new(status_bar_style)))
     .into()
 }
