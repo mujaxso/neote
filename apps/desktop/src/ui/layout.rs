@@ -876,7 +876,7 @@ fn settings_panel<'a>() -> Element<'a, Message> {
     .into()
 }
 
-fn explorer_panel_with_expanded<'a>(
+pub fn explorer_panel_with_expanded<'a>(
     file_entries: &'a [core_types::workspace::DirectoryEntry],
     expanded_directories: &'a std::collections::HashSet<String>,
     workspace_path: &'a str,
