@@ -4,6 +4,7 @@ pub mod common;
 pub mod editor;
 pub mod editor_panel;
 pub mod explorer_panel;
+pub mod layout;
 pub mod shell;
 pub mod status_bar;
 pub mod style;
