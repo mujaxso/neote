@@ -7,22 +7,24 @@ use crate::theme::SemanticColors;
 pub fn explorer_panel(app: &App) -> Element<'_, Message> {
     let style = StyleHelpers::new(app.theme);
     
+    let is_compact = matches!(app.layout_mode, crate::state::LayoutMode::Medium | crate::state::LayoutMode::Narrow);
+    
     let header = container(
         row![
             text("EXPLORER")
-                .size(10)
+                .size(if is_compact { 9 } else { 10 })
                 .style(iced::theme::Text::Color(style.colors.text_muted)),
             iced::widget::horizontal_space(),
             button(
-                text("⟳").size(12)
+                text("⟳").size(if is_compact { 11 } else { 12 })
             )
             .on_press(Message::RefreshWorkspace)
-            .padding([2, 6])
+            .padding(if is_compact { [1, 4] } else { [2, 6] })
             .style(iced::theme::Button::Secondary)
         ]
         .align_items(iced::Alignment::Center)
     )
-    .padding([8, 12])
+    .padding(if is_compact { [6, 8] } else { [8, 12] })
     .width(Length::Fill);
     
     let content: Element<_> = if app.file_entries.is_empty() {
@@ -62,12 +64,12 @@ pub fn explorer_panel(app: &App) -> Element<'_, Message> {
                 };
                 
                 let row_content = row![
-                    text(icon).size(12),
+                    text(icon).size(if is_compact { 11 } else { 12 }),
                     text(&entry.name)
-                        .size(12)
+                        .size(if is_compact { 11 } else { 12 })
                         .style(iced::theme::Text::Color(text_color)),
                 ]
-                .spacing(6)
+                .spacing(if is_compact { 4 } else { 6 })
                 .align_items(iced::Alignment::Center);
                 
                 let message = if entry.is_dir {
@@ -112,9 +114,13 @@ pub fn explorer_panel(app: &App) -> Element<'_, Message> {
                 container(
                     button(row_content)
                         .on_press(message)
-                        .padding([4, 8])
+                        .padding(if is_compact { [3, 6] } else { [4, 8] })
                         .width(Length::Fill)
-                        .height(Length::Fixed(crate::ui::common::EXPLORER_ROW_HEIGHT))
+                        .height(Length::Fixed(if is_compact { 
+                            crate::ui::common::EXPLORER_ROW_HEIGHT - 4.0 
+                        } else { 
+                            crate::ui::common::EXPLORER_ROW_HEIGHT 
+                        }))
                         .style(button_style)
                 )
                 .into()

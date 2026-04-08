@@ -416,5 +416,11 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
             app.status_message = "Command palette (Ctrl+Shift+P) - coming soon".to_string();
             Command::none()
         }
+        Message::WindowResized(width, height) => {
+            app.window_width = width;
+            app.window_height = height;
+            app.update_layout_mode();
+            Command::none()
+        }
     }
 }

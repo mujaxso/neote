@@ -32,6 +32,13 @@ pub enum FileLoadingState {
     ReadOnlyPreview { path: String, size: u64 },
 }
 
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum LayoutMode {
+    Wide,
+    Medium,
+    Narrow,
+}
+
 pub struct App {
     pub workspace_path: String,
     pub file_entries: Vec<DirectoryEntry>,
@@ -54,6 +61,10 @@ pub struct App {
     pub is_file_read_only: bool,
     // Theme
     pub theme: NeoteTheme,
+    // Window dimensions for responsive layout
+    pub window_width: u32,
+    pub window_height: u32,
+    pub layout_mode: LayoutMode,
 }
 
 impl App {
@@ -77,14 +88,32 @@ impl App {
                 file_loading_state: FileLoadingState::Idle,
                 is_file_read_only: false,
                 theme: NeoteTheme::Dark, // Always use premium dark theme
+                window_width: 1200,
+                window_height: 800,
+                layout_mode: LayoutMode::Wide,
             },
             iced::Command::none(),
         )
     }
 
     pub fn subscription(&self) -> iced::Subscription<crate::message::Message> {
-        iced::keyboard::on_key_press(|key, modifiers| {
-            Some(crate::message::Message::KeyPressed(key, modifiers))
-        })
+        iced::Subscription::batch(vec![
+            iced::keyboard::on_key_press(|key, modifiers| {
+                Some(crate::message::Message::KeyPressed(key, modifiers))
+            }),
+            iced::window::resized(|width, height| {
+                Message::WindowResized(width, height)
+            }),
+        ])
+    }
+
+    pub fn update_layout_mode(&mut self) {
+        self.layout_mode = if self.window_width >= 1200 {
+            LayoutMode::Wide
+        } else if self.window_width >= 800 {
+            LayoutMode::Medium
+        } else {
+            LayoutMode::Narrow
+        };
     }
 }

@@ -1,6 +1,6 @@
 use iced::{Element, Length, widget::container};
 use crate::message::Message;
-use crate::state::App;
+use crate::state::{App, LayoutMode};
 use super::{
     activity_bar::activity_bar,
     assistant_panel::assistant_panel,
@@ -15,7 +15,18 @@ pub fn shell(app: &App) -> Element<'_, Message> {
     // Determine if AI panel should be visible
     let ai_panel_visible = matches!(app.active_activity, crate::state::Activity::Ai) || app.ai_panel_visible;
     
-    // Build panels with compact sizing
+    // Get panel widths based on layout mode
+    let (explorer_width, assistant_width) = match app.layout_mode {
+        LayoutMode::Wide => (260.0, 300.0),
+        LayoutMode::Medium => (220.0, 240.0),
+        LayoutMode::Narrow => (180.0, 200.0),
+    };
+    
+    // In narrow mode, we might want to hide the AI panel if it's not the active activity
+    let show_ai_panel = ai_panel_visible && 
+        (app.layout_mode != LayoutMode::Narrow || app.active_activity == crate::state::Activity::Ai);
+    
+    // Build panels with responsive sizing
     let top_bar = container(top_bar(app))
         .width(Length::Fill)
         .height(Length::Fixed(crate::ui::common::TOP_BAR_HEIGHT));
@@ -25,7 +36,7 @@ pub fn shell(app: &App) -> Element<'_, Message> {
         .height(Length::Fill);
     
     let explorer_panel = container(explorer_panel(app))
-        .width(Length::Fixed(260.0)) // Slightly narrower for compact feel
+        .width(Length::Fixed(explorer_width))
         .height(Length::Fill);
     
     let editor_panel = container(editor_panel(app))
@@ -33,9 +44,9 @@ pub fn shell(app: &App) -> Element<'_, Message> {
         .height(Length::Fill);
     
     // Conditionally include AI panel
-    let main_content = if ai_panel_visible {
+    let main_content = if show_ai_panel {
         let assistant_panel = container(assistant_panel(app))
-            .width(Length::Fixed(300.0)) // Compact but useful width
+            .width(Length::Fixed(assistant_width))
             .height(Length::Fill);
         
         iced::widget::row![

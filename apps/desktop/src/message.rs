@@ -29,4 +29,5 @@ pub enum Message {
     KeyPressed(iced::keyboard::Key, iced::keyboard::Modifiers),
     ToggleDirectory(String),
     ToggleCommandPalette,
+    WindowResized(u32, u32),
 }

@@ -72,29 +72,31 @@ pub fn top_bar(app: &App) -> Element<'_, Message> {
         colors: style.colors,
     };
     
-    // Compact workspace path input
+    // Responsive workspace path input
+    let is_compact = matches!(app.layout_mode, crate::state::LayoutMode::Medium | crate::state::LayoutMode::Narrow);
+    
     let workspace_input = text_input(
-        "Workspace path...",
+        if is_compact { "Path..." } else { "Workspace path..." },
         &app.workspace_path,
     )
     .on_input(Message::WorkspacePathChanged)
-    .padding([6, 10])
-    .width(Length::FillPortion(3))
+    .padding(if is_compact { [4, 8] } else { [6, 10] })
+    .width(if is_compact { Length::FillPortion(2) } else { Length::FillPortion(3) })
     .style(iced::theme::TextInput::Custom(Box::new(input_style)));
     
-    // Compact buttons
+    // Responsive buttons
     let open_button = button(
-        text("Open").size(13)
+        text(if is_compact { "Open" } else { "Open" }).size(if is_compact { 12 } else { 13 })
     )
     .on_press(Message::OpenWorkspace)
-    .padding([6, 12])
+    .padding(if is_compact { [4, 8] } else { [6, 12] })
     .style(iced::theme::Button::Secondary);
     
     let save_button = button(
-        text("Save").size(13)
+        text(if is_compact { "Save" } else { "Save" }).size(if is_compact { 12 } else { 13 })
     )
     .on_press(Message::SaveFile)
-    .padding([6, 12])
+    .padding(if is_compact { [4, 8] } else { [6, 12] })
     .style(iced::theme::Button::Primary);
     
     struct StatusIndicatorStyle {
@@ -121,28 +123,36 @@ pub fn top_bar(app: &App) -> Element<'_, Message> {
         colors: style.colors,
     };
     
-    // Subtle status indicator
+    // Responsive status indicator
     let status_indicator = if app.is_dirty {
         container(
             row![
-                text("●").size(10).style(iced::theme::Text::Color(style.colors.warning)),
-                text("Unsaved").size(11).style(iced::theme::Text::Color(style.colors.text_secondary)),
+                text("●").size(if is_compact { 9 } else { 10 }).style(iced::theme::Text::Color(style.colors.warning)),
+                if !is_compact {
+                    text("Unsaved").size(11).style(iced::theme::Text::Color(style.colors.text_secondary)).into()
+                } else {
+                    iced::widget::Space::new(Length::Fixed(0.0), Length::Fixed(0.0)).into()
+                },
             ]
-            .spacing(4)
+            .spacing(if is_compact { 2 } else { 4 })
             .align_items(iced::Alignment::Center)
         )
-        .padding([4, 8])
+        .padding(if is_compact { [2, 6] } else { [4, 8] })
         .style(iced::theme::Container::Custom(Box::new(status_indicator_style)))
     } else {
         container(
             row![
-                text("✓").size(10).style(iced::theme::Text::Color(style.colors.success)),
-                text("Saved").size(11).style(iced::theme::Text::Color(style.colors.text_muted)),
+                text("✓").size(if is_compact { 9 } else { 10 }).style(iced::theme::Text::Color(style.colors.success)),
+                if !is_compact {
+                    text("Saved").size(11).style(iced::theme::Text::Color(style.colors.text_muted)).into()
+                } else {
+                    iced::widget::Space::new(Length::Fixed(0.0), Length::Fixed(0.0)).into()
+                },
             ]
-            .spacing(4)
+            .spacing(if is_compact { 2 } else { 4 })
             .align_items(iced::Alignment::Center)
         )
-        .padding([4, 8])
+        .padding(if is_compact { [2, 6] } else { [4, 8] })
         .style(iced::theme::Container::Custom(Box::new(status_indicator_style)))
     };
     
