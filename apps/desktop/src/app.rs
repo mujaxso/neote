@@ -1,6 +1,6 @@
 // Re-export the main types from the crate root modules
 pub use crate::message::Message;
-pub use crate::state::{App, Activity, FileLoadingState, FileMetadata};
+pub use crate::state::App;
 pub use crate::update::update;
 pub use crate::view::view;
 
