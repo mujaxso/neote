@@ -12,19 +12,14 @@ pub enum Message {
     OpenWorkspace,
     WorkspaceLoaded(Result<Vec<DirectoryEntry>, String>),
     FileSelected(usize),
-    // New: Request to open a file with metadata check first
-    FileOpenRequested(String),
-    // New: Metadata loaded (size, etc.)
+    // Metadata loaded (size, etc.)
     FileMetadataLoaded(Result<FileMetadata, String>),
-    // New: File content loaded
+    // File content loaded
     FileLoaded(Result<(String, String, TextBuffer), String>),
-    // New: Confirm opening a large file
+    // Confirm opening a large file
     ConfirmOpenLargeFile(String, u64),
-    // New: Open in read-only mode
+    // Open in read-only mode
     OpenLargeFileReadOnly(String),
-    // New: Cancel file open
-    CancelOpenFile,
-    TextEditorContentCreated(String), // Just the path
     EditorContentChanged(text_editor::Action),
     SaveFile,
     FileSaved(Result<(), String>),
@@ -38,13 +33,11 @@ pub enum Message {
     ToggleCommandPalette,
 }
 
-// New: File metadata structure
+// File metadata structure
 #[derive(Debug, Clone)]
 pub struct FileMetadata {
     pub path: String,
     pub size: u64,
-    // is_binary is kept for future use
-    pub is_binary: bool,
 }
 
 // Helper to extract edit information from text editor action
@@ -183,7 +176,7 @@ pub struct App {
     is_file_read_only: bool,
 }
 
-// New: File loading states
+// File loading states
 #[derive(Debug, Clone)]
 pub enum FileLoadingState {
     Idle,
@@ -293,15 +286,9 @@ impl iced::Application for App {
                                 let result = tokio::task::spawn_blocking(move || {
                                     match std::fs::metadata(&path) {
                                         Ok(metadata) => {
-                                            // Simple binary detection: check first few bytes
-                                            let is_binary = match std::fs::read(&path) {
-                                                Ok(bytes) => bytes.iter().take(1024).any(|&b| b == 0),
-                                                Err(_) => false,
-                                            };
                                             Ok(FileMetadata {
                                                 path: path.clone(),
                                                 size: metadata.len(),
-                                                is_binary,
                                             })
                                         }
                                         Err(e) => Err(format!("Failed to read file metadata: {}", e)),
@@ -329,10 +316,6 @@ impl iced::Application for App {
                 } else {
                     Command::none()
                 }
-            }
-            // FileOpenRequested is no longer used, but keep the match arm for completeness
-            Message::FileOpenRequested(_path) => {
-                Command::none()
             }
             Message::FileMetadataLoaded(result) => {
                 match result {
@@ -483,11 +466,6 @@ impl iced::Application for App {
                     },
                     |result| result,
                 )
-            }
-            Message::CancelOpenFile => {
-                self.file_loading_state = FileLoadingState::Idle;
-                self.status_message = "File open cancelled".to_string();
-                Command::none()
             }
             Message::FileLoaded(result) => {
                 match result {
@@ -701,10 +679,6 @@ impl iced::Application for App {
             Message::ToggleCommandPalette => {
                 // For now, just show a status message
                 self.status_message = "Command palette (Ctrl+Shift+P) - coming soon".to_string();
-                Command::none()
-            }
-            Message::TextEditorContentCreated(_path) => {
-                // This message is no longer needed since we handle loading directly in FileLoaded
                 Command::none()
             }
             Message::ToggleDirectory(path) => {
