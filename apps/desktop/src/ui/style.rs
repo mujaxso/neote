@@ -109,7 +109,7 @@ impl StyleHelpers {
     /// Text input style
     pub fn text_input(&self) -> text_input::Appearance {
         text_input::Appearance {
-            background: self.colors.elevated_panel_background.into(),
+            background: self.colors.input_background.into(),
             border: iced::Border {
                 color: self.colors.border,
                 width: 1.0,

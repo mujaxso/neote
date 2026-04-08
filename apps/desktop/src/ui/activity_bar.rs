@@ -1,6 +1,7 @@
-use iced::{Element, Length, widget::{button, column, container, text}};
+use iced::{Element, Length, widget::{button, column, container, text}, Color};
 use crate::message::Message;
 use crate::state::{App, Activity};
+use super::style::StyleHelpers;
 
 pub fn activity_bar(app: &App) -> Element<'_, Message> {
     let style = StyleHelpers::new(app.theme);
