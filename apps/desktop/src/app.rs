@@ -310,8 +310,9 @@ impl iced::Application for App {
                         self.error_message = None;
                     }
                     Err(e) => {
+                        let error_msg = e.clone();
                         self.error_message = Some(e);
-                        self.status_message = format!("Failed to save file: {}", e);
+                        self.status_message = format!("Failed to save file: {}", error_msg);
                     }
                 }
                 Command::none()
