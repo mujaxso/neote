@@ -34,22 +34,14 @@ impl iced::Application for App {
         ];
         
         for dir in &possible_font_dirs {
-            for (file, name) in &font_files {
+            for (file, _name) in &font_files {
                 let path = format!("{}/{}", dir, file);
                 if std::path::Path::new(&path).exists() {
-                    match std::fs::read(&path) {
-                        Ok(bytes) => {
-                            font_commands.push(
-                                iced::font::load(bytes)
-                                    .map(|_| Message::FontLoaded)
-                            );
-                            #[cfg(debug_assertions)]
-                            eprintln!("Loaded font: {} from {}", name, path);
-                        }
-                        Err(e) => {
-                            #[cfg(debug_assertions)]
-                            eprintln!("Failed to load font {} from {}: {}", name, path, e);
-                        }
+                    if let Ok(bytes) = std::fs::read(&path) {
+                        font_commands.push(
+                            iced::font::load(bytes)
+                                .map(|_| Message::FontLoaded)
+                        );
                     }
                 }
             }
@@ -57,39 +49,19 @@ impl iced::Application for App {
         
         // If no fonts found in standard locations, try current directory
         if font_commands.is_empty() {
-            for (file, name) in &font_files {
+            for (file, _name) in &font_files {
                 if std::path::Path::new(file).exists() {
-                    match std::fs::read(file) {
-                        Ok(bytes) => {
-                            font_commands.push(
-                                iced::font::load(bytes)
-                                    .map(|_| Message::FontLoaded)
-                            );
-                            #[cfg(debug_assertions)]
-                            eprintln!("Loaded font: {} from current directory", name);
-                        }
-                        Err(e) => {
-                            #[cfg(debug_assertions)]
-                            eprintln!("Failed to load font {} from current directory: {}", name, e);
-                        }
+                    if let Ok(bytes) = std::fs::read(file) {
+                        font_commands.push(
+                            iced::font::load(bytes)
+                                .map(|_| Message::FontLoaded)
+                        );
                     }
                 }
             }
         }
         
-        if font_commands.is_empty() {
-            #[cfg(debug_assertions)]
-            eprintln!("Warning: No custom fonts loaded. Icons may not display correctly.");
-            #[cfg(debug_assertions)]
-            eprintln!("Run from apps/desktop directory: ./scripts/download-fonts.sh");
-            #[cfg(debug_assertions)]
-            eprintln!("This will download JetBrains Mono, Fira Code, and emoji fonts.");
-        }
-        
         // If no fonts were loaded, we'll just use system fonts
-        if font_commands.is_empty() {
-            #[cfg(debug_assertions)]
-            eprintln!("No custom fonts loaded. Run `scripts/download-fonts.sh` to download required fonts.");
             (app, command)
         } else {
             // Combine font loading commands with the initial app command

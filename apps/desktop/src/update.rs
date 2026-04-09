@@ -624,13 +624,9 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
             Command::none()
         }
         Message::FontLoaded => {
-            #[cfg(debug_assertions)]
-            eprintln!("Font loaded successfully");
             Command::none()
         }
         Message::FontLoadFailed => {
-            #[cfg(debug_assertions)]
-            eprintln!("Font loading failed");
             Command::none()
         }
     }
