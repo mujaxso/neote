@@ -40,10 +40,12 @@ impl ExplorerState {
     }
     
     pub fn toggle_directory(&mut self, path: PathBuf) {
-        if self.expanded_directories.contains(&path) {
-            self.expanded_directories.remove(&path);
+        // Normalize the path by removing any trailing separator
+        let normalized_path = normalize_path(&path);
+        if self.expanded_directories.contains(&normalized_path) {
+            self.expanded_directories.remove(&normalized_path);
         } else {
-            self.expanded_directories.insert(path);
+            self.expanded_directories.insert(normalized_path);
         }
     }
     
@@ -52,7 +54,8 @@ impl ExplorerState {
     }
     
     pub fn is_expanded(&self, path: &PathBuf) -> bool {
-        self.expanded_directories.contains(path)
+        let normalized_path = normalize_path(path);
+        self.expanded_directories.contains(&normalized_path)
     }
     
     pub fn is_selected(&self, path: &PathBuf) -> bool {
