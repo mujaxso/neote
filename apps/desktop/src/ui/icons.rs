@@ -142,14 +142,14 @@ impl Icon {
             Icon::Save => "",         // nf-fa-save
             Icon::Close => "",        // nf-fa-times
             
-            // Version control - using Font Awesome alternatives since nf-dev might not be in Symbols Nerd Font
-            Icon::Git => "",         // nf-fa-git (alternative)
-            Icon::GitBranch => "",    // nf-fa-code_fork (alternative)
-            Icon::GitCommit => "",    // nf-fa-history (alternative)
-            Icon::GitPullRequest => "", // nf-fa-code_fork (alternative)
+            // Version control - using nf-dev icons which are in Symbols Nerd Font
+            Icon::Git => "",         // nf-dev-git
+            Icon::GitBranch => "",   // nf-dev-git_branch
+            Icon::GitCommit => "",   // nf-dev-git_commit
+            Icon::GitPullRequest => "", // nf-dev-git_pull_request
             
             // Development
-            Icon::Terminal => "",     // nf-fa-terminal (alternative)
+            Icon::Terminal => "",     // nf-dev-terminal
             Icon::Debug => "",       // nf-fa-bug
             Icon::Run => "",         // nf-fa-play
             Icon::Build => "",       // nf-fa-wrench
@@ -178,8 +178,8 @@ impl Icon {
         let icon_stack = typography.icon_font_stack();
         
         // Try each font in the stack in order
+        // Iced will use the first font that contains the glyph
         for font_name in icon_stack.iter() {
-            // Return the first one - Iced will use it if available
             return iced::Font::with_name(font_name);
         }
         

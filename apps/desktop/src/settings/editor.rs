@@ -173,8 +173,7 @@ pub enum IconMode {
 
 impl Default for IconMode {
     fn default() -> Self {
-        // Temporarily use Unicode to debug icon rendering
-        IconMode::Unicode
+        IconMode::NerdFonts
     }
 }
 
@@ -296,12 +295,15 @@ impl EditorTypographySettings {
             IconMode::NerdFonts => {
                 // Use the exact names from font loading in app.rs
                 // These must match exactly
+                // Prioritize Symbols Nerd Font which contains most icons
                 stack.push("Symbols Nerd Font");
-                stack.push("Noto Color Emoji");
+                // Add other Nerd Font variants that might contain additional glyphs
                 stack.push("JetBrainsMono Nerd Font");
                 stack.push("FiraCode Nerd Font");
                 stack.push("CascadiaCode Nerd Font");
                 stack.push("Iosevka Nerd Font");
+                // Add emoji fonts for fallback
+                stack.push("Noto Color Emoji");
                 
                 // Add the selected Nerd Font variant if applicable
                 if self.font_family.is_nerd_font() {
