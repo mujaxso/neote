@@ -10,6 +10,7 @@ use crate::state::{Activity, FileLoadingState};
 use crate::message::Message;
 use crate::theme::NeoteTheme;
 use crate::ui::style::StyleHelpers;
+use crate::settings::editor::EditorTypographySettings;
 
 // Helper function to normalize paths for consistent comparison
 fn normalize_path(path: &str) -> String {
@@ -40,6 +41,7 @@ pub fn ide_layout<'a>(
     is_file_too_large_for_editor: bool,
     file_loading_state: &'a FileLoadingState,
     theme: NeoteTheme,
+    editor_typography: &'a EditorTypographySettings,
 ) -> Element<'a, Message> {
     let style = StyleHelpers::new(theme);
     
@@ -71,7 +73,7 @@ pub fn ide_layout<'a>(
             .height(Length::Fill),
         vertical_rule(1),
         // Editor area - takes most space
-        container(editor_panel(active_file_path, text_editor, is_dirty, editor_buffer, is_file_too_large_for_editor, file_loading_state))
+        container(editor_panel(active_file_path, text_editor, is_dirty, editor_buffer, is_file_too_large_for_editor, file_loading_state, editor_typography))
             .width(Length::FillPortion(5))
             .height(Length::Fill),
         // AI panel (conditionally visible) - flexible width
@@ -381,6 +383,7 @@ fn editor_panel<'a>(
     editor_buffer: Option<&'a editor_buffer::buffer::TextBuffer>,
     is_file_too_large_for_editor: bool,
     file_loading_state: &'a FileLoadingState,
+    editor_typography: &'a EditorTypographySettings,
 ) -> Element<'a, Message> {
     let header = if let Some(path) = active_file_path {
         let mut status_elements = Vec::new();
@@ -618,7 +621,7 @@ fn editor_panel<'a>(
                     .height(Length::Fill)
                     .into()
                 } else {
-                    super::editor::editor(text_editor)
+                    super::editor::editor(text_editor, editor_typography)
                 }
             } else {
                 container(
