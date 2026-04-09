@@ -122,52 +122,52 @@ impl Icon {
     pub fn nerd_font_glyph(&self) -> &'static str {
         match self {
             // File system
-            Icon::File => "",        // nf-md-file_document
-            Icon::Folder => "",      // nf-md-folder
-            Icon::FolderOpen => "",  // nf-md-folder_open
+            Icon::File => "󰈙",        // nf-md-file_document (updated)
+            Icon::Folder => "󰉋",      // nf-md-folder (updated)
+            Icon::FolderOpen => "󰉌",  // nf-md-folder_open (updated)
             
             // Navigation
-            Icon::ChevronRight => "", // nf-pl-right_hard_divider
-            Icon::ChevronDown => "", // nf-pl-down_hard_divider
+            Icon::ChevronRight => "", // nf-fa-chevron_right
+            Icon::ChevronDown => "",  // nf-fa-chevron_down
             Icon::ArrowRight => "",   // nf-fa-arrow_right
             Icon::ArrowLeft => "",    // nf-fa-arrow_left
             
             // Actions
-            Icon::Search => "",       // nf-fa-search
-            Icon::Settings => "",     // nf-fa-cog
-            Icon::Refresh => "",      // nf-fa-refresh
-            Icon::Add => "",          // nf-fa-plus_circle
-            Icon::Edit => "",         // nf-fa-edit
-            Icon::Delete => "",       // nf-fa-trash
-            Icon::Save => "",         // nf-fa-save
-            Icon::Close => "",        // nf-fa-times
+            Icon::Search => "󰍉",       // nf-md-magnify (updated)
+            Icon::Settings => "󰒓",     // nf-md-cog (updated)
+            Icon::Refresh => "󰑐",      // nf-md-refresh (updated)
+            Icon::Add => "󰅻",          // nf-md-plus (updated)
+            Icon::Edit => "󰏫",         // nf-md-pencil (updated)
+            Icon::Delete => "󰅙",       // nf-md-close (updated)
+            Icon::Save => "󰆓",         // nf-md-content_save (updated)
+            Icon::Close => "󰅖",        // nf-md-close (updated)
             
             // Version control
-            Icon::Git => "",         // nf-dev-git
-            Icon::GitBranch => "",   // nf-dev-git_branch
-            Icon::GitCommit => "",   // nf-dev-git_commit
-            Icon::GitPullRequest => "", // nf-dev-git_pull_request
+            Icon::Git => "󰊢",         // nf-md-git (updated)
+            Icon::GitBranch => "󰘬",   // nf-md-source_branch (updated)
+            Icon::GitCommit => "󰡚",   // nf-md-source_commit (updated)
+            Icon::GitPullRequest => "󰤙", // nf-md-source_pull (updated)
             
             // Development
-            Icon::Terminal => "",     // nf-dev-terminal
-            Icon::Debug => "",       // nf-fa-bug
-            Icon::Run => "",         // nf-fa-play
-            Icon::Build => "",       // nf-fa-wrench
+            Icon::Terminal => "󰆍",     // nf-md-terminal (updated)
+            Icon::Debug => "󰚧",       // nf-md-bug (updated)
+            Icon::Run => "󰐊",         // nf-md-play (updated)
+            Icon::Build => "󰛶",       // nf-md-hammer (updated)
             
             // Status
-            Icon::Success => "",     // nf-fa-check_circle
-            Icon::Warning => "",     // nf-fa-exclamation_triangle
-            Icon::Error => "",       // nf-fa-times_circle
-            Icon::Info => "",        // nf-fa-info_circle
+            Icon::Success => "󰄬",     // nf-md-check_circle (updated)
+            Icon::Warning => "󰀪",     // nf-md-alert (updated)
+            Icon::Error => "󰅖",       // nf-md-close_circle (updated)
+            Icon::Info => "󰋼",        // nf-md-information (updated)
             
             // AI/Assistant
-            Icon::Robot => "ﮧ",       // nf-fa-android
-            Icon::Sparkles => "✨",    // Unicode fallback (no good Nerd Font equivalent)
+            Icon::Robot => "󰚩",       // nf-md-robot (updated)
+            Icon::Sparkles => "󰠮",    // nf-md-auto_fix (updated)
             
             // UI elements
-            Icon::Menu => "",        // nf-fa-bars
-            Icon::MoreHorizontal => "", // nf-fa-ellipsis_h
-            Icon::MoreVertical => "", // nf-fa-ellipsis_v
+            Icon::Menu => "󰍜",        // nf-md-menu (updated)
+            Icon::MoreHorizontal => "󰇘", // nf-md-dots_horizontal (updated)
+            Icon::MoreVertical => "󰇙", // nf-md-dots_vertical (updated)
         }
     }
 

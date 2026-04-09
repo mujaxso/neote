@@ -358,11 +358,8 @@ fn explorer_row(row: crate::explorer::state::VisibleRow, app: &App, is_compact: 
 
 fn inline_edit_row(app: &App, depth: usize, is_dir: bool) -> Element<'static, Message> {
     let indent = depth * 12;
-    let icon = if is_dir { "📁" } else { "📄" };
-    
-    // Create a simple style for the icon
-    // We'll use a default text color
-    let icon_color = iced::Color::from_rgb8(150, 150, 150);
+    let style = StyleHelpers::new(app.theme);
+    let icon = if is_dir { Icon::Folder } else { Icon::File };
     
     let input = text_input("Name", &app.explorer_state.inline_edit_name)
         .on_input(|name| Message::Explorer(ExplorerMessage::InlineEditNameChanged(name)))
@@ -375,10 +372,8 @@ fn inline_edit_row(app: &App, depth: usize, is_dir: bool) -> Element<'static, Me
             iced::widget::Space::with_width(Length::Fixed(indent as f32)),
             // Space for chevron
             iced::widget::Space::with_width(Length::Fixed(16.0)),
-            // Icon with emoji font
-            text(icon).size(12)
-                .style(iced::theme::Text::Color(icon_color))
-                .font(iced::font::Font::with_name("Noto Color Emoji")),
+            // Use the Icon enum for consistent rendering
+            icon.render(&app.editor_typography, &style, Some(12)),
             iced::widget::Space::with_width(Length::Fixed(6.0)),
             input,
         ]

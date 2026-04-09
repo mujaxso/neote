@@ -294,15 +294,14 @@ impl EditorTypographySettings {
         
         match self.icon_mode {
             IconMode::NerdFonts => {
-                // Prioritize Nerd Fonts for icons
+                // Prioritize Symbols Nerd Font which contains most glyphs
                 stack.push("Symbols Nerd Font");
-                stack.push("Noto Color Emoji");
-                
                 // Add the selected Nerd Font variant if applicable
                 if self.font_family.is_nerd_font() {
                     stack.push(self.font_family.to_family_string());
                 }
-                
+                // Add emoji fonts for fallback
+                stack.push("Noto Color Emoji");
                 // Add fallback fonts
                 stack.extend(self.font_family.fallback_stack());
             }
