@@ -90,7 +90,10 @@ pub fn build_explorer_tree(entries: &[DirectoryEntry]) -> Vec<ExplorerNode> {
         let node_a = &nodes[a];
         let node_b = &nodes[b];
         if node_a.is_dir != node_b.is_dir {
-            b.is_dir.cmp(&a.is_dir) // Directories first
+            // Directories first: true (directory) comes before false (file)
+            // So we want b.is_dir.cmp(&a.is_dir) which puts true before false
+            // But we need to compare booleans, not usize
+            node_b.is_dir.cmp(&node_a.is_dir)
         } else {
             node_a.name.to_lowercase().cmp(&node_b.name.to_lowercase())
         }
