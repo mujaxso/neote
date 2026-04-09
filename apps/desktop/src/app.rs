@@ -30,13 +30,6 @@ impl iced::Application for App {
         // We'll try to load multiple fonts to ensure icons are visible
         let mut font_commands = Vec::new();
         
-        // Try to load programming fonts from various possible locations
-        let possible_font_dirs = [
-            "apps/desktop/assets/fonts",
-            "assets/fonts",
-            "../assets/fonts",
-        ];
-        
         // Fonts to load in order of preference, prioritizing Nerd Font variants for icons
         let font_files = [
             // Icon fonts first - most important for icon rendering

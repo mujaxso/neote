@@ -3,6 +3,7 @@ use crate::message::Message;
 use crate::state::App;
 use super::style::StyleHelpers;
 use crate::theme::SemanticColors;
+use crate::ui::icons::{Icon, icon_button};
 
 pub fn top_bar(app: &App) -> Element<'_, Message> {
     let style = StyleHelpers::new(app.theme);
