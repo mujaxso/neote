@@ -173,9 +173,17 @@ impl Icon {
 
     /// Get the appropriate font for icon rendering.
     fn get_font(typography: &EditorTypographySettings) -> iced::Font {
-        // Use the selected font family's string representation
-        let font_name = typography.font_family.to_family_string();
-        iced::Font::with_name(font_name)
+        // For icons, we need to use a font that contains the icon glyphs
+        // The icon font stack is defined in EditorTypographySettings
+        // We'll use the first font from the icon font stack
+        let icon_stack = typography.icon_font_stack();
+        if let Some(first_font) = icon_stack.first() {
+            iced::Font::with_name(first_font)
+        } else {
+            // Fallback to the selected font family
+            let font_name = typography.font_family.to_family_string();
+            iced::Font::with_name(font_name)
+        }
     }
 
     /// Render this icon as a text element with appropriate styling.

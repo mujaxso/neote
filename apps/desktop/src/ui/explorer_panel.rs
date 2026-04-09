@@ -2,7 +2,7 @@ use iced::{Element, Length, widget::{button, column, container, row, scrollable,
 use crate::message::Message;
 use crate::state::App;
 use super::style::StyleHelpers;
-use crate::theme::{SemanticColors, NeoteTheme};
+use crate::theme::SemanticColors;
 use crate::explorer::actions::ExplorerMessage;
 use crate::explorer::state::InlineEditMode;
 use crate::ui::icons::{Icon, icon_button};

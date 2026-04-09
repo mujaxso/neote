@@ -288,7 +288,42 @@ impl EditorTypographySettings {
         if self.icon_mode == IconMode::Disabled {
             return vec!["monospace"];
         }
-        self.font_family.icon_fallback_stack()
+        
+        // Always include Symbols Nerd Font first for maximum icon coverage
+        let mut stack = Vec::new();
+        
+        match self.icon_mode {
+            IconMode::NerdFonts => {
+                // Prioritize Nerd Fonts for icons
+                stack.push("Symbols Nerd Font");
+                stack.push("Noto Color Emoji");
+                
+                // Add the selected Nerd Font variant if applicable
+                if self.font_family.is_nerd_font() {
+                    stack.push(self.font_family.to_family_string());
+                }
+                
+                // Add fallback fonts
+                stack.extend(self.font_family.fallback_stack());
+            }
+            IconMode::Unicode => {
+                // For Unicode mode, prioritize emoji fonts
+                stack.push("Noto Color Emoji");
+                stack.push("Segoe UI Emoji");
+                stack.push("Apple Color Emoji");
+                stack.extend(self.font_family.fallback_stack());
+            }
+            IconMode::Disabled => {
+                stack.push("monospace");
+            }
+        }
+        
+        // Ensure we always have at least one font
+        if stack.is_empty() {
+            stack.push("monospace");
+        }
+        
+        stack
     }
 
     /// Check if icons are enabled

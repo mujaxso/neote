@@ -37,61 +37,59 @@ impl iced::Application for App {
             "../assets/fonts",
         ];
         
-        // Fonts to load in order of preference, including Nerd Font variants
+        // Fonts to load in order of preference, prioritizing Nerd Font variants for icons
         let font_files = [
-            // Regular coding fonts
+            // Icon fonts first - most important for icon rendering
+            ("SymbolsNerdFont-Regular.ttf", "Symbols Nerd Font"),
+            ("NotoColorEmoji.ttf", "Noto Color Emoji"),
+            // Nerd Font variants for coding with icons
+            ("JetBrainsMonoNerdFont-Regular.ttf", "JetBrainsMono Nerd Font"),
+            ("FiraCodeNerdFont-Regular.ttf", "FiraCode Nerd Font"),
+            ("CascadiaCodeNerdFont-Regular.ttf", "CascadiaCode Nerd Font"),
+            ("IosevkaNerdFont-Regular.ttf", "Iosevka Nerd Font"),
+            // Regular coding fonts as fallback
             ("JetBrainsMono-Regular.ttf", "JetBrains Mono"),
             ("FiraCode-Regular.ttf", "Fira Code"),
             ("CascadiaCode-Regular.ttf", "Cascadia Code"),
             ("Iosevka-Regular.ttf", "Iosevka"),
             ("SourceCodePro-Regular.ttf", "Source Code Pro"),
-            // Nerd Font variants
-            ("JetBrainsMonoNerdFont-Regular.ttf", "JetBrainsMono Nerd Font"),
-            ("FiraCodeNerdFont-Regular.ttf", "FiraCode Nerd Font"),
-            ("CascadiaCodeNerdFont-Regular.ttf", "CascadiaCode Nerd Font"),
-            ("IosevkaNerdFont-Regular.ttf", "Iosevka Nerd Font"),
-            // Icon fonts
-            ("SymbolsNerdFont-Regular.ttf", "Symbols Nerd Font"),
-            ("NotoColorEmoji.ttf", "Noto Color Emoji"),
         ];
         
-        for dir in &possible_font_dirs {
-            for (file, _name) in &font_files {
-                let path = format!("{}/{}", dir, file);
-                if std::path::Path::new(&path).exists() {
-                    if let Ok(bytes) = std::fs::read(&path) {
+        // Try to load fonts from assets/fonts directory first
+        let assets_font_dir = "apps/desktop/assets/fonts";
+        if !std::path::Path::new(assets_font_dir).exists() {
+            // Create the directory if it doesn't exist
+            let _ = std::fs::create_dir_all(assets_font_dir);
+        }
+        
+        for (file, name) in &font_files {
+            // Try multiple locations
+            let possible_paths = [
+                format!("{}/{}", assets_font_dir, file),
+                format!("assets/fonts/{}", file),
+                format!("../assets/fonts/{}", file),
+                file.to_string(),
+            ];
+            
+            for path in &possible_paths {
+                if std::path::Path::new(path).exists() {
+                    if let Ok(bytes) = std::fs::read(path) {
+                        println!("Loading font: {} from {}", name, path);
                         font_commands.push(
                             iced::font::load(bytes)
                                 .map(|_| Message::FontLoaded)
                         );
+                        break; // Load each font only once
                     }
                 }
             }
         }
         
-        // If no fonts found in standard locations, try current directory
-        if font_commands.is_empty() {
-            for (file, _name) in &font_files {
-                if std::path::Path::new(file).exists() {
-                    if let Ok(bytes) = std::fs::read(file) {
-                        font_commands.push(
-                            iced::font::load(bytes)
-                                .map(|_| Message::FontLoaded)
-                        );
-                    }
-                }
-            }
-        }
-        
-        // If no fonts were loaded, we'll just use system fonts
-        if font_commands.is_empty() {
-            (app, command)
-        } else {
-            // Combine font loading commands with the initial app command
-            let mut all_commands = font_commands;
-            all_commands.push(command);
-            (app, Command::batch(all_commands))
-        }
+        // Always load at least the default system fonts
+        // Combine font loading commands with the initial app command
+        let mut all_commands = font_commands;
+        all_commands.push(command);
+        (app, Command::batch(all_commands))
     }
 
     fn title(&self) -> String {
