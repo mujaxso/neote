@@ -178,13 +178,13 @@ impl Icon {
         let icon_stack = typography.icon_font_stack();
         
         // Try each font in the stack in order
-        // Iced will use the first font that contains the glyph
         for font_name in icon_stack.iter() {
+            // Return the font - Iced will handle fallback if glyph not found
             return iced::Font::with_name(font_name);
         }
         
-        // Final fallback
-        iced::Font::with_name("monospace")
+        // Final fallback to default font
+        iced::Font::with_name(typography.font_family.to_family_string())
     }
 
     /// Render this icon as a text element with appropriate styling.
@@ -203,15 +203,11 @@ impl Icon {
             IconMode::Unicode => self.unicode_fallback(),
             IconMode::Disabled => " ",
         };
-        let text_widget = text(icon_char)
+        text(icon_char)
             .size(icon_size)
-            .style(iced::theme::Text::Color(style.text_secondary()));
-        
-        // Only apply custom font for NerdFonts mode
-        match typography.icon_mode {
-            IconMode::NerdFonts => text_widget.font(Self::get_font(typography)),
-            _ => text_widget,
-        }.into()
+            .font(Self::get_font(typography))
+            .style(iced::theme::Text::Color(style.text_secondary()))
+            .into()
     }
 
     /// Render this icon as a text element with custom color.
@@ -230,15 +226,11 @@ impl Icon {
             IconMode::Unicode => self.unicode_fallback(),
             IconMode::Disabled => " ",
         };
-        let text_widget = text(icon_char)
+        text(icon_char)
             .size(icon_size)
-            .style(iced::theme::Text::Color(color));
-        
-        // Only apply custom font for NerdFonts mode
-        match typography.icon_mode {
-            IconMode::NerdFonts => text_widget.font(Self::get_font(typography)),
-            _ => text_widget,
-        }.into()
+            .font(Self::get_font(typography))
+            .style(iced::theme::Text::Color(color))
+            .into()
     }
 }
 

@@ -30,8 +30,8 @@ fn main() -> iced::Result {
         },
         // Enable antialiasing for better text rendering
         antialiasing: true,
-        // Use JetBrains Mono as the default font for better programming experience
-        default_font: iced::font::Font::with_name("JetBrains Mono"),
+        // Use JetBrains Mono Nerd Font as the default font for better programming experience with icons
+        default_font: iced::font::Font::with_name("JetBrainsMono Nerd Font"),
         default_text_size: iced::Pixels(14.0),
         ..Default::default()
     })
