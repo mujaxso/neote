@@ -4,12 +4,12 @@ use iced::{
 };
 
 use crate::app::Message;
-use crate::state::App;
+use crate::settings::editor::EditorTypographySettings;
 
-pub fn editor<'a>(app: &'a App) -> Element<'a, Message> {
-    // Get typography settings
-    let typography = &app.editor_typography;
-    
+pub fn editor<'a>(
+    text_editor_content: &'a iced::widget::text_editor::Content,
+    typography: &EditorTypographySettings,
+) -> Element<'a, Message> {
     // Create font based on selected font family
     // Note: Iced's font support is limited, so we use the first font in the fallback stack
     let font_family = typography.font_family.to_family_string();
@@ -18,10 +18,10 @@ pub fn editor<'a>(app: &'a App) -> Element<'a, Message> {
     // Create a text editor with its own built-in scrolling
     // The text_editor widget handles scrolling internally, so we should NOT wrap it
     // in an outer scrollable container to avoid conflicts that cause crashes
-    let editor = text_editor::TextEditor::new(&app.text_editor)
+    let editor = text_editor::TextEditor::new(text_editor_content)
         .on_action(Message::EditorContentChanged)
         .font(font)
-        .size(typography.font_size as f32)
+        .font_size(typography.font_size as f32)
         .line_height(typography.line_height)
         .height(Length::Fill);
     

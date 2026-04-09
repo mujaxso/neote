@@ -5,7 +5,7 @@
 use iced::{
     Element, Length, widget::{
         button, column, container, horizontal_rule, pick_list, row,
-        scrollable, slider, text, text_input, toggler,
+        scrollable, slider, text, toggler,
     },
 };
 use crate::message::Message;
@@ -100,6 +100,7 @@ pub fn editor_font_settings_panel(app: &App) -> Element<'_, Message> {
         horizontal_space(),
         toggler(
             typography.ligatures_enabled,
+            true,
             Message::LigaturesToggled
         )
         .width(Length::Shrink)

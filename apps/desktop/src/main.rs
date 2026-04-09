@@ -9,6 +9,7 @@ mod theme;
 mod update;
 mod view;
 mod explorer;
+mod settings;
 
 use app::App;
 use iced::{Application, Settings};
