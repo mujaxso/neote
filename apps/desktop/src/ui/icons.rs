@@ -203,9 +203,13 @@ impl Icon {
             IconMode::Unicode => self.unicode_fallback(),
             IconMode::Disabled => " ",
         };
+        
+        // Use the default font family which should be a Nerd Font
+        let font = iced::Font::with_name(typography.font_family.to_family_string());
+        
         text(icon_char)
             .size(icon_size)
-            .font(Self::get_font(typography))
+            .font(font)
             .style(iced::theme::Text::Color(style.text_secondary()))
             .into()
     }
@@ -226,9 +230,13 @@ impl Icon {
             IconMode::Unicode => self.unicode_fallback(),
             IconMode::Disabled => " ",
         };
+        
+        // Use the default font family which should be a Nerd Font
+        let font = iced::Font::with_name(typography.font_family.to_family_string());
+        
         text(icon_char)
             .size(icon_size)
-            .font(Self::get_font(typography))
+            .font(font)
             .style(iced::theme::Text::Color(color))
             .into()
     }

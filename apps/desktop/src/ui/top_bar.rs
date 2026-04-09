@@ -211,10 +211,13 @@ pub fn top_bar(app: &App) -> Element<'_, Message> {
                 row![
                     workspace_input,
                     open_button,
-                    button(
-                        text("⟳").size(14)
+                    icon_button(
+                        Icon::Refresh,
+                        &app.editor_typography,
+                        &style,
+                        Some(Message::RefreshWorkspace),
+                        Some(14),
                     )
-                    .on_press(Message::RefreshWorkspace)
                     .padding([6, 10])
                     .style(iced::theme::Button::Secondary),
                 ]

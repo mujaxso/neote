@@ -71,17 +71,22 @@ impl iced::Application for App {
                 file.to_string(),
             ];
             
+            let mut loaded = false;
             for path in &possible_paths {
                 if std::path::Path::new(path).exists() {
                     if let Ok(bytes) = std::fs::read(path) {
-                        println!("Loading font: {} from {}", name, path);
+                        println!("DEBUG: Loading font: {} from {}", name, path);
                         font_commands.push(
                             iced::font::load(bytes)
                                 .map(|_| Message::FontLoaded)
                         );
+                        loaded = true;
                         break; // Load each font only once
                     }
                 }
+            }
+            if !loaded {
+                println!("DEBUG: Could not load font: {}", name);
             }
         }
         
