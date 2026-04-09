@@ -8,10 +8,9 @@ fn normalize_path(path: &PathBuf) -> PathBuf {
     // Convert to string and remove any trailing separator
     let mut normalized = path.to_string_lossy().to_string();
     // Remove trailing separator if present
-    while normalized.ends_with(std::path::MAIN_SEPARATOR) {
+    while normalized.ends_with('/') || normalized.ends_with('\\') {
         normalized.pop();
     }
-    // Also remove any duplicate separators? Not needed for now
     PathBuf::from(normalized)
 }
 
@@ -44,10 +43,15 @@ impl ExplorerState {
     pub fn toggle_directory(&mut self, path: PathBuf) {
         // Normalize the path by removing any trailing separator
         let normalized_path = normalize_path(&path);
-        if self.expanded_directories.contains(&normalized_path) {
-            self.expanded_directories.remove(&normalized_path);
+        let normalized_str = normalized_path.to_string_lossy().to_string();
+        
+        // Convert to PathBuf for storage
+        let path_buf = PathBuf::from(&normalized_str);
+        
+        if self.expanded_directories.contains(&path_buf) {
+            self.expanded_directories.remove(&path_buf);
         } else {
-            self.expanded_directories.insert(normalized_path);
+            self.expanded_directories.insert(path_buf);
         }
     }
     
@@ -58,14 +62,21 @@ impl ExplorerState {
     
     pub fn is_expanded(&self, path: &PathBuf) -> bool {
         let normalized_path = normalize_path(path);
-        self.expanded_directories.contains(&normalized_path)
+        let normalized_str = normalized_path.to_string_lossy().to_string();
+        let path_buf = PathBuf::from(&normalized_str);
+        
+        self.expanded_directories.contains(&path_buf)
     }
     
     pub fn is_selected(&self, path: &PathBuf) -> bool {
         if let Some(selected) = &self.selected_file {
             let normalized_selected = normalize_path(selected);
+            let normalized_selected_str = normalized_selected.to_string_lossy().to_string();
+            
             let normalized_path = normalize_path(path);
-            normalized_selected == normalized_path
+            let normalized_path_str = normalized_path.to_string_lossy().to_string();
+            
+            normalized_selected_str == normalized_path_str
         } else {
             false
         }

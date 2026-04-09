@@ -26,32 +26,24 @@ pub fn build_explorer_tree(entries: &[DirectoryEntry]) -> Vec<ExplorerNode> {
         return Vec::new();
     }
     
-    // Create a map from path to node index
+    // Create nodes from all entries
     let mut nodes: Vec<ExplorerNode> = entries.iter()
         .map(|entry| ExplorerNode::new(entry))
         .collect();
     
-    // Sort nodes: directories first, then files, both alphabetically
-    nodes.sort_by(|a, b| {
-        if a.is_dir != b.is_dir {
-            b.is_dir.cmp(&a.is_dir) // Directories first
-        } else {
-            a.name.to_lowercase().cmp(&b.name.to_lowercase())
-        }
-    });
-    
-    // Build a map from path string to index
+    // Build a map from path string to index for quick lookup
     let mut path_to_index: HashMap<String, usize> = HashMap::new();
     for (i, node) in nodes.iter().enumerate() {
         path_to_index.insert(node.path.to_string_lossy().to_string(), i);
     }
     
-    // Group children by parent
+    // Group children by parent path
     let mut children_by_parent: HashMap<String, Vec<usize>> = HashMap::new();
     
     for (i, node) in nodes.iter().enumerate() {
         if let Some(parent_path) = node.path.parent() {
             let parent_str = parent_path.to_string_lossy().to_string();
+            // Check if parent exists in our entries
             if path_to_index.contains_key(&parent_str) {
                 children_by_parent.entry(parent_str)
                     .or_insert_with(Vec::new)
@@ -60,27 +52,38 @@ pub fn build_explorer_tree(entries: &[DirectoryEntry]) -> Vec<ExplorerNode> {
         }
     }
     
-    // Build tree structure
+    // Build the tree structure
     let mut root_indices = Vec::new();
-    let mut visited = vec![false; nodes.len()];
     
-    for i in 0..nodes.len() {
-        if !visited[i] {
+    for (i, node) in nodes.iter().enumerate() {
+        // Check if this node has a parent in the tree
+        let has_parent = if let Some(parent_path) = node.path.parent() {
+            let parent_str = parent_path.to_string_lossy().to_string();
+            path_to_index.contains_key(&parent_str)
+        } else {
+            false
+        };
+        
+        if !has_parent {
             root_indices.push(i);
-            build_subtree(i, &mut nodes, &children_by_parent, &mut visited);
         }
     }
     
-    // Collect root nodes in sorted order
-    let mut root_nodes = Vec::new();
-    for &idx in &root_indices {
-        root_nodes.push(nodes[idx].clone());
+    // Build subtrees for each root
+    for &root_idx in &root_indices {
+        build_subtree(root_idx, &mut nodes, &children_by_parent);
     }
     
-    // Sort root nodes
+    // Collect root nodes
+    let mut root_nodes: Vec<ExplorerNode> = root_indices
+        .into_iter()
+        .map(|idx| nodes[idx].clone())
+        .collect();
+    
+    // Sort root nodes: directories first, then files, alphabetically
     root_nodes.sort_by(|a, b| {
         if a.is_dir != b.is_dir {
-            b.is_dir.cmp(&a.is_dir)
+            b.is_dir.cmp(&a.is_dir) // Directories first
         } else {
             a.name.to_lowercase().cmp(&b.name.to_lowercase())
         }
@@ -93,22 +96,17 @@ fn build_subtree(
     index: usize,
     nodes: &mut [ExplorerNode],
     children_by_parent: &HashMap<String, Vec<usize>>,
-    visited: &mut [bool],
 ) {
-    if visited[index] {
-        return;
-    }
-    visited[index] = true;
-    
     let path_str = nodes[index].path.to_string_lossy().to_string();
     
     if let Some(child_indices) = children_by_parent.get(&path_str) {
         let mut children = Vec::new();
+        
+        // First, collect all children
         for &child_idx in child_indices {
-            if !visited[child_idx] {
-                build_subtree(child_idx, nodes, children_by_parent, visited);
-                children.push(nodes[child_idx].clone());
-            }
+            // Recursively build the child's subtree
+            build_subtree(child_idx, nodes, children_by_parent);
+            children.push(nodes[child_idx].clone());
         }
         
         // Sort children: directories first, then files, alphabetically
