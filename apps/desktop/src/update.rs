@@ -623,5 +623,15 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
             app.explorer_state.set_hovered_row(path);
             Command::none()
         }
+        Message::FontLoaded => {
+            #[cfg(debug_assertions)]
+            eprintln!("Font loaded successfully");
+            Command::none()
+        }
+        Message::FontLoadFailed => {
+            #[cfg(debug_assertions)]
+            eprintln!("Font loading failed");
+            Command::none()
+        }
     }
 }
