@@ -1,8 +1,9 @@
 use iced::widget::text_editor;
 use core_types::workspace::DirectoryEntry;
 use editor_buffer::buffer::TextBuffer;
-use crate::state::{Activity, FileMetadata, FontFamily};
+use crate::state::{Activity, FileMetadata};
 use crate::explorer::actions::ExplorerMessage;
+use crate::settings::editor::FontFamily;
 
 #[derive(Debug, Clone)]
 pub enum Message {
@@ -38,10 +39,20 @@ pub enum Message {
     // Font loading messages
     FontLoaded,
     FontLoadFailed,
-    // Font settings messages
+    // Editor typography settings messages
     FontFamilyChanged(FontFamily),
-    FontSizeChanged(f32),
+    FontSizeChanged(u16),
     LineHeightChanged(f32),
     LetterSpacingChanged(f32),
     LigaturesToggled(bool),
+    // Zoom controls
+    ZoomIn,
+    ZoomOut,
+    ResetZoom,
+    // Reset all typography settings to defaults
+    ResetTypographyToDefaults,
+    // Save typography settings
+    SaveTypographySettings,
+    // Load typography settings
+    TypographySettingsLoaded(Result<crate::settings::editor::EditorTypographySettings, String>),
 }

@@ -93,6 +93,7 @@ impl App {
                 window_width: 1200,
                 window_height: 800,
                 layout_mode: LayoutMode::Wide,
+                editor_typography: EditorTypographySettings::default(),
             },
             iced::Command::none(),
         )

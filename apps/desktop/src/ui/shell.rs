@@ -1,6 +1,6 @@
 use iced::{Element, Length, widget::container};
 use crate::message::Message;
-use crate::state::{App, LayoutMode};
+use crate::state::{App, LayoutMode, Activity};
 use super::{
     activity_bar::activity_bar,
     assistant_panel::assistant_panel,
@@ -8,6 +8,7 @@ use super::{
     status_bar::status_bar,
     top_bar::top_bar,
     explorer_panel::explorer_panel,
+    settings::editor_font_settings_panel,
 };
 
 /// Main shell that composes all UI components - Premium compact layout
@@ -46,26 +47,40 @@ pub fn shell(app: &App) -> Element<'_, Message> {
         .width(Length::Fill)
         .height(Length::Fill);
     
-    // Conditionally include AI panel
-    let main_content = if show_ai_panel {
-        let assistant_panel = container(assistant_panel(app))
-            .width(Length::Fixed(assistant_width))
-            .height(Length::Fill);
-        
-        iced::widget::row![
-            activity_bar,
-            explorer_panel,
-            editor_panel,
-            assistant_panel,
-        ]
-        .height(Length::Fill)
-    } else {
-        iced::widget::row![
-            activity_bar,
-            explorer_panel,
-            editor_panel,
-        ]
-        .height(Length::Fill)
+    // Determine which panel to show based on active activity
+    let main_content = match app.active_activity {
+        Activity::Settings => {
+            let settings_panel = container(editor_font_settings_panel(app))
+                .width(Length::Fill)
+                .height(Length::Fill);
+            
+            iced::widget::row![
+                activity_bar,
+                settings_panel,
+            ]
+            .height(Length::Fill)
+        }
+        Activity::Ai if show_ai_panel => {
+            let assistant_panel = container(assistant_panel(app))
+                .width(Length::Fixed(assistant_width))
+                .height(Length::Fill);
+            
+            iced::widget::row![
+                activity_bar,
+                explorer_panel,
+                editor_panel,
+                assistant_panel,
+            ]
+            .height(Length::Fill)
+        }
+        _ => {
+            iced::widget::row![
+                activity_bar,
+                explorer_panel,
+                editor_panel,
+            ]
+            .height(Length::Fill)
+        }
     };
     
     let status_bar = container(status_bar(app))

@@ -10,3 +10,4 @@ pub mod shell;
 pub mod status_bar;
 pub mod style;
 pub mod top_bar;
+pub mod settings;

@@ -13,7 +13,18 @@ impl iced::Application for App {
     type Flags = ();
 
     fn new(_flags: ()) -> (Self, Command<Message>) {
-        let (app, command) = App::new();
+        let (mut app, command) = App::new();
+        
+        // Load saved typography settings
+        match crate::settings::persistence::load_settings() {
+            Ok(settings) => {
+                app.editor_typography = settings;
+            }
+            Err(e) => {
+                eprintln!("Failed to load typography settings: {}", e);
+                // Continue with defaults
+            }
+        }
         
         // Load custom fonts for icon support
         // We'll try to load multiple fonts to ensure icons are visible
@@ -30,6 +41,9 @@ impl iced::Application for App {
         let font_files = [
             ("JetBrainsMono-Regular.ttf", "JetBrains Mono"),
             ("FiraCode-Regular.ttf", "Fira Code"),
+            ("CascadiaCode-Regular.ttf", "Cascadia Code"),
+            ("Iosevka-Regular.ttf", "Iosevka"),
+            ("SourceCodePro-Regular.ttf", "Source Code Pro"),
             ("NotoColorEmoji.ttf", "Noto Color Emoji"),
         ];
         

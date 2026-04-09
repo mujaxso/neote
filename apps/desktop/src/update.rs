@@ -428,6 +428,18 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                     }
                     Command::none()
                 }
+                iced::keyboard::Key::Character(c) if c == "+" && modifiers.control() => {
+                    // Ctrl++ to zoom in
+                    update(app, Message::ZoomIn)
+                }
+                iced::keyboard::Key::Character(c) if c == "-" && modifiers.control() => {
+                    // Ctrl+- to zoom out
+                    update(app, Message::ZoomOut)
+                }
+                iced::keyboard::Key::Character(c) if c == "0" && modifiers.control() => {
+                    // Ctrl+0 to reset zoom
+                    update(app, Message::ResetZoom)
+                }
                 _ => Command::none(),
             }
         }
@@ -627,6 +639,86 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
             Command::none()
         }
         Message::FontLoadFailed => {
+            Command::none()
+        }
+        // Editor typography settings
+        Message::FontFamilyChanged(font_family) => {
+            app.editor_typography.font_family = font_family;
+            app.status_message = format!("Font changed to {}", font_family.to_family_string());
+            Command::none()
+        }
+        Message::FontSizeChanged(size) => {
+            app.editor_typography.font_size = size;
+            app.editor_typography.validate();
+            app.status_message = format!("Font size changed to {}px", size);
+            Command::none()
+        }
+        Message::LineHeightChanged(line_height) => {
+            app.editor_typography.line_height = line_height;
+            app.editor_typography.validate();
+            app.status_message = format!("Line height changed to {:.1}", line_height);
+            Command::none()
+        }
+        Message::LetterSpacingChanged(spacing) => {
+            app.editor_typography.letter_spacing = spacing;
+            app.editor_typography.validate();
+            app.status_message = format!("Letter spacing changed to {:.1}px", spacing);
+            Command::none()
+        }
+        Message::LigaturesToggled(enabled) => {
+            app.editor_typography.ligatures_enabled = enabled;
+            app.status_message = if enabled {
+                "Ligatures enabled".to_string()
+            } else {
+                "Ligatures disabled".to_string()
+            };
+            Command::none()
+        }
+        Message::ZoomIn => {
+            app.editor_typography.zoom_in();
+            app.status_message = format!("Zoomed in to {}px", app.editor_typography.font_size);
+            Command::none()
+        }
+        Message::ZoomOut => {
+            app.editor_typography.zoom_out();
+            app.status_message = format!("Zoomed out to {}px", app.editor_typography.font_size);
+            Command::none()
+        }
+        Message::ResetZoom => {
+            app.editor_typography.reset_zoom();
+            app.status_message = format!("Zoom reset to {}px", app.editor_typography.font_size);
+            Command::none()
+        }
+        Message::ResetTypographyToDefaults => {
+            app.editor_typography.reset_to_defaults();
+            app.status_message = "Typography reset to defaults".to_string();
+            Command::none()
+        }
+        Message::SaveTypographySettings => {
+            match crate::settings::persistence::save_settings(&app.editor_typography) {
+                Ok(_) => {
+                    app.status_message = "Typography settings saved".to_string();
+                    app.error_message = None;
+                }
+                Err(e) => {
+                    app.error_message = Some(e);
+                    app.status_message = "Failed to save typography settings".to_string();
+                }
+            }
+            Command::none()
+        }
+        Message::TypographySettingsLoaded(result) => {
+            match result {
+                Ok(settings) => {
+                    app.editor_typography = settings;
+                    app.status_message = "Typography settings loaded".to_string();
+                    app.error_message = None;
+                }
+                Err(e) => {
+                    app.error_message = Some(e);
+                    app.status_message = "Failed to load typography settings".to_string();
+                }
+            }
             Command::none()
         }
     }
