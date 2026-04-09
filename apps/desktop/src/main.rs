@@ -29,10 +29,8 @@ fn main() -> iced::Result {
         },
         // Enable antialiasing for better text rendering
         antialiasing: true,
-        // Use a default font that should work on most systems
-        // The actual icon fonts will be loaded separately in app.rs
-        // Using DEFAULT is better than MONOSPACE for icons
-        default_font: iced::font::Font::DEFAULT,
+        // Use JetBrains Mono as the default font for better programming experience
+        default_font: iced::font::Font::with_name("JetBrains Mono"),
         default_text_size: iced::Pixels(14.0),
         ..Default::default()
     })

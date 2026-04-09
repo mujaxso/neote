@@ -5,44 +5,36 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Go up one level to the desktop directory
 DESKTOP_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
-# Go up another level to the project root (if needed)
-PROJECT_ROOT="$(cd "${DESKTOP_DIR}/.." && pwd)"
 FONTS_DIR="${DESKTOP_DIR}/assets/fonts"
 
-echo "Script directory: ${SCRIPT_DIR}"
-echo "Desktop directory: ${DESKTOP_DIR}"
-echo "Project root: ${PROJECT_ROOT}"
-echo "Fonts directory: ${FONTS_DIR}"
-
-echo "Downloading fonts to ${FONTS_DIR}..."
+echo "Downloading programming fonts to ${FONTS_DIR}..."
 mkdir -p "${FONTS_DIR}"
 
-# Remove placeholder files if they exist
-rm -f "${FONTS_DIR}/NotoSans-Regular.ttf"
-rm -f "${FONTS_DIR}/NotoEmoji-Regular.ttf"
-rm -f "${FONTS_DIR}/NotoColorEmoji.ttf"
+# Remove old font files if they exist
+rm -f "${FONTS_DIR}/"*.ttf
 
-# Download Noto Sans Regular from a reliable source
-# Using the official Google Fonts GitHub repository
-NOTO_SANS_URL="https://github.com/googlefonts/noto-fonts/raw/main/hinted/ttf/NotoSans/NotoSans-Regular.ttf"
+# Download JetBrains Mono (Regular)
+JETBRAINS_MONO_URL="https://github.com/JetBrains/JetBrainsMono/raw/master/fonts/ttf/JetBrainsMono-Regular.ttf"
 
-# Download Noto Color Emoji (which includes emoji support)
-# Note: NotoEmoji-Regular.ttf might not exist, so we'll use NotoColorEmoji.ttf
-NOTO_EMOJI_URL="https://github.com/googlefonts/noto-emoji/raw/main/fonts/NotoColorEmoji.ttf"
+# Download Fira Code (Regular) as alternative
+FIRACODE_URL="https://github.com/tonsky/FiraCode/raw/main/distr/ttf/FiraCode-Regular.ttf"
 
-echo "Downloading Noto Sans Regular..."
+# Download a fallback emoji font (still needed for icons)
+EMOJI_URL="https://github.com/googlefonts/noto-emoji/raw/main/fonts/NotoColorEmoji.ttf"
+
+echo "Downloading JetBrains Mono..."
 if command -v curl &> /dev/null; then
-    if curl -L -o "${FONTS_DIR}/NotoSans-Regular.ttf" "${NOTO_SANS_URL}"; then
-        echo "✓ Noto Sans downloaded successfully"
+    if curl -L -o "${FONTS_DIR}/JetBrainsMono-Regular.ttf" "${JETBRAINS_MONO_URL}"; then
+        echo "✓ JetBrains Mono downloaded successfully"
     else
-        echo "✗ Failed to download Noto Sans"
+        echo "✗ Failed to download JetBrains Mono"
         exit 1
     fi
 elif command -v wget &> /dev/null; then
-    if wget -O "${FONTS_DIR}/NotoSans-Regular.ttf" "${NOTO_SANS_URL}"; then
-        echo "✓ Noto Sans downloaded successfully"
+    if wget -O "${FONTS_DIR}/JetBrainsMono-Regular.ttf" "${JETBRAINS_MONO_URL}"; then
+        echo "✓ JetBrains Mono downloaded successfully"
     else
-        echo "✗ Failed to download Noto Sans"
+        echo "✗ Failed to download JetBrains Mono"
         exit 1
     fi
 else
@@ -50,25 +42,37 @@ else
     exit 1
 fi
 
-echo "Downloading Noto Color Emoji..."
+echo "Downloading Fira Code..."
 if command -v curl &> /dev/null; then
-    if curl -L -o "${FONTS_DIR}/NotoColorEmoji.ttf" "${NOTO_EMOJI_URL}"; then
+    if curl -L -o "${FONTS_DIR}/FiraCode-Regular.ttf" "${FIRACODE_URL}"; then
+        echo "✓ Fira Code downloaded successfully"
+    else
+        echo "✗ Failed to download Fira Code"
+        exit 1
+    fi
+elif command -v wget &> /dev/null; then
+    if wget -O "${FONTS_DIR}/FiraCode-Regular.ttf" "${FIRACODE_URL}"; then
+        echo "✓ Fira Code downloaded successfully"
+    else
+        echo "✗ Failed to download Fira Code"
+        exit 1
+    fi
+else
+    echo "Error: Neither curl nor wget found. Please install one of them."
+    exit 1
+fi
+
+echo "Downloading Noto Color Emoji for icons..."
+if command -v curl &> /dev/null; then
+    if curl -L -o "${FONTS_DIR}/NotoColorEmoji.ttf" "${EMOJI_URL}"; then
         echo "✓ Noto Color Emoji downloaded successfully"
-        # Also create a symlink for the expected name
-        cd "${FONTS_DIR}"
-        ln -sf "NotoColorEmoji.ttf" "NotoEmoji-Regular.ttf"
-        cd - > /dev/null
     else
         echo "✗ Failed to download Noto Color Emoji"
         exit 1
     fi
 elif command -v wget &> /dev/null; then
-    if wget -O "${FONTS_DIR}/NotoColorEmoji.ttf" "${NOTO_EMOJI_URL}"; then
+    if wget -O "${FONTS_DIR}/NotoColorEmoji.ttf" "${EMOJI_URL}"; then
         echo "✓ Noto Color Emoji downloaded successfully"
-        # Also create a symlink for the expected name
-        cd "${FONTS_DIR}"
-        ln -sf "NotoColorEmoji.ttf" "NotoEmoji-Regular.ttf"
-        cd - > /dev/null
     else
         echo "✗ Failed to download Noto Color Emoji"
         exit 1
@@ -79,10 +83,13 @@ else
 fi
 
 # Verify the downloads
-if [[ -f "${FONTS_DIR}/NotoSans-Regular.ttf" ]] && [[ -f "${FONTS_DIR}/NotoColorEmoji.ttf" ]]; then
+if [[ -f "${FONTS_DIR}/JetBrainsMono-Regular.ttf" ]] && \
+   [[ -f "${FONTS_DIR}/FiraCode-Regular.ttf" ]] && \
+   [[ -f "${FONTS_DIR}/NotoColorEmoji.ttf" ]]; then
     echo ""
     echo "✅ Fonts downloaded successfully!"
-    echo "   Noto Sans Regular: ${FONTS_DIR}/NotoSans-Regular.ttf"
+    echo "   JetBrains Mono: ${FONTS_DIR}/JetBrainsMono-Regular.ttf"
+    echo "   Fira Code: ${FONTS_DIR}/FiraCode-Regular.ttf"
     echo "   Noto Color Emoji: ${FONTS_DIR}/NotoColorEmoji.ttf"
     echo ""
     echo "To rebuild the application with the new fonts:"
