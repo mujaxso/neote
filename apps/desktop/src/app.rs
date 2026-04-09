@@ -13,7 +13,12 @@ impl iced::Application for App {
     type Flags = ();
 
     fn new(_flags: ()) -> (Self, Command<Message>) {
-        App::new()
+        let (app, command) = App::new();
+        
+        // Try to load additional fonts for better icon support
+        // We'll use system fonts, so we don't need to load font files
+        // The font settings in main.rs should handle it
+        (app, command)
     }
 
     fn title(&self) -> String {

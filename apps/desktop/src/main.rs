@@ -29,7 +29,9 @@ fn main() -> iced::Result {
         },
         // Enable antialiasing for better text rendering
         antialiasing: true,
-        default_font: iced::font::Font::MONOSPACE,
+        // Use a font that supports emoji and other Unicode characters
+        // Try multiple fonts in order of preference
+        default_font: iced::font::Font::with_name("Noto Sans"),
         default_text_size: iced::Pixels(14.0),
         ..Default::default()
     })
