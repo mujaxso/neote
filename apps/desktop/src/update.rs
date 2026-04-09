@@ -443,14 +443,14 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                 ExplorerMessage::SelectFile(path) => {
                     app.explorer_state.select_file(path.clone());
                     // Convert to string and trigger file loading
-                    if let Some(path_str) = path.to_str() {
-                        app.active_file_path = Some(path_str.to_string());
-                        // Trigger file loading
-                        return Command::perform(
-                            async move { path_str.to_string() },
-                            |path| Message::FileSelectedByPath(path),
-                        );
-                    }
+                    // Clone the path to a String to avoid lifetime issues
+                    let path_string = path.to_string_lossy().to_string();
+                    app.active_file_path = Some(path_string.clone());
+                    // Trigger file loading
+                    return Command::perform(
+                        async move { path_string },
+                        |path| Message::FileSelectedByPath(path),
+                    );
                 }
                 ExplorerMessage::Refresh => {
                     // Trigger a workspace refresh

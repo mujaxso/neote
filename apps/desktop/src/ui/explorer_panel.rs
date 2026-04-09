@@ -3,34 +3,39 @@ use crate::message::Message;
 use crate::state::App;
 use super::style::StyleHelpers;
 use crate::theme::SemanticColors;
+use crate::explorer::actions::ExplorerMessage;
 
 pub fn explorer_panel(app: &App) -> Element<'_, Message> {
     let style = StyleHelpers::new(app.theme);
     
     let is_compact = matches!(app.layout_mode, crate::state::LayoutMode::Medium | crate::state::LayoutMode::Narrow);
     
+    // Get visible rows from explorer state
+    let visible_rows = app.explorer_state.visible_rows();
+    
     let header = container(
         row![
             text("EXPLORER")
-                .size(if is_compact { 9 } else { 10 })
+                .size(if is_compact { 10 } else { 11 })
                 .style(iced::theme::Text::Color(style.colors.text_muted)),
             iced::widget::horizontal_space(),
             button(
-                text("⟳").size(if is_compact { 11 } else { 12 })
+                text("⟳").size(if is_compact { 12 } else { 13 })
             )
-            .on_press(Message::RefreshWorkspace)
-            .padding(if is_compact { [1, 4] } else { [2, 6] })
+            .on_press(Message::Explorer(ExplorerMessage::Refresh))
+            .padding(if is_compact { [2, 6] } else { [3, 8] })
             .style(iced::theme::Button::Secondary)
         ]
         .align_items(iced::Alignment::Center)
     )
-    .padding(if is_compact { [6, 8] } else { [8, 12] })
+    .padding(if is_compact { [8, 12] } else { [10, 16] })
     .width(Length::Fill);
     
-    let content: Element<_> = if app.file_entries.is_empty() {
+    let content: Element<_> = if visible_rows.is_empty() {
         container(
             column![
                 text("No files in workspace")
+                    .size(12)
                     .style(iced::theme::Text::Color(style.colors.text_muted)),
                 button("Open Workspace")
                     .on_press(Message::OpenWorkspace)
@@ -46,89 +51,137 @@ pub fn explorer_panel(app: &App) -> Element<'_, Message> {
         .height(Length::Fill)
         .into()
     } else {
-        let entries: Vec<Element<_>> = app.file_entries
+        let rows: Vec<Element<_>> = visible_rows
             .iter()
-            .enumerate()
-            .map(|(idx, entry)| {
-                let is_selected = app.active_file_path.as_ref() == Some(&entry.path);
+            .map(|row| {
+                let indent = row.depth * 12;
                 
-                let icon = if entry.is_dir { "📁" } else { "📄" };
-                let text_color = if is_selected {
+                // Choose icon based on type and state
+                let icon = if row.is_dir {
+                    if row.is_expanded { "📂" } else { "📁" }
+                } else {
+                    "📄"
+                };
+                
+                // Text color
+                let text_color = if row.is_selected {
                     style.colors.text_on_accent
-                } else if entry.is_dir {
-                    // Make directories more visible with accent color
+                } else if row.is_dir {
                     style.colors.accent
                 } else {
-                    // Make file text more readable
                     style.colors.text_secondary
                 };
                 
-                let row_content = row![
-                    text(icon).size(if is_compact { 11 } else { 12 }),
-                    text(&entry.name)
-                        .size(if is_compact { 11 } else { 12 })
-                        .style(iced::theme::Text::Color(text_color)),
-                ]
-                .spacing(if is_compact { 4 } else { 6 })
-                .align_items(iced::Alignment::Center);
-                
-                let message = if entry.is_dir {
-                    Message::ToggleDirectory(entry.path.clone())
+                // Background color
+                let background = if row.is_selected {
+                    style.colors.accent
                 } else {
-                    Message::FileSelected(idx)
+                    iced::Color::TRANSPARENT
                 };
                 
-                // Custom button style for better IDE feel
-                let button_style = if is_selected {
-                    iced::theme::Button::Primary
+                // Chevron for folders
+                let chevron = if row.is_dir {
+                    let chevron_icon = if row.is_expanded { "▼" } else { "▶" };
+                    Some(
+                        text(chevron_icon)
+                            .size(9)
+                            .style(iced::theme::Text::Color(style.colors.text_muted))
+                    )
                 } else {
-                    // Create a custom style that's more IDE-like
-                    let colors = style.colors;
-                    struct ExplorerButtonStyle {
-                        colors: crate::theme::SemanticColors,
-                    }
-                    impl iced::widget::button::StyleSheet for ExplorerButtonStyle {
-                        type Style = iced::Theme;
-                        
-                        fn active(&self, _style: &Self::Style) -> iced::widget::button::Appearance {
-                            iced::widget::button::Appearance {
-                                background: Some(iced::Background::Color(iced::Color::TRANSPARENT)),
-                                border: iced::Border::default(),
-                                text_color: self.colors.text_secondary,
-                                ..Default::default()
-                            }
+                    None
+                };
+                
+                // Build row content
+                let mut row_elements = vec![
+                    iced::widget::horizontal_space(Length::Fixed(indent as f32))
+                ];
+                
+                if let Some(chevron) = chevron {
+                    row_elements.push(chevron.into());
+                    row_elements.push(iced::widget::horizontal_space(Length::Fixed(4.0)).into());
+                } else {
+                    row_elements.push(iced::widget::horizontal_space(Length::Fixed(16.0)).into());
+                }
+                
+                row_elements.push(
+                    text(icon)
+                        .size(if is_compact { 12 } else { 13 })
+                        .into()
+                );
+                row_elements.push(
+                    iced::widget::horizontal_space(Length::Fixed(6.0)).into()
+                );
+                row_elements.push(
+                    text(&row.name)
+                        .size(if is_compact { 12 } else { 13 })
+                        .style(iced::theme::Text::Color(text_color))
+                        .into()
+                );
+                
+                let row_content = row![
+                    row_elements
+                ]
+                .spacing(0)
+                .align_items(iced::Alignment::Center);
+                
+                // Determine message
+                let message = if row.is_dir {
+                    Message::Explorer(ExplorerMessage::ToggleDirectory(row.path.clone()))
+                } else {
+                    Message::Explorer(ExplorerMessage::SelectFile(row.path.clone()))
+                };
+                
+                // Create a custom button style
+                struct ExplorerRowStyle {
+                    background: iced::Color,
+                    hover_background: iced::Color,
+                }
+                
+                impl iced::widget::button::StyleSheet for ExplorerRowStyle {
+                    type Style = iced::Theme;
+                    
+                    fn active(&self, _style: &Self::Style) -> iced::widget::button::Appearance {
+                        iced::widget::button::Appearance {
+                            background: Some(self.background.into()),
+                            border: iced::Border::default(),
+                            text_color: iced::Color::WHITE, // Will be overridden by text style
+                            ..Default::default()
                         }
-                        
-                        fn hovered(&self, _style: &Self::Style) -> iced::widget::button::Appearance {
-                            iced::widget::button::Appearance {
-                                background: Some(iced::Background::Color(self.colors.hover_background)),
-                                border: iced::Border::default(),
-                                text_color: self.colors.text_primary,
-                                ..Default::default()
-                            }
+                    }
+                    
+                    fn hovered(&self, _style: &Self::Style) -> iced::widget::button::Appearance {
+                        iced::widget::button::Appearance {
+                            background: Some(self.hover_background.into()),
+                            border: iced::Border::default(),
+                            text_color: iced::Color::WHITE,
+                            ..Default::default()
                         }
                     }
-                    iced::theme::Button::Custom(Box::new(ExplorerButtonStyle { colors }))
+                }
+                
+                let button_style = ExplorerRowStyle {
+                    background,
+                    hover_background: if row.is_selected {
+                        style.colors.accent
+                    } else {
+                        style.colors.hover_background
+                    },
                 };
                 
                 container(
                     button(row_content)
                         .on_press(message)
-                        .padding(if is_compact { [3, 6] } else { [4, 8] })
+                        .padding(if is_compact { [4, 8] } else { [6, 12] })
                         .width(Length::Fill)
-                        .height(Length::Fixed(if is_compact { 
-                            crate::ui::common::EXPLORER_ROW_HEIGHT - 4.0 
-                        } else { 
-                            crate::ui::common::EXPLORER_ROW_HEIGHT 
-                        }))
-                        .style(button_style)
+                        .height(Length::Fixed(if is_compact { 28.0 } else { 32.0 }))
+                        .style(iced::theme::Button::Custom(Box::new(button_style)))
                 )
                 .into()
             })
             .collect();
         
         scrollable(
-            column(entries)
+            column(rows)
                 .spacing(0)
                 .width(Length::Fill)
         )
@@ -136,6 +189,7 @@ pub fn explorer_panel(app: &App) -> Element<'_, Message> {
         .into()
     };
     
+    // Panel container style
     struct ExplorerPanelContainerStyle {
         colors: SemanticColors,
     }
