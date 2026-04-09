@@ -29,10 +29,10 @@ impl fmt::Display for FontFamily {
             FontFamily::CascadiaCode => write!(f, "Cascadia Code"),
             FontFamily::Iosevka => write!(f, "Iosevka"),
             FontFamily::SourceCodePro => write!(f, "Source Code Pro"),
-            FontFamily::JetBrainsMonoNerd => write!(f, "JetBrains Mono Nerd Font"),
-            FontFamily::FiraCodeNerd => write!(f, "Fira Code Nerd Font"),
-            FontFamily::CascadiaCodeNerd => write!(f, "Cascadia Code Nerd Font"),
-            FontFamily::IosevkaNerd => write!(f, "Iosevka Nerd Font"),
+            FontFamily::JetBrainsMonoNerd => write!(f, "JetBrains Mono (Nerd Font)"),
+            FontFamily::FiraCodeNerd => write!(f, "Fira Code (Nerd Font)"),
+            FontFamily::CascadiaCodeNerd => write!(f, "Cascadia Code (Nerd Font)"),
+            FontFamily::IosevkaNerd => write!(f, "Iosevka (Nerd Font)"),
         }
     }
 }
@@ -48,49 +48,71 @@ impl FontFamily {
             FontFamily::SourceCodePro => "Source Code Pro",
             FontFamily::JetBrainsMonoNerd => "JetBrainsMono Nerd Font",
             FontFamily::FiraCodeNerd => "FiraCode Nerd Font",
-            FontFamily::CascadiaCodeNerd => "CascadiaCode Nerd Font",
+            FontFamily::CascadiaCodeNerd => "CaskaydiaCove Nerd Font",
             FontFamily::IosevkaNerd => "Iosevka Nerd Font",
         }
     }
 
     /// Get the fallback font stack for this font family.
     pub fn fallback_stack(&self) -> Vec<&'static str> {
+        // Default fallback stack for all fonts
+        let default_fallback = vec![
+            "JetBrains Mono",
+            "Fira Code",
+            "Cascadia Code",
+            "monospace",
+        ];
+        
         match self {
-            FontFamily::JetBrainsMono | FontFamily::JetBrainsMonoNerd => vec![
-                "JetBrainsMono Nerd Font",
-                "JetBrains Mono",
-                "Fira Code",
-                "Cascadia Code",
-                "monospace",
-            ],
-            FontFamily::FiraCode | FontFamily::FiraCodeNerd => vec![
-                "FiraCode Nerd Font",
-                "Fira Code",
-                "JetBrains Mono",
-                "Cascadia Code",
-                "monospace",
-            ],
-            FontFamily::CascadiaCode | FontFamily::CascadiaCodeNerd => vec![
-                "CascadiaCode Nerd Font",
-                "Cascadia Code",
-                "JetBrains Mono",
-                "Fira Code",
-                "monospace",
-            ],
-            FontFamily::Iosevka | FontFamily::IosevkaNerd => vec![
-                "Iosevka Nerd Font",
-                "Iosevka",
-                "JetBrains Mono",
-                "Fira Code",
-                "monospace",
-            ],
-            FontFamily::SourceCodePro => vec![
-                "Source Code Pro",
-                "JetBrains Mono",
-                "Fira Code",
-                "Cascadia Code",
-                "monospace",
-            ],
+            FontFamily::JetBrainsMono | FontFamily::JetBrainsMonoNerd => {
+                let mut stack = Vec::new();
+                // Add primary font first
+                stack.push("JetBrains Mono");
+                // Add Nerd Font variant if applicable
+                if let FontFamily::JetBrainsMonoNerd = self {
+                    stack.push("JetBrainsMono Nerd Font");
+                    stack.push("JetBrainsMono Nerd Font Mono");
+                }
+                // Add default fallbacks
+                stack.extend(default_fallback);
+                stack
+            }
+            FontFamily::FiraCode | FontFamily::FiraCodeNerd => {
+                let mut stack = Vec::new();
+                stack.push("Fira Code");
+                if let FontFamily::FiraCodeNerd = self {
+                    stack.push("FiraCode Nerd Font");
+                    stack.push("FiraCode Nerd Font Mono");
+                }
+                stack.extend(default_fallback);
+                stack
+            }
+            FontFamily::CascadiaCode | FontFamily::CascadiaCodeNerd => {
+                let mut stack = Vec::new();
+                stack.push("Cascadia Code");
+                if let FontFamily::CascadiaCodeNerd = self {
+                    stack.push("CaskaydiaCove Nerd Font");
+                    stack.push("CaskaydiaCove Nerd Font Mono");
+                }
+                stack.extend(default_fallback);
+                stack
+            }
+            FontFamily::Iosevka | FontFamily::IosevkaNerd => {
+                let mut stack = Vec::new();
+                stack.push("Iosevka");
+                if let FontFamily::IosevkaNerd = self {
+                    stack.push("Iosevka Nerd Font");
+                    stack.push("Iosevka Nerd Font Mono");
+                }
+                stack.extend(default_fallback);
+                stack
+            }
+            FontFamily::SourceCodePro => {
+                let mut stack = Vec::new();
+                stack.push("Source Code Pro");
+                stack.extend(default_fallback);
+                stack
+            }
         }
     }
 
@@ -103,12 +125,24 @@ impl FontFamily {
         stack.push("Symbols Nerd Font");
         stack.push("Noto Color Emoji");
         
-        // Add the primary font if it's a Nerd Font variant
+        // Add Nerd Font variants for icon support
         match self {
-            FontFamily::JetBrainsMonoNerd => stack.push("JetBrainsMono Nerd Font"),
-            FontFamily::FiraCodeNerd => stack.push("FiraCode Nerd Font"),
-            FontFamily::CascadiaCodeNerd => stack.push("CascadiaCode Nerd Font"),
-            FontFamily::IosevkaNerd => stack.push("Iosevka Nerd Font"),
+            FontFamily::JetBrainsMonoNerd => {
+                stack.push("JetBrainsMono Nerd Font");
+                stack.push("JetBrainsMono Nerd Font Mono");
+            }
+            FontFamily::FiraCodeNerd => {
+                stack.push("FiraCode Nerd Font");
+                stack.push("FiraCode Nerd Font Mono");
+            }
+            FontFamily::CascadiaCodeNerd => {
+                stack.push("CaskaydiaCove Nerd Font");
+                stack.push("CaskaydiaCove Nerd Font Mono");
+            }
+            FontFamily::IosevkaNerd => {
+                stack.push("Iosevka Nerd Font");
+                stack.push("Iosevka Nerd Font Mono");
+            }
             _ => {}
         }
         
@@ -293,24 +327,34 @@ impl EditorTypographySettings {
         
         match self.icon_mode {
             IconMode::NerdFonts => {
-                // Use the exact names from font loading in app.rs
-                // These must match exactly
-                // Prioritize Symbols Nerd Font which contains most icons
+                // Icon fonts first
                 stack.push("Symbols Nerd Font");
-                // Add other Nerd Font variants that might contain additional glyphs
-                stack.push("JetBrainsMono Nerd Font");
-                stack.push("FiraCode Nerd Font");
-                stack.push("CascadiaCode Nerd Font");
-                stack.push("Iosevka Nerd Font");
-                // Add emoji fonts for fallback
                 stack.push("Noto Color Emoji");
                 
-                // Add the selected Nerd Font variant if applicable
+                // Add Nerd Font variants for icon support
                 if self.font_family.is_nerd_font() {
-                    stack.push(self.font_family.to_family_string());
+                    match self.font_family {
+                        FontFamily::JetBrainsMonoNerd => {
+                            stack.push("JetBrainsMono Nerd Font");
+                            stack.push("JetBrainsMono Nerd Font Mono");
+                        }
+                        FontFamily::FiraCodeNerd => {
+                            stack.push("FiraCode Nerd Font");
+                            stack.push("FiraCode Nerd Font Mono");
+                        }
+                        FontFamily::CascadiaCodeNerd => {
+                            stack.push("CaskaydiaCove Nerd Font");
+                            stack.push("CaskaydiaCove Nerd Font Mono");
+                        }
+                        FontFamily::IosevkaNerd => {
+                            stack.push("Iosevka Nerd Font");
+                            stack.push("Iosevka Nerd Font Mono");
+                        }
+                        _ => {}
+                    }
                 }
                 
-                // Add standard fallbacks
+                // Add standard fallback stack
                 stack.extend(self.font_family.fallback_stack());
             }
             IconMode::Unicode => {

@@ -45,7 +45,7 @@ impl iced::Application for App {
             // Nerd Font variants for coding with icons
             ("JetBrainsMonoNerdFont-Regular.ttf", "JetBrainsMono Nerd Font"),
             ("FiraCodeNerdFont-Regular.ttf", "FiraCode Nerd Font"),
-            ("CascadiaCodeNerdFont-Regular.ttf", "CascadiaCode Nerd Font"),
+            ("CascadiaCodeNerdFont-Regular.ttf", "CaskaydiaCove Nerd Font"),
             ("IosevkaNerdFont-Regular.ttf", "Iosevka Nerd Font"),
             // Regular coding fonts as fallback
             ("JetBrainsMono-Regular.ttf", "JetBrains Mono"),

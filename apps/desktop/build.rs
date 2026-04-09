@@ -8,7 +8,9 @@ fn main() {
         "assets/fonts/FiraCodeNerdFont-Regular.ttf",
         "assets/fonts/NotoColorEmoji.ttf",
         "assets/fonts/SymbolsNerdFont-Regular.ttf",
+        "assets/fonts/CascadiaCode-Regular.ttf",
         "assets/fonts/CascadiaCodeNerdFont-Regular.ttf",
+        "assets/fonts/Iosevka-Regular.ttf",
         "assets/fonts/IosevkaNerdFont-Regular.ttf",
         // Relative to project root
         "apps/desktop/assets/fonts/JetBrainsMono-Regular.ttf",
@@ -17,7 +19,9 @@ fn main() {
         "apps/desktop/assets/fonts/FiraCodeNerdFont-Regular.ttf",
         "apps/desktop/assets/fonts/NotoColorEmoji.ttf",
         "apps/desktop/assets/fonts/SymbolsNerdFont-Regular.ttf",
+        "apps/desktop/assets/fonts/CascadiaCode-Regular.ttf",
         "apps/desktop/assets/fonts/CascadiaCodeNerdFont-Regular.ttf",
+        "apps/desktop/assets/fonts/Iosevka-Regular.ttf",
         "apps/desktop/assets/fonts/IosevkaNerdFont-Regular.ttf",
     ];
     
