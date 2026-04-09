@@ -42,7 +42,13 @@ pub fn build_explorer_tree(entries: &[DirectoryEntry]) -> Vec<ExplorerNode> {
     
     for (i, node) in nodes.iter().enumerate() {
         if let Some(parent_path) = node.path.parent() {
-            let parent_str = parent_path.to_string_lossy().to_string();
+            // Normalize the parent path
+            let mut parent_str = parent_path.to_string_lossy().to_string();
+            // Remove trailing separator if present
+            while parent_str.ends_with('/') || parent_str.ends_with('\\') {
+                parent_str.pop();
+            }
+            
             // Check if parent exists in our entries
             if path_to_index.contains_key(&parent_str) {
                 children_by_parent.entry(parent_str)
@@ -58,7 +64,11 @@ pub fn build_explorer_tree(entries: &[DirectoryEntry]) -> Vec<ExplorerNode> {
     for (i, node) in nodes.iter().enumerate() {
         // Check if this node has a parent in the tree
         let has_parent = if let Some(parent_path) = node.path.parent() {
-            let parent_str = parent_path.to_string_lossy().to_string();
+            // Normalize the parent path
+            let mut parent_str = parent_path.to_string_lossy().to_string();
+            while parent_str.ends_with('/') || parent_str.ends_with('\\') {
+                parent_str.pop();
+            }
             path_to_index.contains_key(&parent_str)
         } else {
             false
@@ -97,7 +107,11 @@ fn build_subtree(
     nodes: &mut [ExplorerNode],
     children_by_parent: &HashMap<String, Vec<usize>>,
 ) {
-    let path_str = nodes[index].path.to_string_lossy().to_string();
+    // Normalize the path string
+    let mut path_str = nodes[index].path.to_string_lossy().to_string();
+    while path_str.ends_with('/') || path_str.ends_with('\\') {
+        path_str.pop();
+    }
     
     if let Some(child_indices) = children_by_parent.get(&path_str) {
         let mut children = Vec::new();
