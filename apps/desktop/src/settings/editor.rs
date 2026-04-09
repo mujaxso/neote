@@ -4,6 +4,7 @@
 //! including font family, size, line height, and ligature support.
 
 use serde::{Deserialize, Serialize};
+use std::fmt;
 
 /// Available monospace font families optimized for coding.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -13,6 +14,18 @@ pub enum FontFamily {
     CascadiaCode,
     Iosevka,
     SourceCodePro,
+}
+
+impl fmt::Display for FontFamily {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            FontFamily::JetBrainsMono => write!(f, "JetBrains Mono"),
+            FontFamily::FiraCode => write!(f, "Fira Code"),
+            FontFamily::CascadiaCode => write!(f, "Cascadia Code"),
+            FontFamily::Iosevka => write!(f, "Iosevka"),
+            FontFamily::SourceCodePro => write!(f, "Source Code Pro"),
+        }
+    }
 }
 
 impl FontFamily {

@@ -14,3 +14,6 @@ editor-buffer = { path = "../../crates/editor-buffer" }
 file-ops = { path = "../../crates/file-ops" }
 uuid = { workspace = true }
 iced = { version = "0.12", features = ["tokio", "multi-window"] }
+serde = { workspace = true }
+serde_json = { workspace = true }
+dirs = "5.0"

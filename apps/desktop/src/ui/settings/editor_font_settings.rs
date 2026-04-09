@@ -10,7 +10,7 @@ use iced::{
 };
 use crate::message::Message;
 use crate::state::App;
-use crate::settings::editor::{EditorTypographySettings, FontFamily};
+use crate::settings::editor::FontFamily;
 use super::super::style::StyleHelpers;
 
 /// Preview code snippet to demonstrate typography settings
@@ -100,7 +100,7 @@ pub fn editor_font_settings_panel(app: &App) -> Element<'_, Message> {
         horizontal_space(),
         toggler(
             typography.ligatures_enabled,
-            true,
+            None::<String>,
             Message::LigaturesToggled
         )
         .width(Length::Shrink)
