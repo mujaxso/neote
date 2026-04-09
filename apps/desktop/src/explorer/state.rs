@@ -3,6 +3,16 @@ use std::collections::HashSet;
 use crate::explorer::model::{ExplorerNode, build_explorer_tree};
 use core_types::workspace::DirectoryEntry;
 
+// Helper function to normalize paths for consistent comparison
+fn normalize_path(path: &PathBuf) -> PathBuf {
+    let mut normalized = path.to_string_lossy().to_string();
+    // Remove trailing separator if present
+    while normalized.ends_with(std::path::MAIN_SEPARATOR) {
+        normalized.pop();
+    }
+    PathBuf::from(normalized)
+}
+
 #[derive(Debug, Clone)]
 pub struct ExplorerState {
     pub workspace_root: PathBuf,
@@ -58,16 +68,17 @@ impl ExplorerState {
     
     fn collect_visible_rows(&self, nodes: &[ExplorerNode], depth: usize, rows: &mut Vec<VisibleRow>) {
         for node in nodes {
+            let is_expanded = self.is_expanded(&node.path);
             rows.push(VisibleRow {
                 path: node.path.clone(),
                 name: node.name.clone(),
                 is_dir: node.is_dir,
                 depth,
-                is_expanded: self.is_expanded(&node.path),
+                is_expanded,
                 is_selected: self.is_selected(&node.path),
             });
             
-            if node.is_dir && self.is_expanded(&node.path) {
+            if node.is_dir && is_expanded {
                 self.collect_visible_rows(&node.children, depth + 1, rows);
             }
         }

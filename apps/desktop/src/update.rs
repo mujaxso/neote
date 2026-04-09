@@ -52,6 +52,7 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                     app.error_message = None;
                     
                     // Update explorer state
+                    app.explorer_state.set_workspace_root(std::path::PathBuf::from(&app.workspace_path));
                     app.explorer_state.set_file_tree(entries);
                     
                     let mut state = app.workspace_state.lock().unwrap();

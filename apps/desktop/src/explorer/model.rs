@@ -20,8 +20,12 @@ impl ExplorerNode {
         if is_dir {
             for child_entry in all_entries {
                 let child_path = PathBuf::from(&child_entry.path);
+                // Check if this child is directly inside the current directory
                 if let Some(parent) = child_path.parent() {
-                    if parent == path {
+                    // Normalize paths for comparison
+                    let parent_normalized = parent.to_string_lossy().to_string();
+                    let path_normalized = path.to_string_lossy().to_string();
+                    if parent_normalized == path_normalized {
                         children.push(ExplorerNode::from_directory_entry(child_entry, all_entries));
                     }
                 }
@@ -50,9 +54,14 @@ pub fn build_explorer_tree(entries: &[DirectoryEntry]) -> Vec<ExplorerNode> {
                 continue;
             }
             let other_path = PathBuf::from(&other_entry.path);
-            if path.parent() == Some(&other_path) {
-                has_parent_in_list = true;
-                break;
+            // Check if other_entry is a parent of this entry
+            if let Some(parent) = path.parent() {
+                let parent_normalized = parent.to_string_lossy().to_string();
+                let other_path_normalized = other_path.to_string_lossy().to_string();
+                if parent_normalized == other_path_normalized {
+                    has_parent_in_list = true;
+                    break;
+                }
             }
         }
         
