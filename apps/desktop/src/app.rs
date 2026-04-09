@@ -15,10 +15,20 @@ impl iced::Application for App {
     fn new(_flags: ()) -> (Self, Command<Message>) {
         let (app, command) = App::new();
         
-        // Try to load additional fonts for better icon support
-        // We'll use system fonts, so we don't need to load font files
-        // The font settings in main.rs should handle it
-        (app, command)
+        // Load custom fonts for icon support
+        // We'll try to load multiple fonts to ensure icons are visible
+        let font_commands = vec![
+            // Try to load Noto Sans first
+            iced::font::load(include_bytes!("../../assets/fonts/NotoSans-Regular.ttf"))
+                .map(|_| Message::FontLoaded)
+                .map_err(|_| Message::FontLoadFailed),
+            // Try to load Noto Emoji for emoji icons
+            iced::font::load(include_bytes!("../../assets/fonts/NotoEmoji-Regular.ttf"))
+                .map(|_| Message::FontLoaded)
+                .map_err(|_| Message::FontLoadFailed),
+        ];
+        
+        (app, Command::batch(font_commands).then(|| command))
     }
 
     fn title(&self) -> String {

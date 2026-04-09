@@ -204,10 +204,11 @@ fn explorer_row(row: crate::explorer::state::VisibleRow, theme: NeoteTheme, is_c
                 .size(9)
                 .style(iced::theme::Text::Color(style.colors.text_muted)),
             iced::widget::Space::with_width(Length::Fixed(4.0)),
-            // Icon - with explicit color
+            // Icon - with explicit color and font
             text(icon)
                 .size(if is_compact { 12 } else { 13 })
-                .style(iced::theme::Text::Color(icon_color)),
+                .style(iced::theme::Text::Color(icon_color))
+                .font(iced::font::Font::with_name("Noto Emoji")),
             // Spacing between icon and name
             iced::widget::Space::with_width(Length::Fixed(6.0)),
             // File/folder name

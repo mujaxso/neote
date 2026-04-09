@@ -30,8 +30,8 @@ fn main() -> iced::Result {
         // Enable antialiasing for better text rendering
         antialiasing: true,
         // Use a font that supports emoji and other Unicode characters
-        // Try multiple fonts in order of preference
-        default_font: iced::font::Font::with_name("Noto Sans"),
+        // Try to use Noto Color Emoji for better icon support
+        default_font: iced::font::Font::with_name("Noto Color Emoji"),
         default_text_size: iced::Pixels(14.0),
         ..Default::default()
     })
