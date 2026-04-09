@@ -289,20 +289,34 @@ impl EditorTypographySettings {
             return vec!["monospace"];
         }
         
-        // Always include Symbols Nerd Font first for maximum icon coverage
         let mut stack = Vec::new();
         
         match self.icon_mode {
             IconMode::NerdFonts => {
-                // Prioritize Symbols Nerd Font which contains most glyphs
+                // Try multiple Nerd Font variants to ensure we find one that works
+                // The exact font family name might vary
                 stack.push("Symbols Nerd Font");
-                // Add the selected Nerd Font variant if applicable
+                stack.push("SymbolsNerdFont");
+                stack.push("SymbolsNerdFontMono");
+                stack.push("Symbols Nerd Font Mono");
+                
+                // Add specific Nerd Font variants
                 if self.font_family.is_nerd_font() {
                     stack.push(self.font_family.to_family_string());
                 }
-                // Add emoji fonts for fallback
+                
+                // Add common Nerd Font fallbacks
+                stack.push("JetBrainsMono Nerd Font");
+                stack.push("FiraCode Nerd Font");
+                stack.push("CascadiaCode Nerd Font");
+                stack.push("Iosevka Nerd Font");
+                
+                // Add emoji fonts
                 stack.push("Noto Color Emoji");
-                // Add fallback fonts
+                stack.push("Segoe UI Emoji");
+                stack.push("Apple Color Emoji");
+                
+                // Add standard fallbacks
                 stack.extend(self.font_family.fallback_stack());
             }
             IconMode::Unicode => {
@@ -317,12 +331,20 @@ impl EditorTypographySettings {
             }
         }
         
-        // Ensure we always have at least one font
-        if stack.is_empty() {
-            stack.push("monospace");
+        // Remove duplicates while preserving order
+        let mut deduped = Vec::new();
+        for font in stack {
+            if !deduped.contains(&font) {
+                deduped.push(font);
+            }
         }
         
-        stack
+        // Ensure we always have at least one font
+        if deduped.is_empty() {
+            deduped.push("monospace");
+        }
+        
+        deduped
     }
 
     /// Check if icons are enabled

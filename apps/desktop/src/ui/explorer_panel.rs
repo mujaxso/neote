@@ -197,14 +197,12 @@ fn explorer_row(row: crate::explorer::state::VisibleRow, app: &App, is_compact: 
     
     // Build row content
     let row_content = if row.is_dir {
-        let chevron_icon = if row.is_expanded { "▼" } else { "▶" };
+        let chevron_icon = if row.is_expanded { Icon::ChevronDown } else { Icon::ChevronRight };
         row![
             // Indentation
             iced::widget::Space::with_width(Length::Fixed(indent as f32)),
-            // Chevron for folders
-            text(chevron_icon)
-                .size(9)
-                .style(iced::theme::Text::Color(style.colors.text_muted)),
+            // Chevron for folders using Icon enum
+            chevron_icon.render(&app.editor_typography, &style, Some(9)),
             iced::widget::Space::with_width(Length::Fixed(4.0)),
             // Icon using semantic icon system
             icon.render(&app.editor_typography, &style, Some(if is_compact { 12 } else { 13 })),

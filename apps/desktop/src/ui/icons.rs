@@ -121,10 +121,10 @@ impl Icon {
     /// Returns the appropriate Unicode code point for Nerd Fonts.
     pub fn nerd_font_glyph(&self) -> &'static str {
         match self {
-            // File system
-            Icon::File => "󰈙",        // nf-md-file_document (updated)
-            Icon::Folder => "󰉋",      // nf-md-folder (updated)
-            Icon::FolderOpen => "󰉌",  // nf-md-folder_open (updated)
+            // File system - using nf-set icons which are more reliable
+            Icon::File => "",        // nf-fa-file_o
+            Icon::Folder => "",      // nf-fa-folder
+            Icon::FolderOpen => "",  // nf-fa-folder_open
             
             // Navigation
             Icon::ChevronRight => "", // nf-fa-chevron_right
@@ -133,41 +133,41 @@ impl Icon {
             Icon::ArrowLeft => "",    // nf-fa-arrow_left
             
             // Actions
-            Icon::Search => "󰍉",       // nf-md-magnify (updated)
-            Icon::Settings => "󰒓",     // nf-md-cog (updated)
-            Icon::Refresh => "󰑐",      // nf-md-refresh (updated)
-            Icon::Add => "󰅻",          // nf-md-plus (updated)
-            Icon::Edit => "󰏫",         // nf-md-pencil (updated)
-            Icon::Delete => "󰅙",       // nf-md-close (updated)
-            Icon::Save => "󰆓",         // nf-md-content_save (updated)
-            Icon::Close => "󰅖",        // nf-md-close (updated)
+            Icon::Search => "",       // nf-fa-search
+            Icon::Settings => "",     // nf-fa-cog
+            Icon::Refresh => "",      // nf-fa-refresh
+            Icon::Add => "",          // nf-fa-plus_circle
+            Icon::Edit => "",         // nf-fa-edit
+            Icon::Delete => "",       // nf-fa-trash_o
+            Icon::Save => "",         // nf-fa-save
+            Icon::Close => "",        // nf-fa-times
             
             // Version control
-            Icon::Git => "󰊢",         // nf-md-git (updated)
-            Icon::GitBranch => "󰘬",   // nf-md-source_branch (updated)
-            Icon::GitCommit => "󰡚",   // nf-md-source_commit (updated)
-            Icon::GitPullRequest => "󰤙", // nf-md-source_pull (updated)
+            Icon::Git => "",         // nf-dev-git
+            Icon::GitBranch => "",   // nf-dev-git_branch
+            Icon::GitCommit => "",   // nf-dev-git_commit
+            Icon::GitPullRequest => "", // nf-dev-git_pull_request
             
             // Development
-            Icon::Terminal => "󰆍",     // nf-md-terminal (updated)
-            Icon::Debug => "󰚧",       // nf-md-bug (updated)
-            Icon::Run => "󰐊",         // nf-md-play (updated)
-            Icon::Build => "󰛶",       // nf-md-hammer (updated)
+            Icon::Terminal => "",     // nf-dev-terminal
+            Icon::Debug => "",       // nf-fa-bug
+            Icon::Run => "",         // nf-fa-play
+            Icon::Build => "",       // nf-fa-wrench
             
             // Status
-            Icon::Success => "󰄬",     // nf-md-check_circle (updated)
-            Icon::Warning => "󰀪",     // nf-md-alert (updated)
-            Icon::Error => "󰅖",       // nf-md-close_circle (updated)
-            Icon::Info => "󰋼",        // nf-md-information (updated)
+            Icon::Success => "",     // nf-fa-check_circle
+            Icon::Warning => "",     // nf-fa-exclamation_triangle
+            Icon::Error => "",       // nf-fa-times_circle
+            Icon::Info => "",        // nf-fa-info_circle
             
             // AI/Assistant
-            Icon::Robot => "󰚩",       // nf-md-robot (updated)
-            Icon::Sparkles => "󰠮",    // nf-md-auto_fix (updated)
+            Icon::Robot => "ﮧ",       // nf-fa-android
+            Icon::Sparkles => "✨",    // Unicode fallback (no good Nerd Font equivalent)
             
             // UI elements
-            Icon::Menu => "󰍜",        // nf-md-menu (updated)
-            Icon::MoreHorizontal => "󰇘", // nf-md-dots_horizontal (updated)
-            Icon::MoreVertical => "󰇙", // nf-md-dots_vertical (updated)
+            Icon::Menu => "",        // nf-fa-bars
+            Icon::MoreHorizontal => "", // nf-fa-ellipsis_h
+            Icon::MoreVertical => "", // nf-fa-ellipsis_v
         }
     }
 
@@ -177,6 +177,9 @@ impl Icon {
         // The icon font stack is defined in EditorTypographySettings
         // We'll use the first font from the icon font stack
         let icon_stack = typography.icon_font_stack();
+        
+        // Try to find a font that works by checking each in order
+        // Start with the first font in the stack
         if let Some(first_font) = icon_stack.first() {
             iced::Font::with_name(first_font)
         } else {
