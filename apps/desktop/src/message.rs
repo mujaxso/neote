@@ -36,6 +36,8 @@ pub enum Message {
     Explorer(ExplorerMessage),
     // New messages for explorer actions
     ExplorerHoverChanged(Option<std::path::PathBuf>),
+    // Activity bar hover state
+    ActivityHovered(Option<Activity>),
     // Font loading messages
     FontLoaded,
     FontLoadFailed,

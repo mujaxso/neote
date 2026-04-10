@@ -70,6 +70,8 @@ pub struct App {
     pub layout_mode: LayoutMode,
     // Editor typography settings
     pub editor_typography: EditorTypographySettings,
+    // Track which activity is currently hovered (for visual feedback)
+    pub hovered_activity: Option<Activity>,
 }
 
 impl App {
@@ -97,6 +99,7 @@ impl App {
                 window_height: 800,
                 layout_mode: LayoutMode::Wide,
                 editor_typography: EditorTypographySettings::default(),
+                hovered_activity: None,
             },
             iced::Command::none(),
         )

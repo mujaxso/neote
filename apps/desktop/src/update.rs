@@ -635,6 +635,10 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
             app.explorer_state.set_hovered_row(path);
             Command::none()
         }
+        Message::ActivityHovered(activity) => {
+            app.hovered_activity = activity;
+            Command::none()
+        }
         Message::FontLoaded => {
             Command::none()
         }
