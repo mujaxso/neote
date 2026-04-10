@@ -259,7 +259,7 @@ pub fn centered_icon_button<'a, Message>(
 where
     Message: Clone + 'a,
 {
-    use iced::{Alignment, Length};
+    use iced::Length;
     
     let icon_size = size.unwrap_or(typography.font_size);
     let button_size_val = button_size.unwrap_or(BUTTON_HEIGHT_MD);

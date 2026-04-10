@@ -5,7 +5,7 @@ use super::style::StyleHelpers;
 use crate::theme::SemanticColors;
 use crate::explorer::actions::ExplorerMessage;
 use crate::explorer::state::InlineEditMode;
-use crate::ui::icons::{Icon, icon_button};
+use crate::ui::icons::Icon;
 
 pub fn explorer_panel<'a>(app: &'a App) -> Element<'a, Message> {
     let style = StyleHelpers::new(app.theme);

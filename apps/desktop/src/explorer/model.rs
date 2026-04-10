@@ -37,7 +37,7 @@ pub fn build_explorer_tree(entries: &[DirectoryEntry]) -> Vec<ExplorerNode> {
     });
     
     // Create all nodes first, without children
-    let mut nodes: Vec<ExplorerNode> = sorted_entries
+    let nodes: Vec<ExplorerNode> = sorted_entries
         .iter()
         .map(|entry| ExplorerNode::new(entry))
         .collect();

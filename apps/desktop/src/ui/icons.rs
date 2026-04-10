@@ -241,7 +241,8 @@ pub fn icon_button<'a, Message>(
 where
     Message: Clone + 'a,
 {
-    use iced::{Alignment, Length};
+    use iced::Length;
+    use iced::widget::container;
     
     let icon_size = size.unwrap_or(typography.font_size);
     
