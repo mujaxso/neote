@@ -62,4 +62,6 @@ pub enum Message {
     TypographySettingsLoaded(Result<crate::settings::editor::EditorTypographySettings, String>),
     // Workspace dialog was cancelled
     WorkspaceDialogCancelled,
+    // Manual workspace path submission (fallback when native dialog fails)
+    SubmitManualWorkspacePath(String),
 }

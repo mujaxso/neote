@@ -69,57 +69,22 @@ pub fn top_bar(app: &App) -> Element<'_, Message> {
         }
     }
     
-    let _input_style = WorkspaceInputStyle {
+    let input_style = WorkspaceInputStyle {
         colors: style.colors,
     };
     
-    // Responsive workspace path display (read-only)
+    // Responsive workspace path input (editable)
     let is_compact = matches!(app.layout_mode, crate::state::LayoutMode::Medium | crate::state::LayoutMode::Narrow);
     
-    // Create a container style for the workspace display
-    struct WorkspaceDisplayStyle {
-        colors: SemanticColors,
-    }
-    
-    impl iced::widget::container::StyleSheet for WorkspaceDisplayStyle {
-        type Style = iced::Theme;
-        
-        fn appearance(&self, _style: &Self::Style) -> iced::widget::container::Appearance {
-            iced::widget::container::Appearance {
-                background: Some(self.colors.input_background.into()),
-                border: iced::Border {
-                    color: self.colors.border,
-                    width: 1.0,
-                    radius: crate::ui::common::RADIUS_SM.into(),
-                },
-                ..Default::default()
-            }
-        }
-    }
-    
-    let workspace_display_style = WorkspaceDisplayStyle {
-        colors: style.colors,
-    };
-    
-    let workspace_display = if app.workspace_path.is_empty() {
-        container(
-            text(if is_compact { "No workspace open" } else { "No workspace open - click Open to select" })
-                .size(if is_compact { 12 } else { 13 })
-                .style(iced::theme::Text::Color(style.colors.text_muted))
-        )
-        .padding(if is_compact { [4, 8] } else { [6, 10] })
-        .width(if is_compact { Length::FillPortion(2) } else { Length::FillPortion(3) })
-        .style(iced::theme::Container::Custom(Box::new(workspace_display_style)))
-    } else {
-        container(
-            text(&app.workspace_path)
-                .size(if is_compact { 12 } else { 13 })
-                .style(iced::theme::Text::Color(style.colors.text_primary))
-        )
-        .padding(if is_compact { [4, 8] } else { [6, 10] })
-        .width(if is_compact { Length::FillPortion(2) } else { Length::FillPortion(3) })
-        .style(iced::theme::Container::Custom(Box::new(workspace_display_style)))
-    };
+    let workspace_input = text_input(
+        if is_compact { "Path..." } else { "Workspace path..." },
+        &app.workspace_path,
+    )
+    .on_input(Message::WorkspacePathChanged)
+    .on_submit(Message::SubmitManualWorkspacePath(app.workspace_path.clone()))
+    .padding(if is_compact { [4, 8] } else { [6, 10] })
+    .width(if is_compact { Length::FillPortion(2) } else { Length::FillPortion(3) })
+    .style(iced::theme::TextInput::Custom(Box::new(input_style)));
     
     // Responsive buttons
     let open_button = button(
@@ -251,7 +216,7 @@ pub fn top_bar(app: &App) -> Element<'_, Message> {
             // Workspace controls - compact
             container(
                 row![
-                    workspace_display,
+                    workspace_input,
                     open_button,
                     icon_button(
                         Icon::Refresh,
