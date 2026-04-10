@@ -162,7 +162,7 @@ impl Icon {
             
             // AI/Assistant - Use a more reliable glyph
             // Try nf-fa-robot (f544) which is more standard
-            Icon::Robot => "󰚩",       // nf-md-robot (Material Design Icons)
+            Icon::Robot => "🤖",       // Use Unicode emoji as fallback for now
             Icon::Sparkles => "✨",    // Unicode fallback
             
             // UI elements
@@ -186,15 +186,18 @@ impl Icon {
         let icon_size = size.unwrap_or(typography.font_size);
         
         // For the Robot icon, always use Unicode fallback to ensure it shows
-        let (icon_char, font_name) = if matches!(self, Icon::Robot) {
-            // Always use Unicode for Robot icon to ensure visibility
-            (self.unicode_fallback(), typography.font_family.to_family_string())
-        } else {
-            match typography.icon_mode {
-                IconMode::NerdFonts => (self.nerd_font_glyph(), typography.font_family.to_family_string()),
-                IconMode::Unicode => (self.unicode_fallback(), typography.font_family.to_family_string()),
-                IconMode::Disabled => (" ", typography.font_family.to_family_string()),
+        // Also for other icons, use Unicode fallback if Nerd Fonts are not available
+        let (icon_char, font_name) = match typography.icon_mode {
+            IconMode::NerdFonts => {
+                // Try to use Nerd Font glyph, but for Robot, use Unicode
+                if matches!(self, Icon::Robot) {
+                    (self.unicode_fallback(), typography.font_family.to_family_string())
+                } else {
+                    (self.nerd_font_glyph(), typography.font_family.to_family_string())
+                }
             }
+            IconMode::Unicode => (self.unicode_fallback(), typography.font_family.to_family_string()),
+            IconMode::Disabled => (" ", typography.font_family.to_family_string()),
         };
         
         let font = iced::Font::with_name(font_name);
@@ -219,15 +222,18 @@ impl Icon {
         let icon_size = size.unwrap_or(typography.font_size);
         
         // For the Robot icon, always use Unicode fallback to ensure it shows
-        let (icon_char, font_name) = if matches!(self, Icon::Robot) {
-            // Always use Unicode for Robot icon to ensure visibility
-            (self.unicode_fallback(), typography.font_family.to_family_string())
-        } else {
-            match typography.icon_mode {
-                IconMode::NerdFonts => (self.nerd_font_glyph(), typography.font_family.to_family_string()),
-                IconMode::Unicode => (self.unicode_fallback(), typography.font_family.to_family_string()),
-                IconMode::Disabled => (" ", typography.font_family.to_family_string()),
+        // Also for other icons, use Unicode fallback if Nerd Fonts are not available
+        let (icon_char, font_name) = match typography.icon_mode {
+            IconMode::NerdFonts => {
+                // Try to use Nerd Font glyph, but for Robot, use Unicode
+                if matches!(self, Icon::Robot) {
+                    (self.unicode_fallback(), typography.font_family.to_family_string())
+                } else {
+                    (self.nerd_font_glyph(), typography.font_family.to_family_string())
+                }
             }
+            IconMode::Unicode => (self.unicode_fallback(), typography.font_family.to_family_string()),
+            IconMode::Disabled => (" ", typography.font_family.to_family_string()),
         };
         
         let font = iced::Font::with_name(font_name);

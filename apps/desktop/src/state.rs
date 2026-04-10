@@ -119,7 +119,13 @@ impl Default for WorkbenchLayoutState {
 impl WorkbenchLayoutState {
     pub fn set_active_primary_view(&mut self, view: PrimarySidebarView) {
         self.active_primary_view = view;
-        self.primary_sidebar_visible = true;
+        // For Settings, we want to hide the primary sidebar and show settings in main area
+        // For other views, show the primary sidebar
+        if view == PrimarySidebarView::Settings {
+            self.primary_sidebar_visible = false;
+        } else {
+            self.primary_sidebar_visible = true;
+        }
     }
     
     pub fn toggle_auxiliary_sidebar(&mut self) {
@@ -132,7 +138,12 @@ impl WorkbenchLayoutState {
     }
     
     pub fn is_primary_view_active(&self, view: PrimarySidebarView) -> bool {
-        self.primary_sidebar_visible && self.active_primary_view == view
+        // For Settings, it's active even if primary_sidebar_visible is false
+        if view == PrimarySidebarView::Settings {
+            self.active_primary_view == view
+        } else {
+            self.primary_sidebar_visible && self.active_primary_view == view
+        }
     }
     
     pub fn is_auxiliary_view_active(&self, view: AuxiliaryView) -> bool {

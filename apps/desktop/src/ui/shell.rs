@@ -29,8 +29,11 @@ pub fn shell(app: &App) -> Element<'_, Message> {
         .width(Length::Fixed(crate::ui::common::ACTIVITY_BAR_WIDTH))
         .height(Length::Fill);
     
-    // Primary sidebar panel
-    let primary_sidebar = if app.workbench_layout.primary_sidebar_visible {
+    // Check if we're in Settings mode - Settings should take over the main editor area
+    let is_settings_mode = app.workbench_layout.active_primary_view == PrimarySidebarView::Settings;
+    
+    // Primary sidebar panel (not shown when in settings mode)
+    let primary_sidebar = if app.workbench_layout.primary_sidebar_visible && !is_settings_mode {
         match app.workbench_layout.active_primary_view {
             PrimarySidebarView::Explorer => {
                 let explorer_panel = container(explorer_panel(app))
@@ -53,6 +56,7 @@ pub fn shell(app: &App) -> Element<'_, Message> {
                 Some(git_panel)
             }
             PrimarySidebarView::Settings => {
+                // This shouldn't be reached when is_settings_mode is true
                 let settings_panel = container(editor_font_settings_panel(app))
                     .width(Length::Fixed(explorer_width))
                     .height(Length::Fill);
@@ -63,12 +67,21 @@ pub fn shell(app: &App) -> Element<'_, Message> {
         None
     };
     
-    let editor_panel = container(editor_panel(app))
-        .width(Length::Fill)
-        .height(Length::Fill);
+    // Editor panel or Settings panel
+    let main_editor_area = if is_settings_mode {
+        // When in settings mode, show settings in the main editor area
+        container(editor_font_settings_panel(app))
+            .width(Length::Fill)
+            .height(Length::Fill)
+    } else {
+        // Normal editor panel
+        container(editor_panel(app))
+            .width(Length::Fill)
+            .height(Length::Fill)
+    };
     
     // Auxiliary sidebar (AI Assistant)
-    let auxiliary_sidebar = if app.workbench_layout.auxiliary_sidebar_visible {
+    let auxiliary_sidebar = if app.workbench_layout.auxiliary_sidebar_visible && !is_settings_mode {
         match app.workbench_layout.active_auxiliary_view {
             Some(AuxiliaryView::AiAssistant) => {
                 let assistant_panel = container(assistant_panel(app))
@@ -87,14 +100,20 @@ pub fn shell(app: &App) -> Element<'_, Message> {
         activity_bar,
     ];
     
-    if let Some(primary) = primary_sidebar {
-        main_content_row = main_content_row.push(primary);
+    // Only show primary sidebar if not in settings mode
+    if !is_settings_mode {
+        if let Some(primary) = primary_sidebar {
+            main_content_row = main_content_row.push(primary);
+        }
     }
     
-    main_content_row = main_content_row.push(editor_panel);
+    main_content_row = main_content_row.push(main_editor_area);
     
-    if let Some(auxiliary) = auxiliary_sidebar {
-        main_content_row = main_content_row.push(auxiliary);
+    // Only show auxiliary sidebar if not in settings mode
+    if !is_settings_mode {
+        if let Some(auxiliary) = auxiliary_sidebar {
+            main_content_row = main_content_row.push(auxiliary);
+        }
     }
     
     let main_content = main_content_row.height(Length::Fill);
