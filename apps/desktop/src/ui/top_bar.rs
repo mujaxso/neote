@@ -1,4 +1,4 @@
-use iced::{Element, Length, Color, widget::{button, container, row, text, text_input}};
+use iced::{Element, Length, Color, widget::{button, container, row, text}};
 use crate::message::Message;
 use crate::state::App;
 use super::style::StyleHelpers;
@@ -76,6 +76,31 @@ pub fn top_bar(app: &App) -> Element<'_, Message> {
     // Responsive workspace path display (read-only)
     let is_compact = matches!(app.layout_mode, crate::state::LayoutMode::Medium | crate::state::LayoutMode::Narrow);
     
+    // Create a container style for the workspace display
+    struct WorkspaceDisplayStyle {
+        colors: SemanticColors,
+    }
+    
+    impl iced::widget::container::StyleSheet for WorkspaceDisplayStyle {
+        type Style = iced::Theme;
+        
+        fn appearance(&self, _style: &Self::Style) -> iced::widget::container::Appearance {
+            iced::widget::container::Appearance {
+                background: Some(self.colors.input_background.into()),
+                border: iced::Border {
+                    color: self.colors.border,
+                    width: 1.0,
+                    radius: crate::ui::common::RADIUS_SM.into(),
+                },
+                ..Default::default()
+            }
+        }
+    }
+    
+    let workspace_display_style = WorkspaceDisplayStyle {
+        colors: style.colors,
+    };
+    
     let workspace_display = if app.workspace_path.is_empty() {
         container(
             text(if is_compact { "No workspace open" } else { "No workspace open - click Open to select" })
@@ -84,7 +109,7 @@ pub fn top_bar(app: &App) -> Element<'_, Message> {
         )
         .padding(if is_compact { [4, 8] } else { [6, 10] })
         .width(if is_compact { Length::FillPortion(2) } else { Length::FillPortion(3) })
-        .style(iced::theme::Container::Custom(Box::new(input_style)))
+        .style(iced::theme::Container::Custom(Box::new(workspace_display_style)))
     } else {
         container(
             text(&app.workspace_path)
@@ -93,7 +118,7 @@ pub fn top_bar(app: &App) -> Element<'_, Message> {
         )
         .padding(if is_compact { [4, 8] } else { [6, 10] })
         .width(if is_compact { Length::FillPortion(2) } else { Length::FillPortion(3) })
-        .style(iced::theme::Container::Custom(Box::new(input_style)))
+        .style(iced::theme::Container::Custom(Box::new(workspace_display_style)))
     };
     
     // Responsive buttons

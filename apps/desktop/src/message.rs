@@ -9,7 +9,7 @@ use crate::settings::editor::FontFamily;
 pub enum Message {
     WorkspacePathChanged(String),
     OpenWorkspace,
-    WorkspaceLoaded(Result<Vec<DirectoryEntry>, String>),
+    WorkspaceLoaded(Result<(String, Vec<DirectoryEntry>), String>),
     FileSelected(usize),
     FileSelectedByPath(String),
     // Metadata loaded (size, etc.)

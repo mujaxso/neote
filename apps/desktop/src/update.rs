@@ -4,7 +4,7 @@ use file_ops::{FileLoader, WorkspaceLoader};
 use iced::Command;
 use crate::explorer::actions::ExplorerMessage;
 use crate::explorer::state::InlineEditMode;
-use rfd::{AsyncFileDialog, FileHandle};
+use rfd::AsyncFileDialog;
 
 // Helper function to normalize paths for consistent comparison
 fn normalize_path(path: &str) -> String {
@@ -34,7 +34,7 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
             Command::perform(
                 async move {
                     // Open a directory picker
-                    let handle: Option<rfd::FileHandle> = AsyncFileDialog::new()
+                    let handle = AsyncFileDialog::new()
                         .set_title("Select Workspace Directory")
                         .pick_folder()
                         .await;
@@ -44,7 +44,7 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                             let path = folder.path().to_string_lossy().to_string();
                             // Load the workspace immediately after selection
                             match WorkspaceLoader::list_directory(&path) {
-                                Ok(entries) => Message::WorkspaceLoaded(Ok(entries)),
+                                Ok(entries) => Message::WorkspaceLoaded(Ok((path, entries))),
                                 Err(e) => Message::WorkspaceLoaded(Err(format!("Failed to open workspace: {}", e))),
                             }
                         }
@@ -59,7 +59,8 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
         }
         Message::WorkspaceLoaded(result) => {
             match result {
-                Ok(entries) => {
+                Ok((path, entries)) => {
+                    app.workspace_path = path.clone();
                     app.file_entries = entries.clone();
                     app.status_message = format!("Workspace loaded: {} files", app.file_entries.len());
                     app.error_message = None;
