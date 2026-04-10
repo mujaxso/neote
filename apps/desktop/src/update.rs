@@ -380,56 +380,18 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
             }
         }
         Message::ToggleAiPanel => {
-            app.ai_panel_visible = !app.ai_panel_visible;
-            // When toggling the AI panel, also set the active activity to AI if showing
-            if app.ai_panel_visible {
-                // Store current activity as last non-AI if it's not AI
-                if app.active_activity != Activity::Ai {
-                    app.last_non_ai_activity = app.active_activity;
-                }
-                app.active_activity = Activity::Ai;
-            } else {
-                // If hiding AI panel, switch back to last non-AI activity
-                app.active_activity = app.last_non_ai_activity;
-            }
+            app.workbench_layout.toggle_auxiliary_sidebar();
             Command::none()
         }
         Message::ActivitySelected(activity) => {
-            app.active_activity = activity;
-            
-            // Reset panel visibilities, but keep AI panel if it's already visible
-            // This allows AI panel to stay open while other activities are selected
-            app.explorer_panel_visible = false;
-            app.search_panel_visible = false;
-            // Don't reset ai_panel_visible - let it stay as is
-            app.git_panel_visible = false;
-            app.settings_panel_visible = false;
-            
-            // Show the panel for the selected activity
             match activity {
-                Activity::Explorer => {
-                    app.explorer_panel_visible = true;
+                Activity::Primary(primary_view) => {
+                    app.workbench_layout.set_active_primary_view(primary_view);
                 }
-                Activity::Search => {
-                    app.search_panel_visible = true;
-                }
-                Activity::Ai => {
-                    // AI panel visibility is toggled by ToggleAiPanel
-                    // Don't change it here
-                }
-                Activity::SourceControl => {
-                    app.git_panel_visible = true;
-                }
-                Activity::Settings => {
-                    app.settings_panel_visible = true;
+                Activity::Auxiliary(auxiliary_view) => {
+                    app.workbench_layout.set_auxiliary_view(auxiliary_view);
                 }
             }
-            
-            // Update last non-AI activity if not AI
-            if activity != Activity::Ai {
-                app.last_non_ai_activity = activity;
-            }
-            
             Command::none()
         }
         Message::PromptInputChanged(text) => {

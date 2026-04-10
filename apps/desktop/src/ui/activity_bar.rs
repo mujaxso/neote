@@ -27,35 +27,35 @@ impl ActivityItem {
     fn all() -> Vec<Self> {
         vec![
             ActivityItem {
-                id: Activity::Explorer,
+                id: Activity::explorer(),
                 icon: Icon::Folder,
                 label: "Explorer",
                 tooltip: "File Explorer (Ctrl+Shift+E)",
                 group: ActivityGroup::Primary,
             },
             ActivityItem {
-                id: Activity::Search,
+                id: Activity::search(),
                 icon: Icon::Search,
                 label: "Search",
                 tooltip: "Search across files (Ctrl+Shift+F)",
                 group: ActivityGroup::Primary,
             },
             ActivityItem {
-                id: Activity::Ai,
+                id: Activity::ai_assistant(),
                 icon: Icon::Robot,
                 label: "AI Assistant",
                 tooltip: "AI Assistant (Ctrl+Shift+A)",
                 group: ActivityGroup::Primary,
             },
             ActivityItem {
-                id: Activity::SourceControl,
+                id: Activity::source_control(),
                 icon: Icon::Git,
                 label: "Source Control",
                 tooltip: "Git source control (Ctrl+Shift+G)",
                 group: ActivityGroup::Primary,
             },
             ActivityItem {
-                id: Activity::Settings,
+                id: Activity::settings(),
                 icon: Icon::Settings,
                 label: "Settings",
                 tooltip: "Settings (Ctrl+,)",
@@ -67,7 +67,7 @@ impl ActivityItem {
     /// Get the message to send when this item is activated
     fn activation_message(&self) -> Message {
         match self.id {
-            Activity::Ai => Message::ToggleAiPanel,
+            Activity::Auxiliary(crate::state::AuxiliaryView::AiAssistant) => Message::ToggleAiPanel,
             _ => Message::ActivitySelected(self.id),
         }
     }
@@ -132,8 +132,11 @@ pub fn activity_bar(app: &App) -> Element<'_, Message> {
 
 /// Render a single activity button with modern styling
 fn activity_button<'a>(item: &ActivityItem, app: &App, style: &StyleHelpers) -> Element<'a, Message> {
-    let is_active = app.active_activity == item.id;
-    let is_hovered = app.hovered_activity == Some(item.id);
+    let is_active = match item.id {
+        Activity::Primary(view) => app.workbench_layout.is_primary_view_active(view),
+        Activity::Auxiliary(view) => app.workbench_layout.is_auxiliary_view_active(view),
+    };
+    let is_hovered = app.workbench_layout.hovered_activity == Some(item.id);
     
     // Determine icon color based on state
     let icon_color = if is_active {

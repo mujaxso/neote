@@ -106,7 +106,7 @@ impl Icon {
             Icon::Error => "✗",
             Icon::Info => "ℹ",
             
-            // AI/Assistant
+            // AI/Assistant - Use a more reliable emoji
             Icon::Robot => "🤖",       // Unicode robot emoji fallback
             Icon::Sparkles => "✨",
             
@@ -160,9 +160,9 @@ impl Icon {
             Icon::Error => "",       // nf-fa-times_circle
             Icon::Info => "",        // nf-fa-info_circle
             
-            // AI/Assistant - try multiple glyphs to find one that works
-            // First try nf-fa-android, then nf-fa-robot, then fallback to unicode
-            Icon::Robot => "ﮧ",       // nf-fa-android (Font Awesome android)
+            // AI/Assistant - Use a more reliable glyph
+            // Try nf-fa-robot (f544) which is more standard
+            Icon::Robot => "󰚩",       // nf-md-robot (Material Design Icons)
             Icon::Sparkles => "✨",    // Unicode fallback
             
             // UI elements

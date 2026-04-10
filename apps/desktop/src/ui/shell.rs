@@ -13,19 +13,12 @@ use super::{
 
 /// Main shell that composes all UI components - Premium compact layout
 pub fn shell(app: &App) -> Element<'_, Message> {
-    // Determine if AI panel should be visible
-    let ai_panel_visible = matches!(app.active_activity, crate::state::Activity::Ai) || app.ai_panel_visible;
-    
     // Get panel widths based on layout mode
     let (explorer_width, assistant_width) = match app.layout_mode {
         LayoutMode::Wide => (260.0, 300.0),
         LayoutMode::Medium => (220.0, 240.0),
         LayoutMode::Narrow => (180.0, 200.0),
     };
-    
-    // In narrow mode, we might want to hide the AI panel if it's not the active activity
-    let show_ai_panel = ai_panel_visible && 
-        (app.layout_mode != LayoutMode::Narrow || app.active_activity == crate::state::Activity::Ai);
     
     // Build panels with responsive sizing
     let top_bar = container(top_bar(app))
@@ -36,52 +29,75 @@ pub fn shell(app: &App) -> Element<'_, Message> {
         .width(Length::Fixed(crate::ui::common::ACTIVITY_BAR_WIDTH))
         .height(Length::Fill);
     
-    // Use the new explorer panel
-    let explorer_panel = container(
-        explorer_panel(app)
-    )
-    .width(Length::Fixed(explorer_width))
-    .height(Length::Fill);
+    // Primary sidebar panel
+    let primary_sidebar = if app.workbench_layout.primary_sidebar_visible {
+        match app.workbench_layout.active_primary_view {
+            PrimarySidebarView::Explorer => {
+                let explorer_panel = container(explorer_panel(app))
+                    .width(Length::Fixed(explorer_width))
+                    .height(Length::Fill);
+                Some(explorer_panel)
+            }
+            PrimarySidebarView::Search => {
+                // For now, use a placeholder
+                let search_panel = container(text("Search Panel"))
+                    .width(Length::Fixed(explorer_width))
+                    .height(Length::Fill);
+                Some(search_panel)
+            }
+            PrimarySidebarView::SourceControl => {
+                // For now, use a placeholder
+                let git_panel = container(text("Git Panel"))
+                    .width(Length::Fixed(explorer_width))
+                    .height(Length::Fill);
+                Some(git_panel)
+            }
+            PrimarySidebarView::Settings => {
+                let settings_panel = container(editor_font_settings_panel(app))
+                    .width(Length::Fixed(explorer_width))
+                    .height(Length::Fill);
+                Some(settings_panel)
+            }
+        }
+    } else {
+        None
+    };
     
     let editor_panel = container(editor_panel(app))
         .width(Length::Fill)
         .height(Length::Fill);
     
-    // Determine which panel to show based on active activity
-    let main_content = match app.active_activity {
-        Activity::Settings => {
-            let settings_panel = container(editor_font_settings_panel(app))
-                .width(Length::Fill)
-                .height(Length::Fill);
-            
-            iced::widget::row![
-                activity_bar,
-                settings_panel,
-            ]
-            .height(Length::Fill)
+    // Auxiliary sidebar (AI Assistant)
+    let auxiliary_sidebar = if app.workbench_layout.auxiliary_sidebar_visible {
+        match app.workbench_layout.active_auxiliary_view {
+            Some(AuxiliaryView::AiAssistant) => {
+                let assistant_panel = container(assistant_panel(app))
+                    .width(Length::Fixed(assistant_width))
+                    .height(Length::Fill);
+                Some(assistant_panel)
+            }
+            None => None,
         }
-        Activity::Ai if show_ai_panel => {
-            let assistant_panel = container(assistant_panel(app))
-                .width(Length::Fixed(assistant_width))
-                .height(Length::Fill);
-            
-            iced::widget::row![
-                activity_bar,
-                explorer_panel,
-                editor_panel,
-                assistant_panel,
-            ]
-            .height(Length::Fill)
-        }
-        _ => {
-            iced::widget::row![
-                activity_bar,
-                explorer_panel,
-                editor_panel,
-            ]
-            .height(Length::Fill)
-        }
+    } else {
+        None
     };
+    
+    // Build the main content row
+    let mut main_content_row = iced::widget::row![
+        activity_bar,
+    ];
+    
+    if let Some(primary) = primary_sidebar {
+        main_content_row = main_content_row.push(primary);
+    }
+    
+    main_content_row = main_content_row.push(editor_panel);
+    
+    if let Some(auxiliary) = auxiliary_sidebar {
+        main_content_row = main_content_row.push(auxiliary);
+    }
+    
+    let main_content = main_content_row.height(Length::Fill);
     
     let status_bar = container(status_bar(app))
         .width(Length::Fill)

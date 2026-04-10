@@ -15,6 +15,9 @@ impl iced::Application for App {
     fn new(_flags: ()) -> (Self, Command<Message>) {
         let (mut app, command) = App::new();
         
+        // Initialize workbench layout
+        app.workbench_layout = WorkbenchLayoutState::default();
+        
         // Load saved typography settings
         match crate::settings::persistence::load_settings() {
             Ok(settings) => {
