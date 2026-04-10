@@ -87,7 +87,13 @@ pub fn top_bar(app: &App) -> Element<'_, Message> {
     .on_submit({
         let current_path = app.workspace_path.clone();
         println!("DEBUG: Text input on_submit triggered with path: {}", current_path);
-        Message::SubmitManualWorkspacePath(current_path)
+        // Only submit if path is not empty
+        if current_path.is_empty() {
+            // Send a no-op message instead
+            Message::WorkspacePathChanged(current_path)
+        } else {
+            Message::SubmitManualWorkspacePath(current_path)
+        }
     })
     .padding(if is_compact { [4, 8] } else { [6, 10] })
     .width(if is_compact { Length::FillPortion(2) } else { Length::FillPortion(3) })
@@ -224,6 +230,16 @@ pub fn top_bar(app: &App) -> Element<'_, Message> {
             container(
                 row![
                     workspace_input,
+                    // Manual submit button
+                    icon_button(
+                        Icon::Check,
+                        &app.editor_typography,
+                        &style,
+                        Some(Message::SubmitManualWorkspacePath(app.workspace_path.clone())),
+                        Some(12),
+                    )
+                    .padding([4, 6])
+                    .style(iced::theme::Button::Secondary),
                     open_button,
                     icon_button(
                         Icon::Refresh,
@@ -235,7 +251,7 @@ pub fn top_bar(app: &App) -> Element<'_, Message> {
                     .padding([6, 10])
                     .style(iced::theme::Button::Secondary),
                 ]
-                .spacing(6)
+                .spacing(4)
                 .align_items(iced::Alignment::Center)
             )
             .width(Length::FillPortion(2)),
