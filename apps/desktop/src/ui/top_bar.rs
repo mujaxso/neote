@@ -73,21 +73,37 @@ pub fn top_bar(app: &App) -> Element<'_, Message> {
         colors: style.colors,
     };
     
-    // Responsive workspace path input
+    // Responsive workspace path display (read-only)
     let is_compact = matches!(app.layout_mode, crate::state::LayoutMode::Medium | crate::state::LayoutMode::Narrow);
     
-    let workspace_input = text_input(
-        if is_compact { "Path..." } else { "Workspace path..." },
-        &app.workspace_path,
-    )
-    .on_input(Message::WorkspacePathChanged)
-    .padding(if is_compact { [4, 8] } else { [6, 10] })
-    .width(if is_compact { Length::FillPortion(2) } else { Length::FillPortion(3) })
-    .style(iced::theme::TextInput::Custom(Box::new(input_style)));
+    let workspace_display = if app.workspace_path.is_empty() {
+        container(
+            text(if is_compact { "No workspace open" } else { "No workspace open - click Open to select" })
+                .size(if is_compact { 12 } else { 13 })
+                .style(iced::theme::Text::Color(style.colors.text_muted))
+        )
+        .padding(if is_compact { [4, 8] } else { [6, 10] })
+        .width(if is_compact { Length::FillPortion(2) } else { Length::FillPortion(3) })
+        .style(iced::theme::Container::Custom(Box::new(input_style)))
+    } else {
+        container(
+            text(&app.workspace_path)
+                .size(if is_compact { 12 } else { 13 })
+                .style(iced::theme::Text::Color(style.colors.text_primary))
+        )
+        .padding(if is_compact { [4, 8] } else { [6, 10] })
+        .width(if is_compact { Length::FillPortion(2) } else { Length::FillPortion(3) })
+        .style(iced::theme::Container::Custom(Box::new(input_style)))
+    };
     
     // Responsive buttons
     let open_button = button(
-        text(if is_compact { "Open" } else { "Open" }).size(if is_compact { 12 } else { 13 })
+        row![
+            Icon::FolderOpen.render(&app.editor_typography, &style, Some(if is_compact { 12 } else { 13 })),
+            text(if is_compact { "Open" } else { "Open Workspace" }).size(if is_compact { 12 } else { 13 })
+        ]
+        .spacing(4)
+        .align_items(iced::Alignment::Center)
     )
     .on_press(Message::OpenWorkspace)
     .padding(if is_compact { [4, 8] } else { [6, 12] })
@@ -210,7 +226,7 @@ pub fn top_bar(app: &App) -> Element<'_, Message> {
             // Workspace controls - compact
             container(
                 row![
-                    workspace_input,
+                    workspace_display,
                     open_button,
                     icon_button(
                         Icon::Refresh,
