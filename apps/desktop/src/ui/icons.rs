@@ -241,15 +241,29 @@ pub fn icon_button<'a, Message>(
 where
     Message: Clone + 'a,
 {
-    let button = iced::widget::button(
-        icon.render(typography, style, size)
-    );
-
+    use iced::{Alignment, Length};
+    
+    let icon_size = size.unwrap_or(typography.font_size);
+    
+    // Create the icon element
+    let icon_element = icon.render(typography, style, Some(icon_size));
+    
+    // Center the icon in a container
+    let centered_icon = container(icon_element)
+        .width(Length::Fill)
+        .height(Length::Fill)
+        .center_x()
+        .center_y();
+    
+    let button = iced::widget::button(centered_icon)
+        .width(Length::Fixed(32.0))
+        .height(Length::Fixed(32.0))
+        .padding(0)
+        .style(iced::theme::Button::Text);
+    
     if let Some(message) = on_press {
         button.on_press(message)
     } else {
         button
     }
-    .style(iced::theme::Button::Text)
-    .padding(4)
 }

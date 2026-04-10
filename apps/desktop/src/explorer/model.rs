@@ -26,7 +26,7 @@ pub fn build_explorer_tree(entries: &[DirectoryEntry]) -> Vec<ExplorerNode> {
         return Vec::new();
     }
     
-    // First, sort all entries: directories first, then files, alphabetically
+    // Sort entries: directories first, then files, alphabetically
     let mut sorted_entries: Vec<&DirectoryEntry> = entries.iter().collect();
     sorted_entries.sort_by(|a, b| {
         if a.is_dir != b.is_dir {
@@ -36,55 +36,85 @@ pub fn build_explorer_tree(entries: &[DirectoryEntry]) -> Vec<ExplorerNode> {
         }
     });
     
-    // Build a map from path string to ExplorerNode
-    let mut node_map: HashMap<String, ExplorerNode> = HashMap::new();
+    // Create all nodes first, without children
+    let mut nodes: Vec<ExplorerNode> = sorted_entries
+        .iter()
+        .map(|entry| ExplorerNode::new(entry))
+        .collect();
     
-    // First pass: create all nodes without children
-    for entry in sorted_entries {
-        let path_str = entry.path.clone();
-        node_map.insert(path_str.clone(), ExplorerNode::new(entry));
+    // Build a map from path to index in nodes vector
+    let mut path_to_index: HashMap<String, usize> = HashMap::new();
+    for (i, node) in nodes.iter().enumerate() {
+        let path_str = node.path.to_string_lossy().to_string();
+        path_to_index.insert(path_str, i);
     }
     
-    // Second pass: organize nodes into a tree
-    // We need to collect paths first to avoid borrowing issues
-    let paths: Vec<String> = node_map.keys().cloned().collect();
+    // For each node, find its parent and record the relationship
+    let mut children_by_parent: HashMap<usize, Vec<usize>> = HashMap::new();
     
-    for path in paths {
-        if let Some(node) = node_map.get_mut(&path) {
-            // Find parent path
-            if let Some(parent_path) = node.path.parent() {
-                let parent_str = parent_path.to_string_lossy().to_string();
-                if let Some(parent_node) = node_map.get_mut(&parent_str) {
-                    // Add this node as a child of its parent
-                    parent_node.children.push(node.clone());
-                }
+    for i in 0..nodes.len() {
+        let node_path = &nodes[i].path;
+        if let Some(parent_path) = node_path.parent() {
+            let parent_str = parent_path.to_string_lossy().to_string();
+            if let Some(&parent_idx) = path_to_index.get(&parent_str) {
+                children_by_parent.entry(parent_idx)
+                    .or_insert_with(Vec::new)
+                    .push(i);
             }
         }
     }
     
-    // Third pass: sort children of each node
-    for node in node_map.values_mut() {
-        node.children.sort_by(|a, b| {
+    // Now build the tree by moving nodes into their parent's children
+    // We need to process from leaves to root to avoid moving nodes that still need to be accessed
+    // Instead, we'll create a new tree structure
+    let mut new_nodes: Vec<ExplorerNode> = Vec::with_capacity(nodes.len());
+    
+    // First, create all nodes without children
+    for node in &nodes {
+        new_nodes.push(ExplorerNode {
+            path: node.path.clone(),
+            name: node.name.clone(),
+            is_dir: node.is_dir,
+            children: Vec::new(),
+        });
+    }
+    
+    // Then, add children to their parents
+    // We need to process in a way that ensures parent nodes exist before we try to add children
+    // Since we're working with indices, we can do this directly
+    for (parent_idx, child_indices) in children_by_parent {
+        // Collect children nodes
+        let mut children = Vec::new();
+        for &child_idx in &child_indices {
+            // Take the child node from new_nodes (but we can't move out while iterating)
+            // Instead, we'll clone it for now
+            children.push(new_nodes[child_idx].clone());
+        }
+        // Sort children
+        children.sort_by(|a, b| {
             if a.is_dir != b.is_dir {
-                b.is_dir.cmp(&a.is_dir) // Directories first
+                b.is_dir.cmp(&a.is_dir)
             } else {
                 a.name.to_lowercase().cmp(&b.name.to_lowercase())
             }
         });
+        // Set children on parent
+        new_nodes[parent_idx].children = children;
     }
     
     // Collect root nodes (nodes without parents in the entries)
     let mut root_nodes = Vec::new();
-    for node in node_map.values() {
-        let has_parent_in_entries = if let Some(parent_path) = node.path.parent() {
+    for i in 0..new_nodes.len() {
+        let node_path = &new_nodes[i].path;
+        let has_parent = if let Some(parent_path) = node_path.parent() {
             let parent_str = parent_path.to_string_lossy().to_string();
-            node_map.contains_key(&parent_str)
+            path_to_index.contains_key(&parent_str)
         } else {
             false
         };
         
-        if !has_parent_in_entries {
-            root_nodes.push(node.clone());
+        if !has_parent {
+            root_nodes.push(new_nodes[i].clone());
         }
     }
     
