@@ -397,10 +397,11 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
         Message::ActivitySelected(activity) => {
             app.active_activity = activity;
             
-            // Reset all panel visibilities
+            // Reset panel visibilities, but keep AI panel if it's already visible
+            // This allows AI panel to stay open while other activities are selected
             app.explorer_panel_visible = false;
             app.search_panel_visible = false;
-            app.ai_panel_visible = false;
+            // Don't reset ai_panel_visible - let it stay as is
             app.git_panel_visible = false;
             app.settings_panel_visible = false;
             
@@ -413,7 +414,8 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                     app.search_panel_visible = true;
                 }
                 Activity::Ai => {
-                    app.ai_panel_visible = true;
+                    // AI panel visibility is toggled by ToggleAiPanel
+                    // Don't change it here
                 }
                 Activity::SourceControl => {
                     app.git_panel_visible = true;
