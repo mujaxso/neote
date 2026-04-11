@@ -4,7 +4,7 @@ use file_ops::{FileLoader, WorkspaceLoader};
 use iced::Command;
 use crate::explorer::actions::ExplorerMessage;
 use crate::explorer::state::InlineEditMode;
-use rfd::{AsyncFileDialog, FileDialog};
+use rfd::AsyncFileDialog;
 use tokio::time;
 
 // Helper function to normalize paths for consistent comparison
@@ -99,7 +99,7 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                                         "Folder picker failed to open. This is common in Nix+Wayland environments.\n\
                                         \n\
                                         Possible solutions:\n\
-                                        1. Try running with X11: NEOTE_FORCE_X11=1 cargo run\n\
+                                        1. Try running with X11: WINIT_UNIX_BACKEND=x11 cargo run --bin desktop\n\
                                         2. Use manual workspace entry below\n\
                                         3. Ensure xdg-desktop-portal-hyprland is properly configured"
                                     } else if nix_env {
@@ -108,12 +108,12 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                                         Possible solutions:\n\
                                         1. Ensure xdg-desktop-portal is running: systemctl --user status xdg-desktop-portal\n\
                                         2. Use manual workspace entry below\n\
-                                        3. Try running outside nix-shell with: nix develop --command cargo run"
+                                        3. Try running outside nix-shell with: nix develop --command cargo run --bin desktop"
                                     } else if wayland {
                                         "Folder picker failed to open. This may be a Wayland compatibility issue.\n\
                                         \n\
                                         Possible solutions:\n\
-                                        1. Try running with X11: NEOTE_FORCE_X11=1 cargo run\n\
+                                        1. Try running with X11: WINIT_UNIX_BACKEND=x11 cargo run --bin desktop\n\
                                         2. Use manual workspace entry below\n\
                                         3. Ensure xdg-desktop-portal-hyprland is properly configured"
                                     } else {
