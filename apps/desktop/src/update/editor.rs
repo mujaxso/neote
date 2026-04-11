@@ -19,19 +19,10 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
             match &action {
                 iced::widget::text_editor::Action::Edit(edit) => {
                     if let Some(ref mut editor_state) = app.editor_state {
-                        // Apply the edit to the document
-                        match edit {
-                            iced::widget::text_editor::Edit::Insert(char_index, text) => {
-                                // For insertion, update the entire document text
-                                let current_text = app.text_editor.text();
-                                editor_state.document_mut().replace_all(&current_text);
-                            }
-                            iced::widget::text_editor::Edit::Delete(char_index, count) => {
-                                // For deletion, update the entire document text
-                                let current_text = app.text_editor.text();
-                                editor_state.document_mut().replace_all(&current_text);
-                            }
-                        }
+                        // For any edit, update the entire document text
+                        // This is simpler and ensures consistency
+                        let current_text = app.text_editor.text();
+                        editor_state.document_mut().replace_all(&current_text);
                         app.is_dirty = editor_state.document().is_dirty();
                         app.status_message = "Text updated".to_string();
                     }

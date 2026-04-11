@@ -87,10 +87,12 @@ pub fn editor<'a>(
     // The text editor widget has built-in scrolling capabilities
     // It handles both vertical and horizontal scrolling automatically
     // We don't need to wrap it in additional scrollable containers
+    // Ensure the editor is properly clipped to prevent overflow
     container(editor)
         .padding(0) // No padding
         .width(Length::Fill)
         .height(Length::Fill)
+        .clip(true) // Ensure content doesn't overflow
         .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
             container::Appearance {
                 background: Some(background_color.into()),
