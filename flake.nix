@@ -62,6 +62,8 @@
 
           # Environment variables
           env = {
+            # Use Wayland backend for GTK3 in Hyprland
+            GDK_BACKEND = "wayland";
             # GTK3 theme settings for Nix environment
             GTK_THEME = "Adwaita";
             GTK_DATA_PREFIX = "${pkgs.gtk3}";
