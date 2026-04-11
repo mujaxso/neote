@@ -42,6 +42,13 @@
 
             # For workspace-daemon file operations
             openssl
+
+            # GLib and GTK3 for RFD file dialogs (gtk3 feature)
+            glib
+            gtk3
+            pango
+            atk
+            gdk-pixbuf
           ];
 
           # Environment variables
@@ -62,6 +69,12 @@
               vulkan-loader
               wayland
               openssl
+              # GLib/GTK3 for RFD
+              glib
+              gtk3
+              pango
+              atk
+              gdk-pixbuf
             ];
           };
 
@@ -83,6 +96,8 @@
           nativeBuildInputs = with pkgs; [
             pkg-config
             cmake
+            # For GLib/GTK3
+            wrapGAppsHook
           ];
 
           buildInputs = with pkgs; [
@@ -98,6 +113,12 @@
             vulkan-loader
             wayland
             openssl
+            # GLib/GTK3 for RFD
+            glib
+            gtk3
+            pango
+            atk
+            gdk-pixbuf
           ];
 
           # Force X11 backend
