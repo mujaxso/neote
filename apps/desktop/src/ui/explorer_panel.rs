@@ -17,25 +17,59 @@ pub fn explorer_panel<'a>(app: &'a App) -> Element<'a, Message> {
     impl iced::widget::scrollable::StyleSheet for ScrollableStyle {
         type Style = iced::Theme;
         
-        fn active(&self, _style: &Self::Style) -> iced::widget::scrollable::Scrollbar {
-            iced::widget::scrollable::Scrollbar {
-                background: None,
-                border: iced::Border::default(),
-                scroller: iced::widget::scrollable::Scroller {
-                    color: self.colors.border,
+        fn active(&self, _style: &Self::Style) -> iced::widget::scrollable::Appearance {
+            iced::widget::scrollable::Appearance {
+                container: iced::widget::container::Appearance::default(),
+                vertical_scrollbar: iced::widget::scrollable::Scrollbar {
+                    background: None,
                     border: iced::Border::default(),
+                    scroller: iced::widget::scrollable::Scroller {
+                        color: self.colors.border,
+                        border: iced::Border::default(),
+                    },
                 },
+                horizontal_scrollbar: iced::widget::scrollable::Scrollbar {
+                    background: None,
+                    border: iced::Border::default(),
+                    scroller: iced::widget::scrollable::Scroller {
+                        color: self.colors.border,
+                        border: iced::Border::default(),
+                    },
+                },
+                gap: None,
             }
         }
         
-        fn hovered(&self, _style: &Self::Style) -> iced::widget::scrollable::Scrollbar {
-            iced::widget::scrollable::Scrollbar {
-                background: None,
-                border: iced::Border::default(),
-                scroller: iced::widget::scrollable::Scroller {
-                    color: self.colors.accent,
+        fn hovered(
+            &self,
+            _style: &Self::Style,
+            is_mouse_over_scrollbar: bool,
+        ) -> iced::widget::scrollable::Appearance {
+            let scroller_color = if is_mouse_over_scrollbar {
+                self.colors.accent
+            } else {
+                self.colors.border
+            };
+            
+            iced::widget::scrollable::Appearance {
+                container: iced::widget::container::Appearance::default(),
+                vertical_scrollbar: iced::widget::scrollable::Scrollbar {
+                    background: None,
                     border: iced::Border::default(),
+                    scroller: iced::widget::scrollable::Scroller {
+                        color: scroller_color,
+                        border: iced::Border::default(),
+                    },
                 },
+                horizontal_scrollbar: iced::widget::scrollable::Scrollbar {
+                    background: None,
+                    border: iced::Border::default(),
+                    scroller: iced::widget::scrollable::Scroller {
+                        color: scroller_color,
+                        border: iced::Border::default(),
+                    },
+                },
+                gap: None,
             }
         }
     }
