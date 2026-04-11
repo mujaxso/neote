@@ -106,26 +106,28 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
     
     // Create a clean, borderless editor area that fills available space
     // The editor should directly fill the area without extra containers
-    column![
+    let content = column![
         header,
         // Editor content should fill all remaining space
-        // Use a container that matches the editor background exactly
-        container(editor_content)
-            .width(Length::Fill)
-            .height(Length::Fill)
-            .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
-                container::Appearance {
-                    background: Some(style.colors.editor_background.into()),
-                    border: iced::Border {
-                        color: Color::TRANSPARENT,
-                        width: 0.0,
-                        radius: 0.0.into(),
-                    },
-                    ..Default::default()
-                }
-            }))),
+        editor_content
     ]
     .width(Length::Fill)
-    .height(Length::Fill)
-    .into()
+    .height(Length::Fill);
+
+    // Wrap in a container to ensure proper background, but without borders
+    container(content)
+        .width(Length::Fill)
+        .height(Length::Fill)
+        .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
+            container::Appearance {
+                background: Some(style.colors.editor_background.into()),
+                border: iced::Border {
+                    color: Color::TRANSPARENT,
+                    width: 0.0,
+                    radius: 0.0.into(),
+                },
+                ..Default::default()
+            }
+        })))
+        .into()
 }

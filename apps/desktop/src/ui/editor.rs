@@ -26,7 +26,7 @@ pub fn editor<'a>(
     // Place the editor in a container with minimal padding
     // The text_editor widget will handle its own scrolling
     container(editor)
-        .padding([4, 16, 12, 16]) // Reduced padding for more space
+        .padding([2, 12, 8, 12]) // Even less padding for more space
         .width(Length::Fill)
         .height(Length::Fill)
         .style(iced::theme::Container::Custom(Box::new(|_theme: &iced::Theme| {
