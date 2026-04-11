@@ -82,8 +82,6 @@ pub fn editor<'a>(
     let editor = text_editor::TextEditor::new(text_editor_content)
         .on_action(Message::EditorContentChanged)
         .font(font)
-        .width(Length::Fill)
-        .height(Length::Fill)
         .style(iced::theme::TextEditor::Custom(Box::new(style_sheet)));
     
     // Place the editor in a container with NO padding
