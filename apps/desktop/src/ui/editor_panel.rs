@@ -31,10 +31,10 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
                     )
                 }
             ]
-            .spacing(4)
+            .spacing(2)  // Reduced spacing
             .align_items(iced::Alignment::Center)
         )
-        .padding([4, 12])  // Even less padding for more compact header
+        .padding([2, 8])  // Minimal padding
         .width(Length::Fill)
         .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
             container::Appearance {
@@ -55,10 +55,10 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
                     .size(10)
                     .style(iced::theme::Text::Color(style.colors.text_muted)),
             ]
-            .spacing(4)
+            .spacing(2)  // Reduced spacing
             .align_items(iced::Alignment::Center)
         )
-        .padding([4, 12])  // Even less padding for more compact header
+        .padding([2, 8])  // Minimal padding
         .width(Length::Fill)
         .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
             container::Appearance {
@@ -112,7 +112,8 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
         editor_content
     ]
     .width(Length::Fill)
-    .height(Length::Fill);
+    .height(Length::Fill)
+    .spacing(0);  // No spacing between header and editor
 
     // Wrap in a container to ensure proper background, but without borders
     container(content)
