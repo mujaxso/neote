@@ -55,6 +55,7 @@
             atk
             gdk-pixbuf
             xdg-desktop-portal
+            gsettings-desktop-schemas  # For GTK3 settings
           ];
 
           # Environment variables
@@ -68,6 +69,9 @@
             GTK_DATA_PREFIX = "${pkgs.gtk3}";
             # Ensure GTK can find its modules
             GTK_PATH = "${pkgs.gtk3}/lib/gtk-3.0:${pkgs.gtk3}/lib/gtk-3.0/3.0.0";
+            # Additional GTK environment variables
+            XDG_DATA_DIRS = "${pkgs.gtk3}/share:${pkgs.gsettings-desktop-schemas}/share/gsettings-schemas/${pkgs.gsettings-desktop-schemas.name}";
+            GI_TYPELIB_PATH = "${pkgs.gtk3}/lib/girepository-1.0";
             # Ensure linker can find libraries
             LD_LIBRARY_PATH = with pkgs; lib.makeLibraryPath [
               libxkbcommon
@@ -134,6 +138,7 @@
             pango
             atk
             gdk-pixbuf
+            gsettings-desktop-schemas  # For GTK3 settings
             # D-Bus may still be needed
             dbus
           ];

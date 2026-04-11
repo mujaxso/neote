@@ -154,7 +154,7 @@ fn top_bar<'a>(workspace_path: &'a str, is_dirty: bool) -> Element<'a, Message> 
                         .on_submit(Message::SubmitManualWorkspacePath(workspace_path.to_string()))
                         .padding([10, 12])
                         .width(Length::Fill)
-                        .style(iced::theme::TextInput::Boxed),
+                        .style(iced::theme::TextInput::Default),
                     button("Open")
                         .on_press(Message::SubmitManualWorkspacePath(workspace_path.to_string()))
                         .padding([10, 14])
