@@ -34,7 +34,7 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
             .spacing(4)  // Less spacing
             .align_items(iced::Alignment::Center)
         )
-        .padding([2, 8])  // Even less padding
+        .padding([1, 6])  // Even less padding
         .width(Length::Fill)
         .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
             container::Appearance {
@@ -58,7 +58,7 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
             .spacing(4)  // Less spacing
             .align_items(iced::Alignment::Center)
         )
-        .padding([2, 8])  // Even less padding
+        .padding([1, 6])  // Even less padding
         .width(Length::Fill)
         .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
             container::Appearance {

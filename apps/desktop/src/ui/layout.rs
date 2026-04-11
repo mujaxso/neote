@@ -106,7 +106,11 @@ pub fn ide_layout<'a>(
         .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
             container::Appearance {
                 background: Some(style.colors.app_background.into()),
-                border: iced::Border::default(),
+                border: iced::Border {
+                    color: Color::TRANSPARENT,
+                    width: 0.0,
+                    radius: 0.0.into(),
+                },
                 ..Default::default()
             }
         })))

@@ -122,7 +122,7 @@ pub fn activity_bar(app: &App) -> Element<'_, Message> {
     
     // Apply container styling
     container(content)
-        .width(Length::Fixed(48.0)) // Fixed compact width like VS Code
+        .width(Length::Fixed(44.0)) // More compact width
         .height(Length::Fill)
         .style(iced::theme::Container::Custom(Box::new(ActivityBarContainerStyle {
             colors: style.colors,
@@ -156,7 +156,7 @@ fn activity_button<'a>(item: &ActivityItem, app: &App, style: &StyleHelpers) -> 
     
     let button_content = container(icon)
         .width(Length::Fill)
-        .height(Length::Fixed(48.0))
+        .height(Length::Fixed(44.0))
         .center_x()
         .center_y();
     
@@ -168,7 +168,7 @@ fn activity_button<'a>(item: &ActivityItem, app: &App, style: &StyleHelpers) -> 
     // Apply button styling
     container(mouse_area)
         .width(Length::Fill)
-        .height(Length::Fixed(48.0))
+        .height(Length::Fixed(44.0))
         .style(iced::theme::Container::Custom(Box::new(ActivityButtonStyle {
             is_active,
             is_hovered,

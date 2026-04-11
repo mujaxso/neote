@@ -60,7 +60,7 @@ pub fn explorer_panel<'a>(app: &'a App) -> Element<'a, Message> {
         ]
         .align_items(iced::Alignment::Center)
     )
-    .padding(if is_compact { [8, 12] } else { [10, 16] })
+    .padding(if is_compact { [6, 10] } else { [8, 12] })
     .width(Length::Fill);
     
     let content: Element<_> = if visible_rows.is_empty() {
@@ -343,9 +343,9 @@ fn explorer_row(row: crate::explorer::state::VisibleRow, app: &App, is_compact: 
         mouse_area(
             button(row_content)
                 .on_press(message)
-                .padding(if is_compact { [4, 8] } else { [6, 12] })
+                .padding(if is_compact { [3, 6] } else { [5, 10] })
                 .width(Length::Fill)
-                .height(Length::Fixed(if is_compact { 28.0 } else { 32.0 }))
+                .height(Length::Fixed(if is_compact { 26.0 } else { 30.0 }))
                 .style(iced::theme::Button::Custom(Box::new(button_style)))
         )
         .on_enter(Message::ExplorerHoverChanged(Some(row.path.clone())))

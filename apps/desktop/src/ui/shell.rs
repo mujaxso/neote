@@ -16,11 +16,11 @@ use super::{
 pub fn shell(app: &App) -> Element<'_, Message> {
     let style = StyleHelpers::new(app.theme);
     
-    // Get panel widths based on layout mode - make explorer smaller, assistant same
+    // Get panel widths based on layout mode - more compact
     let (explorer_width, assistant_width) = match app.layout_mode {
-        LayoutMode::Wide => (220.0, 320.0),      // Explorer smaller, assistant same
-        LayoutMode::Medium => (180.0, 280.0),    // Explorer smaller
-        LayoutMode::Narrow => (140.0, 240.0),    // Explorer smaller
+        LayoutMode::Wide => (200.0, 300.0),      // More compact widths
+        LayoutMode::Medium => (160.0, 260.0),    // More compact
+        LayoutMode::Narrow => (120.0, 220.0),    // More compact
     };
     
     // Build panels with responsive sizing

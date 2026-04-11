@@ -133,7 +133,7 @@ impl SemanticColors {
             shell_background: Color::from_rgb(0.106, 0.114, 0.153),    // #1B1D27
             panel_background: Color::from_rgb(0.118, 0.129, 0.188),    // #1E2130
             elevated_panel_background: Color::from_rgb(0.137, 0.149, 0.216), // #232637
-            editor_background: Color::from_rgb(0.090, 0.098, 0.137),   // #171923
+            editor_background: Color::from_rgb(0.098, 0.106, 0.145),   // #191B25 - slightly lighter than shell for subtle separation
             input_background: Color::from_rgb(0.078, 0.090, 0.133),    // #141722
             status_bar_background: Color::from_rgb(0.106, 0.114, 0.153), // #1B1D27
             
@@ -145,8 +145,8 @@ impl SemanticColors {
             text_on_accent: Color::from_rgb(1.0, 1.0, 1.0),            // #FFFFFF
             
             // UI elements
-            border: Color::from_rgb(0.169, 0.188, 0.251),              // #2B3040
-            divider: Color::from_rgb(0.169, 0.188, 0.251),             // #2B3040
+            border: Color::from_rgb(0.129, 0.148, 0.211),              // #212536 - darker, more subtle
+            divider: Color::from_rgb(0.129, 0.148, 0.211),             // #212536 - darker, more subtle
             accent: Color::from_rgb(0.298, 0.435, 1.0),                // #4C6FFF
             accent_hover: Color::from_rgb(0.353, 0.482, 1.0),          // #5A7BFF
             accent_soft_background: Color::from_rgba(0.298, 0.435, 1.0, 0.16), // rgba(76, 111, 255, 0.16)

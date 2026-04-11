@@ -5,28 +5,28 @@ use crate::settings::editor::EditorTypographySettings;
 use crate::ui::icons::Icon;
 use crate::ui::style::StyleHelpers;
 
-/// Common spacing constants for compact IDE rhythm
-pub const SPACING_XS: f32 = 4.0;
-pub const SPACING_SM: f32 = 6.0;
-pub const SPACING_MD: f32 = 8.0;
-pub const SPACING_LG: f32 = 12.0;
-pub const SPACING_XL: f32 = 16.0;
+/// Common spacing constants for compact IDE rhythm - more compact
+pub const SPACING_XS: f32 = 3.0;
+pub const SPACING_SM: f32 = 5.0;
+pub const SPACING_MD: f32 = 7.0;
+pub const SPACING_LG: f32 = 10.0;
+pub const SPACING_XL: f32 = 14.0;
 
 /// Common border radius values - subtle and refined
 pub const RADIUS_XS: f32 = 2.0;
-pub const RADIUS_SM: f32 = 4.0;
-pub const RADIUS_MD: f32 = 6.0;
-pub const RADIUS_LG: f32 = 8.0;
+pub const RADIUS_SM: f32 = 3.0;
+pub const RADIUS_MD: f32 = 5.0;
+pub const RADIUS_LG: f32 = 6.0;
 
-/// Common sizes for UI elements - compact IDE density
-pub const ICON_SIZE: f32 = 16.0;
-pub const BUTTON_HEIGHT_SM: f32 = 28.0;
-pub const BUTTON_HEIGHT_MD: f32 = 32.0;
-pub const PANEL_HEADER_HEIGHT: f32 = 36.0;
-pub const STATUS_BAR_HEIGHT: f32 = 24.0;
-pub const EXPLORER_ROW_HEIGHT: f32 = 28.0;
-pub const ACTIVITY_BAR_WIDTH: f32 = 48.0;
-pub const TOP_BAR_HEIGHT: f32 = 40.0;
+/// Common sizes for UI elements - more compact IDE density
+pub const ICON_SIZE: f32 = 14.0;
+pub const BUTTON_HEIGHT_SM: f32 = 26.0;
+pub const BUTTON_HEIGHT_MD: f32 = 30.0;
+pub const PANEL_HEADER_HEIGHT: f32 = 32.0;
+pub const STATUS_BAR_HEIGHT: f32 = 22.0;
+pub const EXPLORER_ROW_HEIGHT: f32 = 26.0;
+pub const ACTIVITY_BAR_WIDTH: f32 = 44.0;
+pub const TOP_BAR_HEIGHT: f32 = 36.0;
 
 /// Extension-friendly theme access interface
 /// This trait allows extensions to access Neote's semantic colors and styles
@@ -178,7 +178,7 @@ pub mod containers {
         container::Appearance {
             background: Some(colors.editor_background.into()),
             border: iced::Border {
-                color: Color::TRANSPARENT,  // Remove border for cleaner look
+                color: Color::TRANSPARENT,
                 width: 0.0,
                 radius: 0.0.into(),
             },

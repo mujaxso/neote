@@ -35,7 +35,7 @@ pub fn assistant_panel(app: &App) -> Element<'_, Message> {
         ]
         .align_items(iced::Alignment::Center)
     )
-    .padding(if is_compact { [6, 8] } else { [8, 12] })
+    .padding(if is_compact { [5, 7] } else { [7, 10] })
     .width(Length::Fill);
     
     struct WelcomeCardStyle {
@@ -114,7 +114,7 @@ pub fn assistant_panel(app: &App) -> Element<'_, Message> {
             column![
                 button(if is_compact { "Explain" } else { "Explain this file" })
                     .on_press(Message::PromptInputChanged("Explain the current file".to_string()))
-                    .padding(if is_compact { [6, 8] } else { [8, 10] })
+                    .padding(if is_compact { [5, 7] } else { [7, 9] })
                     .width(Length::Fill)
                     .style(iced::theme::Button::Secondary),
                 button(if is_compact { "Refactor" } else { "Refactor selection" })
@@ -209,7 +209,7 @@ pub fn assistant_panel(app: &App) -> Element<'_, Message> {
         column![
             text_input(if is_compact { "Ask..." } else { "Ask Neote AI..." }, &app.prompt_input)
                 .on_input(Message::PromptInputChanged)
-                .padding(if is_compact { [8, 10] } else { [12, 14] })
+                .padding(if is_compact { [7, 9] } else { [10, 12] })
                 .width(Length::Fill)
                 .style(iced::theme::TextInput::Custom(Box::new(input_style))),
             row![

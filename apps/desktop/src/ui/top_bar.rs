@@ -83,7 +83,7 @@ pub fn top_bar(app: &App) -> Element<'_, Message> {
     .on_input(|path| {
         Message::WorkspacePathChanged(path)
     })
-    .padding(if is_compact { [4, 8] } else { [6, 10] })
+    .padding(if is_compact { [3, 6] } else { [5, 8] })
     .width(if is_compact { Length::FillPortion(2) } else { Length::FillPortion(3) })
     .style(iced::theme::TextInput::Custom(Box::new(input_style)));
     
@@ -97,7 +97,7 @@ pub fn top_bar(app: &App) -> Element<'_, Message> {
         .align_items(iced::Alignment::Center)
     )
     .on_press(Message::OpenWorkspace)
-    .padding(if is_compact { [4, 8] } else { [6, 12] })
+    .padding(if is_compact { [3, 6] } else { [5, 10] })
     .style(iced::theme::Button::Secondary);
     
     let save_button = button(
