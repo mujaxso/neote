@@ -5,6 +5,7 @@ use iced::Command;
 use crate::explorer::actions::ExplorerMessage;
 use crate::explorer::state::InlineEditMode;
 use rfd::AsyncFileDialog;
+use tokio::time;
 
 // Helper function to normalize paths for consistent comparison
 fn normalize_path(path: &str) -> String {
@@ -30,29 +31,69 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
             Command::none()
         }
         Message::OpenWorkspace => {
-            // Try using the async version of rfd
+            // Immediate UI feedback
+            eprintln!("[DIAG] OpenWorkspace: Button clicked, starting async task");
+            
             Command::perform(
                 async move {
-                    // Try to open the dialog
-                    let dialog = AsyncFileDialog::new()
-                        .set_title("Select Workspace Directory");
+                    eprintln!("[DIAG] OpenWorkspace: Async task started");
                     
-                    match dialog.pick_folder().await {
+                    // Give a small delay to let UI update before showing dialog
+                    // This can help with focus issues on some platforms
+                    time::sleep(std::time::Duration::from_millis(100)).await;
+                    
+                    eprintln!("[DIAG] OpenWorkspace: Creating AsyncFileDialog");
+                    let dialog = AsyncFileDialog::new()
+                        .set_title("Select Workspace Directory - Neote");
+                    
+                    eprintln!("[DIAG] OpenWorkspace: Calling pick_folder().await");
+                    let start_time = std::time::Instant::now();
+                    let result = dialog.pick_folder().await;
+                    let elapsed = start_time.elapsed();
+                    eprintln!("[DIAG] OpenWorkspace: pick_folder() returned after {:?}: {:?}", elapsed, result);
+                    
+                    match result {
                         Some(handle) => {
                             let path = handle.path().to_string_lossy().to_string();
-                            // Load the workspace immediately after selection
+                            eprintln!("[DIAG] OpenWorkspace: User selected folder: {}", path);
+                            
+                            eprintln!("[DIAG] OpenWorkspace: Loading workspace with WorkspaceLoader");
                             match WorkspaceLoader::list_directory(&path) {
-                                Ok(entries) => Message::WorkspaceLoaded(Ok((path, entries))),
-                                Err(e) => Message::WorkspaceLoaded(Err(format!("Failed to open workspace: {}", e))),
+                                Ok(entries) => {
+                                    eprintln!("[DIAG] OpenWorkspace: Successfully loaded {} entries", entries.len());
+                                    Message::WorkspaceLoaded(Ok((path, entries)))
+                                }
+                                Err(e) => {
+                                    eprintln!("[DIAG] OpenWorkspace: WorkspaceLoader error: {}", e);
+                                    Message::WorkspaceLoaded(Err(format!("Failed to open workspace: {}", e)))
+                                }
                             }
                         }
                         None => {
-                            // Return a special error message suggesting manual entry
-                            Message::WorkspaceLoaded(Err("Native folder picker failed or was cancelled.".to_string()))
+                            eprintln!("[DIAG] OpenWorkspace: Dialog returned None (cancelled or failed)");
+                            
+                            // Check if it was likely a backend failure (too fast) vs user cancellation
+                            if elapsed < std::time::Duration::from_millis(500) {
+                                eprintln!("[DIAG] OpenWorkspace: Dialog returned very quickly ({:?}), likely backend failure", elapsed);
+                                // Provide helpful error message
+                                Message::WorkspaceLoaded(Err(
+                                    "Folder picker failed to open. This may be due to:\n\
+                                    1. Missing portal/GTK backend on Linux\n\
+                                    2. Dialog opened behind main window\n\
+                                    3. Platform compatibility issue\n\n\
+                                    Try: Install xdg-desktop-portal and gtk3, or use manual workspace path entry.".to_string()
+                                ))
+                            } else {
+                                eprintln!("[DIAG] OpenWorkspace: Likely user cancellation (took {:?})", elapsed);
+                                Message::WorkspaceDialogCancelled
+                            }
                         }
                     }
                 },
-                |result| result,
+                |result| {
+                    eprintln!("[DIAG] OpenWorkspace: Command::perform callback with result");
+                    result
+                },
             )
         }
         Message::WorkspaceLoaded(result) => {
@@ -136,7 +177,7 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                         return Command::perform(
                             async move {
                                 // Small delay to show the warning
-                                tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
+                                time::sleep(std::time::Duration::from_millis(100)).await;
                                 Message::OpenLargeFileReadOnly(metadata.path)
                             },
                             |msg| msg,
