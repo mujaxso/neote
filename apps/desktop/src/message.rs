@@ -1,6 +1,6 @@
 use iced::widget::text_editor;
 use core_types::workspace::DirectoryEntry;
-use editor_buffer::buffer::TextBuffer;
+use editor_core::{EditorState, Document};
 use crate::state::{Activity, FileMetadata};
 use crate::explorer::actions::ExplorerMessage;
 use crate::settings::editor::FontFamily;
@@ -15,12 +15,19 @@ pub enum Message {
     // Metadata loaded (size, etc.)
     FileMetadataLoaded(Result<FileMetadata, String>),
     // File content loaded
-    FileLoaded(Result<(String, String, TextBuffer), String>),
+    FileLoaded(Result<(String, String, Document), String>),
     // Confirm opening a large file
     ConfirmOpenLargeFile(String, u64),
     // Open in read-only mode
     OpenLargeFileReadOnly(String),
     EditorContentChanged(text_editor::Action),
+    // New editor engine messages
+    EditorInsertText(String),
+    EditorDeleteBackward,
+    EditorDeleteForward,
+    EditorMoveCursor(editor_core::CursorMovement),
+    EditorSetDocument(Document),
+    EditorUpdateState(EditorState),
     SaveFile,
     FileSaved(Result<(), String>),
     RefreshWorkspace,

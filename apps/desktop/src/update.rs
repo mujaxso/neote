@@ -6,6 +6,7 @@ use crate::explorer::actions::ExplorerMessage;
 use crate::explorer::state::InlineEditMode;
 use rfd::AsyncFileDialog;
 use tokio::time;
+use editor_core::{Document, EditorState};
 
 // Helper function to normalize paths for consistent comparison
 fn normalize_path(path: &str) -> String {
@@ -230,8 +231,10 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                             async move {
                                 let path = metadata.path;
                                 match FileLoader::load_file(&path) {
-                                    Ok((content, buffer)) => {
-                                        Message::FileLoaded(Ok((path, content, buffer)))
+                                    Ok((content, _)) => {
+                                        // Create a Document from the content
+                                        let document = Document::from_text_with_path(&content, path.clone());
+                                        Message::FileLoaded(Ok((path, content, document)))
                                     }
                                     Err(e) => Message::FileLoaded(Err(format!("Failed to load file: {}", e))),
                                 }
@@ -258,8 +261,9 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
             Command::perform(
                 async move {
                     match FileLoader::load_file(&path) {
-                        Ok((content, buffer)) => {
-                            Message::FileLoaded(Ok((path, content, buffer)))
+                        Ok((content, _)) => {
+                            let document = Document::from_text_with_path(&content, path.clone());
+                            Message::FileLoaded(Ok((path, content, document)))
                         }
                         Err(e) => Message::FileLoaded(Err(format!("Failed to load file: {}", e))),
                     }
@@ -281,8 +285,9 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
             Command::perform(
                 async move {
                     match FileLoader::load_file_preview(&path, 100 * 1024) {
-                        Ok((content, buffer)) => {
-                            Message::FileLoaded(Ok((path, content, buffer)))
+                        Ok((content, _)) => {
+                            let document = Document::from_text_with_path(&content, path.clone());
+                            Message::FileLoaded(Ok((path, content, document)))
                         }
                         Err(e) => Message::FileLoaded(Err(format!("Failed to load file preview: {}", e))),
                     }
@@ -292,9 +297,11 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
         }
         Message::FileLoaded(result) => {
             match result {
-                Ok((path, content, buffer)) => {
+                Ok((path, content, document)) => {
                     app.active_file_path = Some(path.clone());
-                    app.editor_buffer = Some(buffer);
+                    // Create editor state from document
+                    let editor_state = EditorState::from_document(document);
+                    app.editor_state = Some(editor_state);
                     app.file_loading_state = FileLoadingState::Idle;
                     
                     let file_size = content.len();
@@ -334,8 +341,8 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                         }
                         
                         // Initialize editor content
-                        if let Some(ref buffer) = app.editor_buffer {
-                            let text = buffer.text();
+                        if let Some(ref editor_state) = app.editor_state {
+                            let text = editor_state.document().text();
                             // For very large files, limit the text to prevent crashes
                             let display_text = if text.len() > 1_000_000 {
                                 &text[..1_000_000]
@@ -384,20 +391,70 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
             };
             
             if should_update_buffer {
-                if let Some(ref mut buffer) = app.editor_buffer {
+                if let Some(ref mut editor_state) = app.editor_state {
                     // For simplicity, fall back to full update
                     let current_text = app.text_editor.text();
-                    buffer.replace_all(&current_text);
+                    editor_state.document_mut().replace_all(&current_text);
                     app.status_message = "Text updated".to_string();
-                    app.is_dirty = buffer.is_dirty();
+                    app.is_dirty = editor_state.document().is_dirty();
                 }
             }
             Command::none()
         }
+        // New editor engine messages
+        Message::EditorInsertText(text) => {
+            if let Some(ref mut editor_state) = app.editor_state {
+                if let Err(e) = editor_state.insert_text(&text) {
+                    app.status_message = format!("Failed to insert text: {}", e);
+                } else {
+                    app.is_dirty = editor_state.document().is_dirty();
+                    app.status_message = "Text inserted".to_string();
+                }
+            }
+            Command::none()
+        }
+        Message::EditorDeleteBackward => {
+            if let Some(ref mut editor_state) = app.editor_state {
+                if let Err(e) = editor_state.delete_backward() {
+                    app.status_message = format!("Failed to delete: {}", e);
+                } else {
+                    app.is_dirty = editor_state.document().is_dirty();
+                    app.status_message = "Deleted backward".to_string();
+                }
+            }
+            Command::none()
+        }
+        Message::EditorDeleteForward => {
+            if let Some(ref mut editor_state) = app.editor_state {
+                if let Err(e) = editor_state.delete_forward() {
+                    app.status_message = format!("Failed to delete: {}", e);
+                } else {
+                    app.is_dirty = editor_state.document().is_dirty();
+                    app.status_message = "Deleted forward".to_string();
+                }
+            }
+            Command::none()
+        }
+        Message::EditorMoveCursor(movement) => {
+            if let Some(ref mut editor_state) = app.editor_state {
+                editor_state.move_cursor(movement);
+                app.status_message = "Cursor moved".to_string();
+            }
+            Command::none()
+        }
+        Message::EditorSetDocument(document) => {
+            let editor_state = EditorState::from_document(document);
+            app.editor_state = Some(editor_state);
+            Command::none()
+        }
+        Message::EditorUpdateState(editor_state) => {
+            app.editor_state = Some(editor_state);
+            Command::none()
+        }
         Message::SaveFile => {
             if let Some(path) = &app.active_file_path {
-                if let Some(ref buffer) = app.editor_buffer {
-                    let content = buffer.text();
+                if let Some(ref editor_state) = app.editor_state {
+                    let content = editor_state.document().text();
                     let path_clone = path.clone();
                     let content_clone = content.clone();
                     
@@ -423,9 +480,9 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
         Message::FileSaved(result) => {
             match result {
                 Ok(_) => {
-                    if let Some(buffer) = &mut app.editor_buffer {
-                        buffer.mark_saved();
-                        app.is_dirty = buffer.is_dirty();
+                    if let Some(editor_state) = &mut app.editor_state {
+                        editor_state.document_mut().mark_saved();
+                        app.is_dirty = editor_state.document().is_dirty();
                     }
                     app.status_message = "File saved successfully".to_string();
                     app.error_message = None;
@@ -515,6 +572,31 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                 iced::keyboard::Key::Character(c) if c == "0" && modifiers.control() => {
                     // Ctrl+0 to reset zoom
                     update(app, Message::ResetZoom)
+                }
+                // Handle arrow keys for cursor movement
+                iced::keyboard::Key::Named(iced::keyboard::key::Named::ArrowLeft) => {
+                    if let Some(ref mut editor_state) = app.editor_state {
+                        editor_state.move_cursor(editor_core::CursorMovement::Left(1));
+                    }
+                    Command::none()
+                }
+                iced::keyboard::Key::Named(iced::keyboard::key::Named::ArrowRight) => {
+                    if let Some(ref mut editor_state) = app.editor_state {
+                        editor_state.move_cursor(editor_core::CursorMovement::Right(1));
+                    }
+                    Command::none()
+                }
+                iced::keyboard::Key::Named(iced::keyboard::key::Named::ArrowUp) => {
+                    if let Some(ref mut editor_state) = app.editor_state {
+                        editor_state.move_cursor(editor_core::CursorMovement::Up(1));
+                    }
+                    Command::none()
+                }
+                iced::keyboard::Key::Named(iced::keyboard::key::Named::ArrowDown) => {
+                    if let Some(ref mut editor_state) = app.editor_state {
+                        editor_state.move_cursor(editor_core::CursorMovement::Down(1));
+                    }
+                    Command::none()
                 }
                 _ => Command::none(),
             }

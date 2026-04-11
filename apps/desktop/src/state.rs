@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex};
 use workspace_model::state::WorkspaceState;
 use core_types::workspace::DirectoryEntry;
-use editor_buffer::buffer::TextBuffer;
+use editor_core::{EditorState, Document};
 use iced::widget::text_editor;
 use iced;
 
@@ -163,7 +163,7 @@ pub struct App {
     pub file_entries: Vec<DirectoryEntry>,
     pub explorer_state: ExplorerState,
     pub active_file_path: Option<String>,
-    pub editor_buffer: Option<TextBuffer>,
+    pub editor_state: Option<EditorState>,
     pub is_dirty: bool,
     pub status_message: String,
     pub error_message: Option<String>,
@@ -195,7 +195,7 @@ impl App {
                 file_entries: Vec::new(),
                 explorer_state: ExplorerState::new(),
                 active_file_path: None,
-                editor_buffer: None,
+                editor_state: None,
                 is_dirty: false,
                 status_message: "Ready".to_string(),
                 error_message: None,
