@@ -2,8 +2,8 @@
 
 > ⚠️ **Heavily Under Development**: Neote is currently in active development. APIs, features, and architecture are subject to change. We welcome early adopters and contributors to help shape the project!
 
-[![CI](https://github.com/yourusername/neote/actions/workflows/ci.yml/badge.svg)](https://github.com/yourusername/neote/actions/workflows/ci.yml)
-[![Security Audit](https://github.com/yourusername/neote/actions/workflows/security-audit.yml/badge.svg)](https://github.com/yourusername/neote/actions/workflows/security-audit.yml)
+[![CI](https://github.com/mujaxso/neote/actions/workflows/ci.yml/badge.svg)](https://github.com/mujaxso/neote/actions/workflows/ci.yml)
+[![Security Audit](https://github.com/mujaxso/neote/actions/workflows/security-audit.yml/badge.svg)](https://github.com/mujaxso/neote/actions/workflows/security-audit.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Rust](https://img.shields.io/badge/rust-1.75%2B-orange.svg)](https://www.rust-lang.org)
 
@@ -79,7 +79,7 @@ neote/
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/neote.git
+git clone https://github.com/mujaxso/neote.git
 cd neote
 
 # Build all crates
@@ -168,13 +168,13 @@ Neote is licensed under the MIT License. See [LICENSE](LICENSE) for details.
 
 ## 📞 Contact
 
-- **GitHub Issues**: [Bug reports and feature requests](https://github.com/yourusername/neote/issues)
-- **Discussions**: [Community discussions](https://github.com/yourusername/neote/discussions)
+- **GitHub Issues**: [Bug reports and feature requests](https://github.com/mujaxso/neote/issues)
+- **Discussions**: [Community discussions](https://github.com/mujaxso/neote/discussions)
 - **Email**: contact@neote.dev
 
 ## 🌟 Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=yourusername/neote&type=Date)](https://star-history.com/#yourusername/neote&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=mujaxso/neote&type=Date)](https://star-history.com/#mujaxso/neote&Date)
 
 ---
 
