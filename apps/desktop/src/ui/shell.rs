@@ -148,7 +148,7 @@ pub fn shell(app: &App) -> Element<'_, Message> {
     let main_content = main_content_row
         .height(Length::Fill)
         .spacing(0)  // No spacing between panels
-        .padding(0)  // No padding in the row
+        .padding(0);  // No padding in the row
     
     let status_bar = container(status_bar(app))
         .width(Length::Fill)
