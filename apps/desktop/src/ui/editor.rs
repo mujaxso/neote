@@ -9,6 +9,7 @@ use crate::settings::editor::EditorTypographySettings;
 pub fn editor<'a>(
     text_editor_content: &'a iced::widget::text_editor::Content,
     typography: &EditorTypographySettings,
+    background_color: Color,
 ) -> Element<'a, Message> {
     // Create font based on selected font family
     // Note: Iced's font support is limited, so we use the first font in the fallback stack
@@ -32,9 +33,9 @@ pub fn editor<'a>(
         .width(Length::Fill)
         .height(Length::Fill)
         .clip(true) // Clip text to prevent overflow
-        .style(iced::theme::Container::Custom(Box::new(|_theme: &iced::Theme| {
+        .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
             container::Appearance {
-                background: None, // Let parent handle background
+                background: Some(background_color.into()),
                 border: iced::Border {
                     color: Color::TRANSPARENT,
                     width: 0.0,

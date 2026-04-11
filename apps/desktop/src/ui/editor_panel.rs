@@ -75,7 +75,7 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
     
     let editor_content = if let Some(_) = &app.active_file_path {
         // Use the existing editor component with typography settings
-        editor::editor(&app.text_editor, &app.editor_typography)
+        editor::editor(&app.text_editor, &app.editor_typography, style.colors.editor_background)
     } else {
         // Welcome screen
         container(
