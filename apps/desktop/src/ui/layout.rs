@@ -3,7 +3,7 @@ use iced::{
         button, column, container, horizontal_space, row, scrollable, text,
         text_input, vertical_rule, Space,
     },
-    Alignment, Element, Length,
+    Alignment, Color, Element, Length,
 };
 
 use crate::state::{Activity, FileLoadingState};
