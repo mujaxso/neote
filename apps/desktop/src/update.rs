@@ -100,42 +100,15 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                                         || std::env::var("XDG_CURRENT_DESKTOP").unwrap_or_default().to_lowercase().contains("hyprland");
                                     
                                     let error_msg = if hyprland && wayland {
-                                        "Folder picker failed to open in Hyprland (Wayland).\n\
-                                        \n\
-                                        Common solutions for Hyprland:\n\
-                                        1. Install and configure xdg-desktop-portal-hyprland:\n\
-                                           - nix: nix-shell -p xdg-desktop-portal-hyprland\n\
-                                           - other: Check your package manager\n\
-                                        2. Ensure it's running: systemctl --user status xdg-desktop-portal-hyprland\n\
-                                        3. Try running with X11: WINIT_UNIX_BACKEND=x11 cargo run --bin desktop\n\
-                                        4. Use manual workspace entry below"
+                                        "File picker failed in Hyprland. Try manual entry below."
                                     } else if nix_env && wayland {
-                                        "Folder picker failed to open. This is common in Nix+Wayland environments.\n\
-                                        \n\
-                                        Possible solutions:\n\
-                                        1. Try running with X11: WINIT_UNIX_BACKEND=x11 cargo run --bin desktop\n\
-                                        2. Use manual workspace entry below\n\
-                                        3. Ensure xdg-desktop-portal-hyprland is properly configured"
+                                        "File picker failed in Nix+Wayland. Try manual entry below."
                                     } else if nix_env {
-                                        "Folder picker failed to open. This is common in Nix environments.\n\
-                                        \n\
-                                        Possible solutions:\n\
-                                        1. Ensure xdg-desktop-portal is running: systemctl --user status xdg-desktop-portal\n\
-                                        2. Use manual workspace entry below\n\
-                                        3. Try running outside nix-shell with: nix develop --command cargo run --bin desktop"
+                                        "File picker failed in Nix environment. Try manual entry below."
                                     } else if wayland {
-                                        "Folder picker failed to open. This may be a Wayland compatibility issue.\n\
-                                        \n\
-                                        Possible solutions:\n\
-                                        1. Try running with X11: WINIT_UNIX_BACKEND=x11 cargo run --bin desktop\n\
-                                        2. Use manual workspace entry below\n\
-                                        3. Ensure xdg-desktop-portal-hyprland is properly configured"
+                                        "File picker failed in Wayland. Try manual entry below."
                                     } else {
-                                        "Folder picker failed to open. This may be due to:\n\
-                                        1. Missing xdg-desktop-portal service (for Wayland)\n\
-                                        2. Dialog opened behind main window\n\
-                                        3. Platform compatibility issue\n\n\
-                                        Try: Install and start xdg-desktop-portal, or use manual workspace path entry."
+                                        "File picker failed. Try manual entry below."
                                     };
                                     Message::WorkspaceLoaded(Err(error_msg.to_string()))
                                 }
