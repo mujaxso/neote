@@ -326,7 +326,7 @@ pub fn assistant_panel(app: &App) -> Element<'_, Message> {
     )
     .width(Length::Fill)
     .height(Length::Fill)
-    .padding([0, 0, 0, 0]) // Ensure no padding that could hide content
+    .clip(true) // Ensure content doesn't overflow
     .style(iced::theme::Container::Custom(Box::new(container_style)))
     .into()
 }

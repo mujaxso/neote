@@ -111,7 +111,10 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
             header,
             // Editor content should fill all remaining space
             // The text editor handles its own scrolling, so we don't need extra containers
-            editor_content
+            container(editor_content)
+                .width(Length::Fill)
+                .height(Length::Fill)
+                .clip(true) // Ensure content doesn't overflow
         ]
         .width(Length::Fill)
         .height(Length::Fill)
@@ -119,6 +122,7 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
     )
     .width(Length::Fill)
     .height(Length::Fill)
+    .clip(true) // Ensure panel content doesn't overflow
     .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
         container::Appearance {
             background: Some(style.colors.editor_background.into()),

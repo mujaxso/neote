@@ -12,25 +12,29 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                 return Command::none();
             }
             
-            // First, perform the action on the text editor
+            // Perform the action on the text editor
             app.text_editor.perform(action.clone());
             
-            // Check if this action modifies the text content
-            // In Iced, only Action::Edit actually modifies the text
-            // All other actions (Scroll, MoveCursor, Select, etc.) are navigation/selection
-            let should_update_buffer = match &action {
-                iced::widget::text_editor::Action::Edit(_) => true,
-                // All other actions don't modify text
-                _ => false,
-            };
-            
-            if should_update_buffer {
-                if let Some(ref mut editor_state) = app.editor_state {
-                    // For simplicity, fall back to full update
-                    let current_text = app.text_editor.text();
-                    editor_state.document_mut().replace_all(&current_text);
-                    app.status_message = "Text updated".to_string();
-                    app.is_dirty = editor_state.document().is_dirty();
+            // Only update the document for edit actions to improve performance
+            match &action {
+                iced::widget::text_editor::Action::Edit(edit) => {
+                    if let Some(ref mut editor_state) = app.editor_state {
+                        // Apply the edit to the document
+                        match edit {
+                            iced::widget::text_editor::Edit::Insert { char_index, text } => {
+                                let _ = editor_state.document_mut().insert(*char_index, text);
+                            }
+                            iced::widget::text_editor::Edit::Delete { char_index, count } => {
+                                let _ = editor_state.document_mut().delete(*char_index, *char_index + count);
+                            }
+                        }
+                        app.is_dirty = editor_state.document().is_dirty();
+                        app.status_message = "Text updated".to_string();
+                    }
+                }
+                _ => {
+                    // For non-edit actions, just update status
+                    app.status_message = "Cursor moved".to_string();
                 }
             }
             Command::none()
@@ -78,6 +82,13 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
         Message::EditorSetDocument(document) => {
             let editor_state = EditorState::from_document(document);
             app.editor_state = Some(editor_state);
+            
+            // Update the text editor content efficiently
+            // Only update if the document is not too large
+            if !app.is_file_too_large_for_editor {
+                let text = editor_state.document().text();
+                app.text_editor = iced::widget::text_editor::Content::with_text(&text);
+            }
             Command::none()
         }
         Message::EditorUpdateState(editor_state) => {

@@ -206,7 +206,8 @@ pub fn explorer_panel<'a>(app: &'a App) -> Element<'a, Message> {
             header,
             container(content)
                 .height(Length::Fill)
-                .width(Length::Fill),
+                .width(Length::Fill)
+                .clip(true), // Ensure content doesn't overflow
         ]
     )
     .width(Length::Fill)
