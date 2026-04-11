@@ -104,11 +104,8 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
         .into()
     };
     
-    // Create a clean, borderless editor area that fills available space
-    // The editor should directly fill the area without extra containers
-    // Use a column that expands to fill its container
-    // Ensure proper clipping to prevent text overflow
-    // Set background to editor_background to match theme
+    // Create an editor panel with a border to match other panels
+    // The panel should have a visible border like the explorer and assistant panels
     container(
         column![
             header,
@@ -140,8 +137,8 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
         container::Appearance {
             background: Some(style.colors.editor_background.into()),
             border: iced::Border {
-                color: Color::TRANSPARENT,
-                width: 0.0,
+                color: style.colors.border,
+                width: 1.0,
                 radius: 0.0.into(),
             },
             ..Default::default()

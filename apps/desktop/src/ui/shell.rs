@@ -46,8 +46,8 @@ pub fn shell(app: &App) -> Element<'_, Message> {
                         container::Appearance {
                             background: Some(style.colors.panel_background.into()),
                             border: iced::Border {
-                                color: Color::TRANSPARENT,
-                                width: 0.0,
+                                color: style.colors.border,
+                                width: 1.0,
                                 radius: 0.0.into(),
                             },
                             ..Default::default()
@@ -101,8 +101,8 @@ pub fn shell(app: &App) -> Element<'_, Message> {
                         container::Appearance {
                             background: Some(style.colors.panel_background.into()),
                             border: iced::Border {
-                                color: Color::TRANSPARENT,
-                                width: 0.0,
+                                color: style.colors.border,
+                                width: 1.0,
                                 radius: 0.0.into(),
                             },
                             ..Default::default()
@@ -130,7 +130,7 @@ pub fn shell(app: &App) -> Element<'_, Message> {
     
     // Editor area should expand to fill remaining space without any gaps
     // Make sure the editor fills all available space with proper clipping
-    // Add a subtle border to match other panels
+    // The editor panel will handle its own border to be consistent
     main_content_row = main_content_row.push(
         container(main_editor_area)
             .width(Length::Fill)
@@ -140,8 +140,8 @@ pub fn shell(app: &App) -> Element<'_, Message> {
                 container::Appearance {
                     background: Some(style.colors.editor_background.into()),
                     border: iced::Border {
-                        color: style.colors.border,
-                        width: 1.0,
+                        color: Color::TRANSPARENT,
+                        width: 0.0,
                         radius: 0.0.into(),
                     },
                     ..Default::default()
