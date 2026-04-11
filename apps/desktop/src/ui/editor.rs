@@ -28,6 +28,7 @@ pub fn editor<'a>(
     // The text_editor widget will handle its own scrolling
     // Ensure the editor is properly constrained and clipped
     // The container sets the width to Fill, which constrains the text editor
+    // Add explicit width constraint and ensure no borders
     container(editor)
         .padding(0) // No padding
         .width(Length::Fill)
