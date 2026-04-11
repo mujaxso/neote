@@ -1,6 +1,7 @@
 use iced::{Element, Length, Color, widget::{container, text}};
 use crate::message::Message;
 use crate::state::{App, LayoutMode, PrimarySidebarView, AuxiliaryView};
+use crate::theme::NeoteTheme;
 use super::{
     activity_bar::activity_bar,
     assistant_panel::assistant_panel,
@@ -9,15 +10,18 @@ use super::{
     top_bar::top_bar,
     explorer_panel::explorer_panel,
     settings::editor_font_settings_panel,
+    style::StyleHelpers,
 };
 
 /// Main shell that composes all UI components - Premium compact layout
 pub fn shell(app: &App) -> Element<'_, Message> {
-    // Get panel widths based on layout mode - make explorer and assistant larger
+    let style = StyleHelpers::new(app.theme);
+    
+    // Get panel widths based on layout mode - make explorer smaller, assistant same
     let (explorer_width, assistant_width) = match app.layout_mode {
-        LayoutMode::Wide => (280.0, 320.0),      // Make sidebars larger
-        LayoutMode::Medium => (240.0, 280.0),    // Keep them substantial
-        LayoutMode::Narrow => (200.0, 240.0),    // Still reasonable
+        LayoutMode::Wide => (220.0, 320.0),      // Explorer smaller, assistant same
+        LayoutMode::Medium => (180.0, 280.0),    // Explorer smaller
+        LayoutMode::Narrow => (140.0, 240.0),    // Explorer smaller
     };
     
     // Build panels with responsive sizing
@@ -38,7 +42,18 @@ pub fn shell(app: &App) -> Element<'_, Message> {
             PrimarySidebarView::Explorer => {
                 let explorer_panel = container(explorer_panel(app))
                     .width(Length::Fixed(explorer_width))
-                    .height(Length::Fill);
+                    .height(Length::Fill)
+                    .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
+                        container::Appearance {
+                            background: Some(style.colors.panel_background.into()),
+                            border: iced::Border {
+                                color: Color::TRANSPARENT,
+                                width: 0.0,
+                                radius: 0.0.into(),
+                            },
+                            ..Default::default()
+                        }
+                    })));
                 Some(explorer_panel)
             }
             PrimarySidebarView::Search => {
@@ -67,27 +82,13 @@ pub fn shell(app: &App) -> Element<'_, Message> {
         None
     };
     
-    // Editor panel or Settings panel - make it fill naturally
+    // Editor panel or Settings panel - make it fill naturally without extra containers
     let main_editor_area: Element<_> = if is_settings_mode {
         // When in settings mode, show settings in the main editor area
         editor_font_settings_panel(app)
     } else {
-        // Normal editor panel - wrap in a container that fills
-        container(editor_panel(app))
-            .width(Length::Fill)
-            .height(Length::Fill)
-            .style(iced::theme::Container::Custom(Box::new(|_theme: &iced::Theme| {
-                container::Appearance {
-                    background: None,
-                    border: iced::Border {
-                        color: Color::TRANSPARENT,
-                        width: 0.0,
-                        radius: 0.0.into(),
-                    },
-                    ..Default::default()
-                }
-            })))
-            .into()
+        // Normal editor panel - directly use the panel without extra container
+        editor_panel(app)
     };
     
     // Auxiliary sidebar (AI Assistant)
@@ -96,7 +97,18 @@ pub fn shell(app: &App) -> Element<'_, Message> {
             Some(AuxiliaryView::AiAssistant) => {
                 let assistant_panel = container(assistant_panel(app))
                     .width(Length::Fixed(assistant_width))
-                    .height(Length::Fill);
+                    .height(Length::Fill)
+                    .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
+                        container::Appearance {
+                            background: Some(style.colors.panel_background.into()),
+                            border: iced::Border {
+                                color: Color::TRANSPARENT,
+                                width: 0.0,
+                                radius: 0.0.into(),
+                            },
+                            ..Default::default()
+                        }
+                    })));
                 Some(assistant_panel)
             }
             None => None,
@@ -105,7 +117,7 @@ pub fn shell(app: &App) -> Element<'_, Message> {
         None
     };
     
-    // Build the main content row with proper spacing
+    // Build the main content row without spacing between panels
     let mut main_content_row = iced::widget::row![
         activity_bar,
     ];
@@ -117,7 +129,7 @@ pub fn shell(app: &App) -> Element<'_, Message> {
         }
     }
     
-    // Editor area should expand to fill remaining space
+    // Editor area should expand to fill remaining space without gaps
     main_content_row = main_content_row.push(main_editor_area);
     
     // Only show auxiliary sidebar if not in settings mode
@@ -127,7 +139,9 @@ pub fn shell(app: &App) -> Element<'_, Message> {
         }
     }
     
-    let main_content = main_content_row.height(Length::Fill);
+    let main_content = main_content_row
+        .height(Length::Fill)
+        .spacing(0);  // Remove spacing between panels
     
     let status_bar = container(status_bar(app))
         .width(Length::Fill)

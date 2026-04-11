@@ -34,7 +34,7 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
             .spacing(4)
             .align_items(iced::Alignment::Center)
         )
-        .padding([8, 20])  // More padding for better spacing
+        .padding([6, 16])  // Less padding for more compact header
         .width(Length::Fill)
         .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
             container::Appearance {
@@ -58,7 +58,7 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
             .spacing(4)
             .align_items(iced::Alignment::Center)
         )
-        .padding([8, 20])  // More padding for better spacing
+        .padding([6, 16])  // Less padding for more compact header
         .width(Length::Fill)
         .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
             container::Appearance {
@@ -105,27 +105,29 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
     };
     
     // Create a clean, borderless editor area that fills available space
-    // The editor should directly fill the area without extra containers
-    column![
+    // Use a column that expands to fill its container without extra borders
+    let content = column![
         header,
         // Editor content should fill all remaining space
-        // Use a container with transparent border to ensure it fills
-        container(editor_content)
-            .width(Length::Fill)
-            .height(Length::Fill)
-            .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
-                container::Appearance {
-                    background: Some(style.colors.editor_background.into()),
-                    border: iced::Border {
-                        color: Color::TRANSPARENT,
-                        width: 0.0,
-                        radius: 0.0.into(),
-                    },
-                    ..Default::default()
-                }
-            }))),
+        editor_content
     ]
     .width(Length::Fill)
-    .height(Length::Fill)
-    .into()
+    .height(Length::Fill);
+
+    // Wrap in a container to ensure proper background, but without borders
+    container(content)
+        .width(Length::Fill)
+        .height(Length::Fill)
+        .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
+            container::Appearance {
+                background: Some(style.colors.editor_background.into()),
+                border: iced::Border {
+                    color: Color::TRANSPARENT,
+                    width: 0.0,
+                    radius: 0.0.into(),
+                },
+                ..Default::default()
+            }
+        })))
+        .into()
 }
