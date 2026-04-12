@@ -126,6 +126,7 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
             // Pass the syntax highlight cache only if it's not empty
             let line_cache = if !app.syntax_highlight_cache.is_empty() {
                 eprintln!("DEBUG: editor_panel: syntax_highlight_cache has {} lines", app.syntax_highlight_cache.len());
+                eprintln!("DEBUG: editor_panel: text_editor text length: {}", app.text_editor.text().len());
                 Some(app.syntax_highlight_cache.clone())
             } else {
                 eprintln!("DEBUG: editor_panel: syntax_highlight_cache is empty");
