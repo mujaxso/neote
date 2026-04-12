@@ -36,9 +36,7 @@ impl SyntaxManager {
             parser
                 .set_language(&ts_lang)
                 .map_err(|e| SyntaxError::GrammarLoadError(e.to_string()))?;
-            parser
-                .parse(text, None)
-                .ok_or_else(|| SyntaxError::ParseError)?
+            Some(parser.parse(text, None).ok_or_else(|| SyntaxError::ParseError)?)
         } else {
             // Unsupported language, store without a tree (no syntax highlighting)
             None

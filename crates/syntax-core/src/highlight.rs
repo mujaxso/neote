@@ -108,7 +108,7 @@ fn get_query_for_language(language: LanguageId) -> Result<&'static str, SyntaxEr
             #[cfg(feature = "rust")]
             {
                 Ok(include_str!(
-                    "../../../../runtime/treesitter/languages/rust/queries/highlights.scm"
+                    "../../../runtime/treesitter/languages/rust/queries/highlights.scm"
                 ))
             }
             #[cfg(not(feature = "rust"))]
