@@ -63,15 +63,16 @@ impl LanguageId {
             LanguageId::Rust => {
                 // First try runtime loading
                 if let Ok(lang) = runtime_load_language("rust", runtime) {
-                    return Some(lang);
+                    Some(lang)
+                } else {
+                    #[cfg(feature = "rust")]
+                    {
+                        // Use the statically linked grammar function
+                        Some(tree_sitter_rust::language())
+                    }
+                    #[cfg(not(feature = "rust"))]
+                    None
                 }
-                // Fallback to static linking (if feature enabled)
-                #[cfg(feature = "rust")]
-                {
-                    return Some(tree_sitter_rust::LANGUAGE());
-                }
-                #[cfg(not(feature = "rust"))]
-                None
             }
             LanguageId::Toml => {
                 // TOML support is not currently implemented
