@@ -2,7 +2,7 @@
 
 use crate::error::SyntaxError;
 use crate::language::LanguageId;
-use tree_sitter::Tree;
+use tree_sitter::{Query, QueryCursor, Tree};
 
 /// A highlight span in the document
 #[derive(Debug, Clone)]
@@ -28,6 +28,7 @@ pub enum Highlight {
     Attribute,
     Operator,
     Number,
+    Property,
     Plain,
 }
 
@@ -38,46 +39,94 @@ pub fn highlight(
     tree: &Tree,
 ) -> Result<Vec<HighlightSpan>, SyntaxError> {
     match language {
-        LanguageId::Rust => highlight_rust(source),
-        LanguageId::Toml => highlight_toml(source),
+        LanguageId::Rust => highlight_with_query(language, source, tree),
+        LanguageId::Toml => highlight_with_query(language, source, tree),
         LanguageId::PlainText => Ok(Vec::new()),
     }
 }
 
-fn highlight_rust(source: &str) -> Result<Vec<HighlightSpan>, SyntaxError> {
+fn highlight_with_query(
+    language: LanguageId,
+    source: &str,
+    tree: &Tree,
+) -> Result<Vec<HighlightSpan>, SyntaxError> {
+    let query_str = get_query_for_language(language)?;
+    let ts_lang = language
+        .tree_sitter_language()
+        .ok_or_else(|| SyntaxError::LanguageNotSupported(language.as_str().to_string()))?;
+
+    let query = Query::new(&ts_lang, query_str)
+        .map_err(|e| SyntaxError::QueryError(e.to_string()))?;
+
+    let mut cursor = QueryCursor::new();
+    let root_node = tree.root_node();
     let mut spans = Vec::new();
-    // Simple line-based detection for demonstration.
-    let mut offset = 0;
-    for line in source.lines() {
-        if let Some(pos) = line.find("//") {
-            let start = offset + pos;
-            let end = offset + line.len();
+
+    for match_ in cursor.matches(&query, root_node, source.as_bytes()) {
+        for capture in match_.captures {
+            let node = capture.node;
+            let start = node.start_byte();
+            let end = node.end_byte();
+            let capture_name = query.capture_names()[capture.index as usize].as_str();
+            let highlight = map_capture_name(capture_name);
             spans.push(HighlightSpan {
                 start,
                 end,
-                highlight: Highlight::Comment,
+                highlight,
             });
         }
-        // Detect string literals (simplistic)
-        if let Some(pos) = line.find('\"') {
-            // Find closing quote
-            let line_remainder = &line[pos + 1..];
-            if let Some(close) = line_remainder.find('\"') {
-                let start = offset + pos;
-                let end = offset + pos + 1 + close + 1;
-                spans.push(HighlightSpan {
-                    start,
-                    end,
-                    highlight: Highlight::String,
-                });
-            }
-        }
-        offset += line.len() + 1; // +1 for newline character (assuming \n)
     }
+
+    // Sort spans by start position
+    spans.sort_by_key(|span| span.start);
     Ok(spans)
 }
 
-fn highlight_toml(_source: &str) -> Result<Vec<HighlightSpan>, SyntaxError> {
-    // Placeholder
-    Ok(Vec::new())
+fn map_capture_name(name: &str) -> Highlight {
+    match name {
+        "comment" => Highlight::Comment,
+        "string" => Highlight::String,
+        "keyword" => Highlight::Keyword,
+        "function" => Highlight::Function,
+        "variable" => Highlight::Variable,
+        "type" => Highlight::Type,
+        "constant" => Highlight::Constant,
+        "attribute" => Highlight::Attribute,
+        "operator" => Highlight::Operator,
+        "number" => Highlight::Number,
+        "property" => Highlight::Property,
+        _ => Highlight::Plain,
+    }
+}
+
+fn get_query_for_language(language: LanguageId) -> Result<&'static str, SyntaxError> {
+    match language {
+        LanguageId::Rust => {
+            #[cfg(feature = "rust")]
+            {
+                Ok(include_str!(
+                    "../../../runtime/treesitter/languages/rust/queries/highlights.scm"
+                ))
+            }
+            #[cfg(not(feature = "rust"))]
+            Err(SyntaxError::LanguageNotSupported(
+                "rust feature not enabled".to_string(),
+            ))
+        }
+        LanguageId::Toml => {
+            #[cfg(feature = "toml")]
+            {
+                Ok(include_str!(
+                    "../../../runtime/treesitter/languages/toml/queries/highlights.scm"
+                ))
+            }
+            #[cfg(not(feature = "toml"))]
+            Err(SyntaxError::LanguageNotSupported(
+                "toml feature not enabled".to_string(),
+            ))
+        }
+        LanguageId::PlainText => Err(SyntaxError::LanguageNotSupported(
+            "plaintext has no syntax queries".to_string(),
+        )),
+    }
 }
