@@ -63,9 +63,10 @@ fn build_line_cache(
             if seg_start < seg_end {
                 let line_range = (seg_start - line_start)..(seg_end - line_start);
                 let color = style.highlight_color(span.highlight);
+                let line_range_clone = line_range.clone();
                 line_cache[current_line].push((line_range, color));
                 eprintln!("DEBUG:   added to line {}: range {:?}, color {:?}", 
-                         current_line, line_range, color);
+                         current_line, line_range_clone, color);
             }
             remaining_start = seg_end;
             current_line += 1;
