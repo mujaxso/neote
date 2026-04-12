@@ -67,18 +67,10 @@ impl SyntaxTree {
             std::mem::zeroed()
         });
         
+        // Convert rope to string for parsing
+        let text_str = self.text.to_string();
         let new_tree = parser
-            .parse_with(
-                &mut |byte: usize, _| {
-                    if byte < self.text.len_bytes() {
-                        let chunk = self.text.byte_slice(byte..byte + 1);
-                        chunk.bytes()
-                    } else {
-                        &[]
-                    }
-                },
-                Some(&old_tree),
-            )
+            .parse(&text_str, Some(&old_tree))
             .ok_or_else(|| crate::SyntaxError::ParserError("Failed to reparse".to_string()))?;
         
         // The old tree will be dropped when this function returns

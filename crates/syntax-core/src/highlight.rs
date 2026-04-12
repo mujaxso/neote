@@ -88,7 +88,10 @@ pub fn highlight_tree(
     
     let mut highlights = Vec::new();
     
-    for match_ in cursor.matches(&config.query, root_node, text.bytes()) {
+    // Convert rope to string for highlighting
+    let text_str = text.to_string();
+    
+    for match_ in cursor.matches(&config.query, root_node, text_str.as_bytes()) {
         for capture in match_.captures {
             let node = capture.node;
             let start = node.start_byte();

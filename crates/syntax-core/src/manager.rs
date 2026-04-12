@@ -54,7 +54,7 @@ impl SyntaxManager {
         let (language, config) = self.registry.detect_from_path(path);
         let parser = self.parsers.get(&language).cloned();
         
-        let highlight_config = config.map(|c| Arc::new(c.clone()));
+        let highlight_config = config.cloned().map(Arc::new);
         
         let document = SyntaxDocument::new(
             text,

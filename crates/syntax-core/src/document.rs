@@ -48,6 +48,12 @@ impl SyntaxDocument {
 
     /// Apply a text edit to the document
     pub fn edit(&mut self, start_byte: usize, old_end_byte: usize, new_text: &str) -> Result<(), SyntaxError> {
+        // Calculate positions before any mutable borrows
+        let start_position = self.byte_to_point(start_byte);
+        let old_end_position = self.byte_to_point(old_end_byte);
+        let new_end_byte = start_byte + new_text.len();
+        let new_end_position = self.byte_to_point(new_end_byte);
+        
         // Update the rope text
         let start_char = self.text.byte_to_char(start_byte);
         let old_end_char = self.text.byte_to_char(old_end_byte);
@@ -57,12 +63,6 @@ impl SyntaxDocument {
 
         // Update syntax tree if it exists
         if let Some(tree) = &mut self.syntax_tree {
-            // Calculate positions for the edit before borrowing tree
-            let start_position = self.byte_to_point(start_byte);
-            let old_end_position = self.byte_to_point(old_end_byte);
-            let new_end_byte = start_byte + new_text.len();
-            let new_end_position = self.byte_to_point(new_end_byte);
-            
             // Apply edit to syntax tree
             tree.edit(start_byte, old_end_byte, new_end_byte, 
                      start_position, old_end_position, new_end_position);

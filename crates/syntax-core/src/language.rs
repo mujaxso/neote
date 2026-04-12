@@ -38,7 +38,7 @@ impl LanguageId {
             LanguageId::Rust => {
                 #[cfg(feature = "rust")]
                 {
-                    Some(tree_sitter_rust::LANGUAGE())
+                    Some(unsafe { tree_sitter_rust::LANGUAGE })
                 }
                 #[cfg(not(feature = "rust"))]
                 {
