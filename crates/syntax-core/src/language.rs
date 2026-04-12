@@ -43,10 +43,11 @@ impl LanguageId {
                 #[cfg(feature = "rust")]
                 {
                     // Use the tree-sitter-rust crate's LANGUAGE constant
-                    // It's a LanguageFn which can be converted to raw pointer via as_ptr()
+                    // It's a LanguageFn which wraps a C function pointer
                     use tree_sitter::Language as TsLanguage;
-                    use tree_sitter::LanguageFn;
-                    let raw = tree_sitter_rust::LANGUAGE.as_ptr();
+                    // Get the raw function pointer and call it
+                    let func = unsafe { tree_sitter_rust::LANGUAGE.into_raw() };
+                    let raw = func();
                     Some(unsafe { TsLanguage::from_raw(raw) })
                 }
                 #[cfg(not(feature = "rust"))]
