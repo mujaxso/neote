@@ -109,18 +109,10 @@ LANGUAGES=(
 # Check for tree‑sitter CLI
 if ! command -v tree-sitter >/dev/null 2>&1; then
     echo "tree‑sitter CLI is not installed."
-    echo "Attempting to install via cargo (this may take a while)..."
-    # Try to install globally using cargo
-    if command -v cargo >/dev/null 2>&1; then
-        cargo install tree-sitter-cli --locked 2>/dev/null || {
-            echo "Failed to install tree‑sitter CLI via cargo."
-            echo "Please install it manually: cargo install tree-sitter-cli"
-            exit 1
-        }
-    else
-        echo "Cargo not found. Please install Rust and tree‑sitter CLI manually."
-        exit 1
-    fi
+    echo "Skipping grammar builds. For static linking (Rust, TOML) this is fine."
+    echo "If you need grammars for other languages, install tree-sitter-cli via:"
+    echo "  cargo install tree-sitter-cli"
+    exit 0
 fi
 
 echo "Building grammars from source (using tree‑sitter CLI)..."

@@ -56,9 +56,13 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                                                 );
                                             }
                                         }
-                                        Err(_) => {
+                                        Err(e) => {
                                             app.syntax_highlight_span_count = 0;
                                             app.syntax_highlight_spans.clear();
+                                            app.status_message = format!(
+                                                "Highlight error for {}: {}",
+                                                doc_id, e
+                                            );
                                         }
                                     }
                                 }
