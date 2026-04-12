@@ -176,28 +176,27 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
                 Highlight::Namespace => Color::from_rgb(0.5, 0.5, 0.8),
                 Highlight::Plain => Color::TRANSPARENT,
             };
-            items.push(
-                container(iced::widget::Space::with_width(Length::Fixed(8.0)))
-                    .height(Length::Fixed(8.0))
-                    .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
-                        container::Appearance {
-                            background: Some(color.into()),
-                            border: iced::Border {
-                                color: style.colors.border,
-                                width: 1.0,
-                                radius: 1.0.into(),
-                            },
-                            ..Default::default()
-                        }
-                    })))
-            );
+            let item = container(iced::widget::Space::with_width(Length::Fixed(8.0)))
+                .height(Length::Fixed(8.0))
+                .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
+                    container::Appearance {
+                        background: Some(color.into()),
+                        border: iced::Border {
+                            color: style.colors.border,
+                            width: 1.0,
+                            radius: 1.0.into(),
+                        },
+                        ..Default::default()
+                    }
+                })));
+            items.push(item.into());
         }
         container(
             row![
                 text(format!("{} spans", app.syntax_highlight_span_count))
                     .size(9)
                     .style(iced::theme::Text::Color(style.colors.text_muted)),
-                iced::widget::horizontal_space(Length::Fixed(4.0)),
+                iced::widget::Space::with_width(Length::Fixed(4.0)),
                 row(items).spacing(2)
             ]
             .align_items(iced::Alignment::Center)

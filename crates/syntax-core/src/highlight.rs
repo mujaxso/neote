@@ -16,7 +16,7 @@ pub struct HighlightSpan {
 }
 
 /// Highlight types (maps to Tree-sitter capture names)
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum Highlight {
     Comment,
     String,
