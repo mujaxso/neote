@@ -52,6 +52,7 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                                             app.syntax_highlight_spans.clear();
                                         }
                                     }
+                                }
                                 Err(e) => {
                                     // Don't show error for unsupported languages
                                     if !matches!(e, syntax_core::SyntaxError::LanguageNotSupported(_)) {
