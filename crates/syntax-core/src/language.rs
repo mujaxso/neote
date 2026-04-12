@@ -38,9 +38,10 @@ impl LanguageId {
             LanguageId::Rust => {
                 #[cfg(feature = "rust")]
                 {
-                    // In tree-sitter-rust 0.24.2, LANGUAGE is a LanguageFn tuple struct
-                    // We can access its inner function pointer using .0
-                    let func_ptr = tree_sitter_rust::LANGUAGE.0;
+                    // In tree-sitter-rust 0.24.2, LANGUAGE is a LanguageFn
+                    // Use into_raw() to get the raw function pointer
+                    type LanguageFn = unsafe extern "C" fn() -> *const tree_sitter::ffi::TSLanguage;
+                    let func_ptr: LanguageFn = tree_sitter_rust::LANGUAGE.into_raw();
                     
                     // Call the function pointer
                     let raw_lang_ptr = unsafe { func_ptr() };
