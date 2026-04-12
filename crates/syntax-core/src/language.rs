@@ -41,7 +41,7 @@ impl LanguageId {
                     // In tree-sitter-rust 0.24.2, there's a language() function
                     // that returns the Language directly
                     // Let's check if it exists
-                    extern "C" {
+                    unsafe extern "C" {
                         // Declare the external function from tree-sitter-rust
                         fn tree_sitter_rust() -> *const tree_sitter::ffi::TSLanguage;
                     }
