@@ -13,6 +13,8 @@ pub mod parser;
 pub mod highlight;
 pub mod snapshot;
 pub mod manager;
+pub mod runtime;
+pub mod metadata;
 
 // Re-export main types for convenience
 pub use document::SyntaxDocument;
@@ -20,6 +22,8 @@ pub use language::{LanguageId, LanguageRegistry};
 pub use highlight::{HighlightConfiguration, Highlight, HighlightSpan};
 pub use snapshot::SyntaxSnapshot;
 pub use manager::SyntaxManager;
+pub use runtime::Runtime;
+pub use metadata::LanguageMetadata;
 
 /// Error type for syntax operations
 #[derive(Debug, thiserror::Error)]
@@ -36,4 +40,10 @@ pub enum SyntaxError {
     DocumentNotFound,
     #[error("IO error: {0}")]
     IoError(#[from] std::io::Error),
+    #[error("Grammar load error: {0}")]
+    GrammarLoadError(String),
+    #[error("Metadata error: {0}")]
+    MetadataError(String),
+    #[error("Runtime path error: {0}")]
+    RuntimePathError(String),
 }

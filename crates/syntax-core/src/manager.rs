@@ -6,41 +6,24 @@ use std::sync::Arc;
 use parking_lot::Mutex;
 
 use crate::document::SyntaxDocument;
-use crate::language::{LanguageId, LanguageRegistry};
+use crate::language::LanguageRegistry;
 use crate::snapshot::SyntaxSnapshot;
 use crate::SyntaxError;
 
 /// Manages syntax documents and provides syntax snapshots
 pub struct SyntaxManager {
-    /// Language registry
+    /// Language registry (now includes runtime and metadata)
     registry: LanguageRegistry,
     /// Active syntax documents keyed by document ID
     documents: HashMap<String, SyntaxDocument>,
-    /// Parser cache for each language
-    parsers: HashMap<LanguageId, Arc<Mutex<tree_sitter::Parser>>>,
 }
 
 impl SyntaxManager {
     /// Create a new syntax manager
     pub fn new() -> Self {
-        let registry = LanguageRegistry::new();
-        let mut manager = Self {
-            registry,
+        Self {
+            registry: LanguageRegistry::new(),
             documents: HashMap::new(),
-            parsers: HashMap::new(),
-        };
-        
-        // Initialize parsers for supported languages
-        manager.initialize_parsers();
-        
-        manager
-    }
-
-    /// Initialize parsers for supported languages
-    fn initialize_parsers(&mut self) {
-        // Only initialize parsers for languages we actually support
-        if let Some(parser) = self.registry.create_parser(LanguageId::Rust) {
-            self.parsers.insert(LanguageId::Rust, Arc::new(Mutex::new(parser)));
         }
     }
 
@@ -51,20 +34,38 @@ impl SyntaxManager {
         text: &str,
         path: &Path,
     ) -> Result<(), SyntaxError> {
-        let (language, config) = self.registry.detect_from_path(path);
-        let parser = self.parsers.get(&language).cloned();
-        
-        let highlight_config = config.map(|c| Arc::new(c.clone()));
-        
+        let (language_id, _metadata) = self.registry.detect_from_path(path);
+        let parser = {
+            // Get or create a parser for the detected language
+            let parser = self.registry.parser(&language_id)?;
+            // We need to wrap the parser in an Arc<Mutex> for SyntaxDocument.
+            // Since the registry returns a mutable reference, we must create a new parser.
+            // For simplicity, we create a fresh parser using the same language.
+            // A more advanced implementation would share the parser across documents.
+            let lang = parser.language().ok_or_else(|| {
+                SyntaxError::ParserError("Parser has no language set".to_string())
+            })?;
+            let mut new_parser = tree_sitter::Parser::new();
+            new_parser.set_language(lang)
+                .map_err(|e| SyntaxError::ParserError(e.to_string()))?;
+            Some(Arc::new(Mutex::new(new_parser)))
+        };
+
+        let highlight_config = self.registry.highlight_config(&language_id)
+            .map(|c| Arc::new(c.clone()))
+            .ok(); // Gracefully fall back if no highlight config
+
+        // For now we pass None as highlight config if detection fails.
+        // SyntaxDocument will fall back to plain text.
         let document = SyntaxDocument::new(
             text,
-            language,
+            crate::language::LanguageId::from_str(&language_id)
+                .unwrap_or(crate::language::LanguageId::PlainText),
             highlight_config,
             parser,
         )?;
-        
+
         self.documents.insert(doc_id.to_string(), document);
-        
         Ok(())
     }
 
@@ -82,7 +83,7 @@ impl SyntaxManager {
         } else {
             return Err(SyntaxError::DocumentNotFound);
         }
-        
+
         Ok(())
     }
 
@@ -104,14 +105,14 @@ impl SyntaxManager {
     }
 
     /// Get the language for a document
-    pub fn document_language(&self, doc_id: &str) -> Option<LanguageId> {
+    pub fn document_language(&self, doc_id: &str) -> Option<crate::language::LanguageId> {
         self.documents.get(doc_id).map(|d| d.language())
     }
 
     /// Check if a document has syntax support
     pub fn has_syntax_support(&self, doc_id: &str) -> bool {
         self.documents.get(doc_id)
-            .map(|doc| self.registry.is_supported(doc.language()))
+            .map(|doc| self.registry.is_supported(doc.language().as_str()))
             .unwrap_or(false)
     }
 }
