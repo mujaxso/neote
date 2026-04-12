@@ -22,12 +22,6 @@
             llvmPackages.libclang
           ];
 
-          # Environment variables for bindgen (used by tree‑sitter‑cli and other crates)
-          env = {
-            LIBCLANG_PATH = "${pkgs.llvmPackages.libclang.lib}/lib";
-          } // (if pkgs.stdenv.isDarwin then {
-            # macOS specific
-          } else {});
 
           buildInputs = with pkgs; [
             # Rust toolchain
@@ -74,6 +68,7 @@
 
           # Environment variables
           env = {
+            LIBCLANG_PATH = "${pkgs.llvmPackages.libclang.lib}/lib";
             # Use Wayland backend for GTK3 in Hyprland
             GDK_BACKEND = "wayland";
             # GTK3 theme settings for Nix environment
