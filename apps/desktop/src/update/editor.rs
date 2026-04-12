@@ -101,7 +101,7 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                                         Ok(spans) => {
                                             app.syntax_highlight_span_count = spans.len();
                                             app.syntax_highlight_spans = spans.clone();
-                                            // rebuild the per‑line cache for the editor widget
+                                            // Always rebuild the per‑line cache for the editor widget
                                             app.syntax_highlight_cache =
                                                 build_line_cache(&current_text, &spans, app.theme);
                                             if spans.is_empty() {
@@ -121,6 +121,7 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                                         Err(e) => {
                                             app.syntax_highlight_span_count = 0;
                                             app.syntax_highlight_spans.clear();
+                                            app.syntax_highlight_cache.clear();
                                             app.status_message = format!(
                                                 "Highlight error for {}: {}",
                                                 doc_id, e
@@ -135,6 +136,7 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                                     }
                                     app.syntax_highlight_span_count = 0;
                                     app.syntax_highlight_spans.clear();
+                                    app.syntax_highlight_cache.clear();
                                 }
                             }
                         }
@@ -267,7 +269,7 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                         Ok(spans) => {
                             app.syntax_highlight_span_count = spans.len();
                             app.syntax_highlight_spans = spans.clone();
-                            // build per‑line cache for the real editor
+                            // Always build per‑line cache for the real editor
                             let text = editor_state.text();
                             app.syntax_highlight_cache =
                                 build_line_cache(&text, &spans, app.theme);
@@ -279,6 +281,11 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                         }
                     }
                 }
+            } else {
+                // Clear syntax cache if no path
+                app.syntax_highlight_cache.clear();
+                app.syntax_highlight_spans.clear();
+                app.syntax_highlight_span_count = 0;
             }
             
             app.editor_state = Some(editor_state);

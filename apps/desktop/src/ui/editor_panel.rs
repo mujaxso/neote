@@ -123,11 +123,17 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
             .into()
         } else {
             // Use the interactive text editor (editable) with syntax highlighting
+            // Pass the syntax highlight cache only if it's not empty
+            let line_cache = if !app.syntax_highlight_cache.is_empty() {
+                Some(app.syntax_highlight_cache.clone())
+            } else {
+                None
+            };
             editor::editor(
                 &app.text_editor,
                 &app.editor_typography,
                 style.colors.editor_background,
-                Some(app.syntax_highlight_cache.clone()),
+                line_cache,
             )
         }
     } else {
