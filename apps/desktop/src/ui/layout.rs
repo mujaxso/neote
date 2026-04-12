@@ -67,8 +67,10 @@ pub fn ide_layout<'a>(
     };
 
     // Debug print
-    eprintln!("DEBUG: layout: syntax_highlight_cache.is_some() = {}, .map_or(0, |c| c.len()) = {}", 
+    let has_highlights = syntax_highlight_cache.as_ref().map_or(false, |cache| cache.iter().any(|line| !line.is_empty()));
+    eprintln!("DEBUG: layout: syntax_highlight_cache.is_some() = {}, has_highlights = {}, .map_or(0, |c| c.len()) = {}", 
              syntax_highlight_cache.is_some(),
+             has_highlights,
              syntax_highlight_cache.as_ref().map_or(0, |c| c.len()));
 
     let main_content = row![
