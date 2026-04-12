@@ -206,20 +206,6 @@ impl App {
                         unsafe {
                             env::set_var("NEOTE_RUNTIME", runtime_candidate.to_string_lossy().to_string());
                         }
-                        // Log a warning if grammar library not found (optional)
-                        #[cfg(target_os = "linux")]
-                        let grammar_ext = ".so";
-                        #[cfg(target_os = "macos")]
-                        let grammar_ext = ".dylib";
-                        #[cfg(target_os = "windows")]
-                        let grammar_ext = ".dll";
-                        let subdir = format!("{}-{}", consts::OS, consts::ARCH);
-                        let grammar_path = runtime_candidate.join(format!("grammars/{}/libtree-sitter-rust{}",
-                            subdir,
-                            grammar_ext));
-                        if !grammar_path.exists() {
-                            eprintln!("WARNING: Rust grammar library not found at {}", grammar_path.display());
-                        }
                     }
                 }
             }
