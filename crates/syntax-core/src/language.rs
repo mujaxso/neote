@@ -68,7 +68,7 @@ impl LanguageId {
                 // Fallback to static linking (if feature enabled)
                 #[cfg(feature = "rust")]
                 {
-                    return Some(tree_sitter_rust::language());
+                    return Some(tree_sitter_rust::LANGUAGE);
                 }
                 #[cfg(not(feature = "rust"))]
                 None
@@ -173,14 +173,21 @@ impl LanguageRegistry {
     /// Get or create a highlight configuration for a language.
     pub fn highlight_config(&mut self, lang_id: &str) -> Result<&HighlightConfiguration, SyntaxError> {
         use std::collections::hash_map::Entry;
+        // Borrow only the fields we need before the mutable borrow of highlight_configs
+        let (query, lang) = {
+            let meta = self.metadata.iter().find(|m| m.id == lang_id)
+                .ok_or_else(|| SyntaxError::LanguageNotSupported(lang_id.to_string()))?;
+            let query = meta.load_highlights_query(&self.runtime)
+                .unwrap_or_else(|_| String::new());
+            let lang_enum = LanguageId::from_str(lang_id)
+                .unwrap_or(LanguageId::PlainText);
+            let lang = lang_enum.tree_sitter_language(&self.runtime)
+                .ok_or_else(|| SyntaxError::LanguageNotSupported(lang_id.to_string()))?;
+            (query, lang)
+        };
         match self.highlight_configs.entry(lang_id.to_string()) {
             Entry::Occupied(occ) => Ok(occ.into_mut()),
             Entry::Vacant(vac) => {
-                let meta = self.metadata(lang_id)
-                    .ok_or_else(|| SyntaxError::LanguageNotSupported(lang_id.to_string()))?;
-                let query = meta.load_highlights_query(&self.runtime)
-                    .unwrap_or_else(|_| String::new());
-                let lang = self.language(lang_id)?;
                 let config = HighlightConfiguration::new(&lang, &query, "", "")
                     .map_err(|e| SyntaxError::QueryError(e.to_string()))?;
                 Ok(vac.insert(config))
@@ -191,10 +198,16 @@ impl LanguageRegistry {
     /// Get or create a parser for a language.
     pub fn parser(&mut self, lang_id: &str) -> Result<&mut Parser, SyntaxError> {
         use std::collections::hash_map::Entry;
+        // Borrow only the runtime before the mutable borrow of parsers
+        let lang = {
+            let lang_enum = LanguageId::from_str(lang_id)
+                .unwrap_or(LanguageId::PlainText);
+            lang_enum.tree_sitter_language(&self.runtime)
+                .ok_or_else(|| SyntaxError::LanguageNotSupported(lang_id.to_string()))?
+        };
         match self.parsers.entry(lang_id.to_string()) {
             Entry::Occupied(occ) => Ok(occ.into_mut()),
             Entry::Vacant(vac) => {
-                let lang = self.language(lang_id)?;
                 let mut parser = Parser::new();
                 parser.set_language(&lang)
                     .map_err(|e| SyntaxError::ParserError(e.to_string()))?;

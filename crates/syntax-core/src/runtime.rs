@@ -1,8 +1,7 @@
 //! Runtime path resolution for Tree-sitter grammars and queries.
 
 use std::env;
-use std::path::{Path, PathBuf};
-use std::ffi::OsStr;
+use std::path::PathBuf;
 
 /// Runtime environment for locating Tree-sitter assets.
 #[derive(Debug, Clone)]
@@ -87,6 +86,11 @@ impl Runtime {
         };
         lib_name.push_str(env::consts::DLL_EXTENSION);
         self.grammar_dir().join(lib_name)
+    }
+
+    /// Get a reference to the runtime root directory.
+    pub fn root(&self) -> &PathBuf {
+        &self.root
     }
 
     /// Check whether the runtime root directory exists.

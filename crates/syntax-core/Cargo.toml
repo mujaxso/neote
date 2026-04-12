@@ -2,15 +2,19 @@
 name = "syntax-core"
 version = "0.1.0"
 edition = "2024"
-license = "MIT"
 
 [dependencies]
 tree-sitter = "0.22"
-tree-sitter-rust = { version = "0.24.2", optional = true }
-ropey = "1.6"
-thiserror = "2"
+ropey = "1"
 parking_lot = "0.12"
+libloading = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+toml = { workspace = true }
+thiserror = { workspace = true }
 
 [features]
-default = ["rust"]
 rust = ["tree-sitter-rust"]
+
+[dependencies.tree-sitter-rust]
+version = "0.24.2"
+optional = true

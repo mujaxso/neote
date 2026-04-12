@@ -1,7 +1,6 @@
 //! Language metadata definition and loading.
 
 use serde::Deserialize;
-use std::collections::HashMap;
 use std::path::PathBuf;
 
 use crate::runtime::Runtime;
@@ -40,7 +39,7 @@ impl LanguageMetadata {
     pub fn load_all(runtime: &Runtime) -> Result<Vec<Self>, SyntaxError> {
         let mut languages = Vec::new();
 
-        let languages_root = runtime.root.join("languages");
+        let languages_root = runtime.root().join("languages");
         if languages_root.is_dir() {
             for entry in std::fs::read_dir(&languages_root)
                 .map_err(|e| SyntaxError::MetadataError(format!("Cannot read languages dir: {}", e)))?
@@ -52,7 +51,7 @@ impl LanguageMetadata {
                     if toml_path.is_file() {
                         let content = std::fs::read_to_string(&toml_path)
                             .map_err(|e| SyntaxError::MetadataError(format!("Failed to read {}: {}", toml_path.display(), e)))?;
-                        let meta: Self = toml::from_str(&content)
+                        let meta: Self = ::toml::from_str(&content)
                             .map_err(|e| SyntaxError::MetadataError(format!("Invalid TOML in {}: {}", toml_path.display(), e)))?;
                         languages.push(meta);
                     }
