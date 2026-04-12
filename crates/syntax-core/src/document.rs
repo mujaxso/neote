@@ -31,8 +31,16 @@ impl SyntaxDocument {
         highlight_config: Option<Arc<HighlightConfiguration>>,
         parser: Option<Arc<Mutex<tree_sitter::Parser>>>,
     ) -> Result<Self, SyntaxError> {
-        let syntax_tree = if let (Some(parser), Some(_)) = (&parser, language.tree_sitter_language()) {
-            Some(SyntaxTree::new(parser.clone(), text, language)?)
+        let syntax_tree = if let Some(parser) = parser {
+            // Try to create a syntax tree if we have a parser
+            match SyntaxTree::new(parser.clone(), text, language) {
+                Ok(tree) => Some(tree),
+                Err(e) => {
+                    // If we can't create a syntax tree, log it but continue without one
+                    eprintln!("Failed to create syntax tree for {:?}: {}", language, e);
+                    None
+                }
+            }
         } else {
             None
         };
@@ -48,6 +56,11 @@ impl SyntaxDocument {
 
     /// Apply a text edit to the document
     pub fn edit(&mut self, start_byte: usize, old_end_byte: usize, new_text: &str) -> Result<(), SyntaxError> {
+        // Validate edit range
+        if start_byte > old_end_byte {
+            return Err(SyntaxError::InvalidEditRange);
+        }
+        
         // Calculate positions before any mutable borrows
         let start_position = self.byte_to_point(start_byte);
         let old_end_position = self.byte_to_point(old_end_byte);
@@ -77,8 +90,16 @@ impl SyntaxDocument {
     pub fn reparse_if_needed(&mut self) -> Result<(), SyntaxError> {
         if self.needs_reparse {
             if let Some(tree) = &mut self.syntax_tree {
-                tree.reparse()?;
-                self.needs_reparse = false;
+                match tree.reparse() {
+                    Ok(()) => {
+                        self.needs_reparse = false;
+                    }
+                    Err(e) => {
+                        // If reparse fails, we'll keep the tree but mark it as potentially stale
+                        eprintln!("Failed to reparse syntax tree: {}", e);
+                        // Don't clear needs_reparse so we can try again later
+                    }
+                }
             }
         }
         Ok(())
@@ -99,11 +120,17 @@ impl SyntaxDocument {
         self.syntax_tree.as_ref()
     }
 
+    /// Check if this document has syntax support
+    pub fn has_syntax_support(&self) -> bool {
+        self.syntax_tree.is_some() && self.highlight_config.is_some()
+    }
+
     /// Get highlight spans for the document
     pub fn highlight_spans(&self) -> Result<Vec<HighlightSpan>, SyntaxError> {
         if let (Some(tree), Some(config)) = (&self.syntax_tree, &self.highlight_config) {
             crate::highlight::highlight_tree(tree.tree(), &self.text, config)
         } else {
+            // Return empty highlights for unsupported languages
             Ok(Vec::new())
         }
     }

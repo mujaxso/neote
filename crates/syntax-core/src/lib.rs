@@ -16,7 +16,7 @@ pub mod manager;
 
 // Re-export main types for convenience
 pub use document::SyntaxDocument;
-pub use language::LanguageRegistry;
+pub use language::{LanguageId, LanguageRegistry};
 pub use highlight::{HighlightConfiguration, Highlight, HighlightSpan};
 pub use snapshot::SyntaxSnapshot;
 pub use manager::SyntaxManager;
@@ -34,4 +34,6 @@ pub enum SyntaxError {
     InvalidEditRange,
     #[error("Document not found")]
     DocumentNotFound,
+    #[error("IO error: {0}")]
+    IoError(#[from] std::io::Error),
 }

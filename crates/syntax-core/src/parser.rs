@@ -6,15 +6,16 @@ use std::sync::Arc;
 use parking_lot::Mutex;
 
 use crate::language::LanguageId;
+use crate::SyntaxError;
 
 /// A syntax tree with its associated text and language
 pub struct SyntaxTree {
     /// The Tree-sitter parse tree
-    pub tree: Tree,
+    tree: Tree,
     /// The text content as a rope for efficient editing
-    pub text: Rope,
+    text: Rope,
     /// Language of this tree
-    pub language: LanguageId,
+    language: LanguageId,
     /// Parser instance (kept for incremental parsing)
     parser: Arc<Mutex<Parser>>,
 }
@@ -25,11 +26,11 @@ impl SyntaxTree {
         parser: Arc<Mutex<Parser>>,
         text: &str,
         language: LanguageId,
-    ) -> Result<Self, crate::SyntaxError> {
+    ) -> Result<Self, SyntaxError> {
         let mut parser_guard = parser.lock();
         let tree = parser_guard
             .parse(text, None)
-            .ok_or_else(|| crate::SyntaxError::ParserError("Failed to parse text".to_string()))?;
+            .ok_or_else(|| SyntaxError::ParserError("Failed to parse text".to_string()))?;
         
         drop(parser_guard);
         
@@ -55,33 +56,27 @@ impl SyntaxTree {
         };
         
         self.tree.edit(&edit);
+        // Note: The text rope is updated in SyntaxDocument::edit, not here
+        // This is to keep the text in sync between SyntaxDocument and SyntaxTree
     }
 
     /// Reparse the tree incrementally after edits
-    pub fn reparse(&mut self) -> Result<(), crate::SyntaxError> {
+    pub fn reparse(&mut self) -> Result<(), SyntaxError> {
         let mut parser = self.parser.lock();
-        // We can't use std::mem::take because Tree doesn't implement Default
-        // So we'll use std::ptr::read to move the tree out without dropping
-        let old_tree = unsafe {
-            // Read the tree from self.tree, leaving the memory uninitialized
-            std::ptr::read(&self.tree)
-        };
-        
-        // Convert rope to string for parsing
         let text_str = self.text.to_string();
-        let new_tree = parser
-            .parse(&text_str, Some(&old_tree))
-            .ok_or_else(|| crate::SyntaxError::ParserError("Failed to reparse".to_string()))?;
         
-        // Write the new tree back, and the old tree will be dropped
-        unsafe {
-            std::ptr::write(&mut self.tree, new_tree);
-        }
+        // Parse with the old tree for incremental parsing
+        let new_tree = parser
+            .parse(&text_str, Some(&self.tree))
+            .ok_or_else(|| SyntaxError::ParserError("Failed to reparse".to_string()))?;
+        
+        // Replace the old tree with the new one
+        self.tree = new_tree;
         
         Ok(())
     }
 
-    /// Get the text as a string slice
+    /// Get the text as a string
     pub fn text(&self) -> String {
         self.text.to_string()
     }
@@ -89,6 +84,11 @@ impl SyntaxTree {
     /// Get the underlying Tree-sitter tree
     pub fn tree(&self) -> &Tree {
         &self.tree
+    }
+
+    /// Get the language
+    pub fn language(&self) -> LanguageId {
+        self.language
     }
 }
 

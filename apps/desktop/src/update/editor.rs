@@ -31,8 +31,16 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                         if let Some(path) = &app.active_file_path {
                             let doc_id = path.clone();
                             let mut syntax_manager = app.syntax_manager.lock().unwrap();
-                            if let Err(e) = syntax_manager.update_document(&doc_id, &current_text, Path::new(path)) {
-                                app.status_message = format!("Syntax update failed: {}", e);
+                            match syntax_manager.update_document(&doc_id, &current_text, Path::new(path)) {
+                                Ok(()) => {
+                                    // Successfully updated syntax
+                                }
+                                Err(e) => {
+                                    // Don't show error for unsupported languages
+                                    if !matches!(e, syntax_core::SyntaxError::LanguageNotSupported(_)) {
+                                        app.status_message = format!("Syntax update failed: {}", e);
+                                    }
+                                }
                             }
                         }
                     }
