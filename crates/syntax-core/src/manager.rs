@@ -34,7 +34,7 @@ impl SyntaxManager {
         let tree = if let Some(ts_lang) = language.tree_sitter_language() {
             let mut parser = Parser::new();
             parser
-                .set_language(&ts_lang)
+                .set_language(ts_lang)
                 .map_err(|e| SyntaxError::GrammarLoadError(e.to_string()))?;
             Some(parser.parse(text, None).ok_or_else(|| SyntaxError::ParseError)?)
         } else {

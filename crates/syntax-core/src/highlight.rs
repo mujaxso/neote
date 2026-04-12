@@ -56,7 +56,7 @@ fn highlight_with_query(
         .tree_sitter_language()
         .ok_or_else(|| SyntaxError::LanguageNotSupported(language.as_str().to_string()))?;
 
-    let query = Query::new(&ts_lang, query_str)
+    let query = Query::new(ts_lang, query_str)
         .map_err(|e| SyntaxError::QueryError(e.to_string()))?;
 
     let mut cursor = QueryCursor::new();
