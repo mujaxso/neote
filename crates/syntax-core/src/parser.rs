@@ -60,7 +60,7 @@ impl SyntaxTree {
     /// Reparse the tree incrementally after edits
     pub fn reparse(&mut self) -> Result<(), crate::SyntaxError> {
         let mut parser = self.parser.lock();
-        let old_tree = std::mem::replace(&mut self.tree, unsafe { std::mem::zeroed() });
+        let old_tree = std::mem::take(&mut self.tree);
         
         let new_tree = parser
             .parse_with(
@@ -76,8 +76,7 @@ impl SyntaxTree {
             )
             .ok_or_else(|| crate::SyntaxError::ParserError("Failed to reparse".to_string()))?;
         
-        // Don't forget to drop the old tree properly
-        drop(old_tree);
+        // The old tree will be dropped when this function returns
         self.tree = new_tree;
         
         Ok(())
@@ -94,11 +93,4 @@ impl SyntaxTree {
     }
 }
 
-impl Drop for SyntaxTree {
-    fn drop(&mut self) {
-        // Explicitly drop the tree to avoid memory issues
-        unsafe {
-            std::ptr::drop_in_place(&mut self.tree);
-        }
-    }
-}
+// The Tree type handles its own cleanup, so we don't need a custom Drop implementation

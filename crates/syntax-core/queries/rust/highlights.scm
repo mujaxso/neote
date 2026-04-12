@@ -51,6 +51,7 @@
 
 (identifier) @variable
 
+; Match constants (uppercase identifiers)
 ((identifier) @constant
  (#match? @constant "^[A-Z][A-Z_]*$"))
 

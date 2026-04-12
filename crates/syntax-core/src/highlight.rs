@@ -5,6 +5,7 @@ use ropey::Rope;
 use std::sync::Arc;
 
 /// Highlight configuration for a language
+#[derive(Clone)]
 pub struct HighlightConfiguration {
     /// Tree-sitter query for highlighting
     query: Query,

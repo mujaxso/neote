@@ -4,6 +4,8 @@ use std::collections::HashMap;
 use std::path::Path;
 use tree_sitter::{Language as TsLanguage, Parser};
 
+use crate::highlight::HighlightConfiguration;
+
 /// Supported language identifiers
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum LanguageId {
