@@ -68,7 +68,7 @@ impl LanguageId {
                     #[cfg(feature = "rust")]
                     {
                         // Use the statically linked grammar function
-                        Some(tree_sitter_rust::language())
+                        Some(unsafe { (*tree_sitter_rust::LANGUAGE)() })
                     }
                     #[cfg(not(feature = "rust"))]
                     None
