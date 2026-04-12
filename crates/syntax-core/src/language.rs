@@ -46,14 +46,8 @@ impl LanguageId {
                 }
             }
             LanguageId::Toml => {
-                #[cfg(feature = "toml")]
-                {
-                    Some(tree_sitter_toml::language())
-                }
-                #[cfg(not(feature = "toml"))]
-                {
-                    None
-                }
+                // TOML support is not currently implemented
+                None
             }
             LanguageId::PlainText => None,
         }
@@ -63,7 +57,7 @@ impl LanguageId {
     pub fn highlight_query(&self) -> &'static str {
         match self {
             LanguageId::Rust => include_str!("../queries/rust/highlights.scm"),
-            LanguageId::Toml => include_str!("../queries/toml/highlights.scm"),
+            LanguageId::Toml => "",
             LanguageId::PlainText => "",
         }
     }
@@ -101,17 +95,7 @@ impl LanguageRegistry {
             }
         }
 
-        // Register TOML if available
-        if let Some(lang) = LanguageId::Toml.tree_sitter_language() {
-            if let Ok(config) = HighlightConfiguration::new(
-                lang,
-                LanguageId::Toml.highlight_query(),
-                "",
-                "",
-            ) {
-                self.languages.insert(LanguageId::Toml, config);
-            }
-        }
+        // TOML support is currently disabled
     }
 
     /// Get language configuration for a language ID

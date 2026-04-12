@@ -7,7 +7,6 @@ license = "MIT"
 [dependencies]
 tree-sitter = "0.22"
 tree-sitter-rust = { version = "0.24", optional = true }
-tree-sitter-toml = { version = "0.24", optional = true }
 ropey = "1"
 thiserror = "2"
 log = "0.4"
@@ -17,4 +16,3 @@ parking_lot = "0.12"
 [features]
 default = ["rust"]
 rust = ["tree-sitter-rust"]
-toml = ["tree-sitter-toml"]

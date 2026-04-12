@@ -38,12 +38,9 @@ impl SyntaxManager {
 
     /// Initialize parsers for supported languages
     fn initialize_parsers(&mut self) {
-        let languages = [LanguageId::Rust, LanguageId::Toml];
-        
-        for lang in languages {
-            if let Some(parser) = self.registry.create_parser(lang) {
-                self.parsers.insert(lang, Arc::new(Mutex::new(parser)));
-            }
+        // Only initialize parsers for languages we actually support
+        if let Some(parser) = self.registry.create_parser(LanguageId::Rust) {
+            self.parsers.insert(LanguageId::Rust, Arc::new(Mutex::new(parser)));
         }
     }
 
