@@ -24,7 +24,6 @@ rpc = { path = "../../crates/rpc" }
 
 [features]
 default = []
-dynamic-grammars = []
 
 [build-dependencies]
 anyhow.workspace = true
