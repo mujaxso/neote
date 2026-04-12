@@ -125,8 +125,10 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
             // Use the interactive text editor (editable) with syntax highlighting
             // Pass the syntax highlight cache only if it's not empty
             let line_cache = if !app.syntax_highlight_cache.is_empty() {
+                eprintln!("DEBUG: editor_panel: syntax_highlight_cache has {} lines", app.syntax_highlight_cache.len());
                 Some(app.syntax_highlight_cache.clone())
             } else {
+                eprintln!("DEBUG: editor_panel: syntax_highlight_cache is empty");
                 None
             };
             editor::editor(
