@@ -38,19 +38,9 @@ impl LanguageId {
             LanguageId::Rust => {
                 #[cfg(feature = "rust")]
                 {
-                    // In tree-sitter-rust 0.24.2, there's a language() function
+                    // tree-sitter-rust 0.24.2 provides a language() function
                     // that returns the Language directly
-                    // Let's check if it exists
-                    unsafe extern "C" {
-                        // Declare the external function from tree-sitter-rust
-                        fn tree_sitter_rust() -> *const tree_sitter::ffi::TSLanguage;
-                    }
-                    
-                    // Call the function to get the raw language pointer
-                    let raw_lang_ptr = unsafe { tree_sitter_rust() };
-                    
-                    // Convert to Language
-                    Some(unsafe { tree_sitter::Language::from_raw(raw_lang_ptr) })
+                    Some(tree_sitter_rust::language())
                 }
                 #[cfg(not(feature = "rust"))]
                 {
