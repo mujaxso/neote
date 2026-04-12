@@ -5,7 +5,6 @@ use std::path::Path;
 use tree_sitter::{Language as TsLanguage, Parser};
 
 use crate::highlight::HighlightConfiguration;
-use crate::SyntaxError;
 
 /// Supported language identifiers
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -39,8 +38,9 @@ impl LanguageId {
             LanguageId::Rust => {
                 #[cfg(feature = "rust")]
                 {
-                    // In tree-sitter-rust 0.24.2, we can use the language() function
-                    Some(tree_sitter_rust::language())
+                    // In tree-sitter-rust 0.24.2, we need to use the LANGUAGE constant
+                    // It's a LanguageFn that needs to be called
+                    Some(tree_sitter_rust::LANGUAGE())
                 }
                 #[cfg(not(feature = "rust"))]
                 {
