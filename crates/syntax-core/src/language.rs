@@ -6,6 +6,10 @@ use tree_sitter::{Language as TsLanguage, Parser};
 
 use crate::highlight::HighlightConfiguration;
 
+// Import tree-sitter-rust when the rust feature is enabled
+#[cfg(feature = "rust")]
+use tree_sitter_rust;
+
 /// Supported language identifiers
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum LanguageId {
@@ -38,17 +42,9 @@ impl LanguageId {
             LanguageId::Rust => {
                 #[cfg(feature = "rust")]
                 {
-                    // Use the raw C function to get the language pointer
-                    unsafe extern "C" {
-                        fn tree_sitter_rust() -> *const ();
-                    }
-                    let ptr = unsafe { tree_sitter_rust() };
-                    // Convert raw pointer to Language using from_raw
-                    // Safety: tree_sitter_rust() returns a valid language pointer
-                    // We need to cast *const () to *const tree_sitter::ffi::TSLanguage
-                    use tree_sitter::ffi::TSLanguage;
-                    let lang_ptr = ptr as *const TSLanguage;
-                    Some(unsafe { TsLanguage::from_raw(lang_ptr) })
+                    // Use the tree-sitter-rust crate's language function
+                    // This is safer than trying to call C functions directly
+                    Some(tree_sitter_rust::language())
                 }
                 #[cfg(not(feature = "rust"))]
                 {
