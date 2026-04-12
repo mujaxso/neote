@@ -1,4 +1,4 @@
-use iced::{Element, Length, Color, Font, widget::{column, container, row, Row, text, Text}};
+use iced::{Element, Length, Color, Font, Renderer, widget::{column, container, row, Row, text, Text}};
 use syntax_core::{Highlight, HighlightSpan};
 use crate::message::Message;
 use crate::state::App;
@@ -39,7 +39,7 @@ pub fn syntax_highlighted_view(
             // Clamp line_end to not exceed text length (the sentinel may overshoot).
             let line_end = line_end.min(text_bytes.len());
 
-            let mut segments = Vec::new();
+            let mut segments: Vec<Text<'_, iced::Theme, Renderer>> = Vec::new();
             let mut current_pos = line_start;
 
             // Collect spans that overlap this line.

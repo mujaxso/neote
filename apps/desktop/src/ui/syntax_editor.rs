@@ -1,7 +1,7 @@
 //! A syntax‑highlighting editor widget for Neote.
 use iced::{
     widget::{column, container, Row, Text},
-    Element, Length, Color, Font,
+    Element, Length, Color, Font, Renderer,
 };
 use crate::settings::editor::EditorTypographySettings;
 use crate::ui::style::StyleHelpers;
@@ -41,7 +41,7 @@ pub fn syntax_highlighted_view(
             // Clamp line_end to not exceed text length (the sentinel may overshoot).
             let line_end = line_end.min(text_bytes.len());
 
-            let mut segments = Vec::new();
+            let mut segments: Vec<Text<'_, iced::Theme, Renderer>> = Vec::new();
             let mut current_pos = line_start;
 
             // Collect spans that overlap this line.
