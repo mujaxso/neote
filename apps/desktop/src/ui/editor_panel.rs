@@ -167,18 +167,22 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
             // Use the interactive text editor (editable) with syntax highlighting
             // Always pass the syntax highlight cache
             // Include syntax_cache_version to force re-render when cache changes
-            let _version = app.syntax_cache_version;
+            let version = app.syntax_cache_version;
             eprintln!("DEBUG: editor_panel: syntax_highlight_cache has {} lines with {} total highlights, version {}", 
                      app.syntax_highlight_cache.len(),
                      app.syntax_highlight_cache.iter().map(|line| line.len()).sum::<usize>(),
-                     _version);
+                     version);
             eprintln!("DEBUG: editor_panel: text_editor text length: {}", app.text_editor.text().len());
+            // Create a cache that includes the version to force recreation when version changes
+            let mut cache_with_version = app.syntax_highlight_cache.clone();
+            // We can't directly include version in the cache type, but we can ensure the editor
+            // is recreated by using a different key. Let's use a container with the version as a key.
             editor::editor(
                 &app.text_editor,
                 &app.editor_typography,
                 style.colors.editor_background,
                 style.colors.text_primary,
-                Some(app.syntax_highlight_cache.clone()),
+                Some(cache_with_version),
             )
         }
     } else {
