@@ -258,9 +258,6 @@ fn handle_file_loaded(app: &mut App, result: Result<(String, String, Document), 
     match result {
         Ok((path, content, document)) => {
             app.active_file_path = Some(path.clone());
-            // Create editor state from document
-            let editor_state = editor_core::EditorState::from_document(document);
-            app.editor_state = Some(editor_state);
             app.file_loading_state = FileLoadingState::Idle;
             
             let file_size_bytes = content.len();
@@ -301,6 +298,8 @@ fn handle_file_loaded(app: &mut App, result: Result<(String, String, Document), 
                     file_size_bytes / (1024 * 1024),
                     preview_content
                 ));
+                // Create editor state from document for consistency
+                app.editor_state = Some(editor_core::EditorState::from_document(document));
             } else {
                 // Large or normal files: editing enabled
                 app.is_file_read_only = false;
@@ -320,31 +319,36 @@ fn handle_file_loaded(app: &mut App, result: Result<(String, String, Document), 
                     app.status_message = format!("File loaded: {} ({} bytes)", path, file_size_bytes);
                 }
                 
-                // Initialize editor content with full text for editable files
-                if let Some(ref editor_state) = app.editor_state {
-                    let text = editor_state.document().text();
-                    app.text_editor = iced::widget::text_editor::Content::with_text(&text);
-                }
+                // Create editor state and set text editor content
+                let editor_state = editor_core::EditorState::from_document(document);
+                let text = editor_state.document().text();
+                app.text_editor = iced::widget::text_editor::Content::with_text(&text);
+                app.editor_state = Some(editor_state);
             }
             
             app.error_message = None;
             app.is_dirty = false;
             
-            // Update workspace state
+            // Update workspace state - use the content we already have
             {
-                let content_clone = content.clone();
                 let mut state = app.workspace_state.lock().unwrap();
-                state.open_buffer(&path, content_clone);
+                state.open_buffer(&path, content);
             }
             
             // Send EditorSetDocument to trigger syntax highlighting only for appropriate files
             if needs_syntax_highlight {
-                Command::perform(
-                    async move {
-                        Message::EditorSetDocument(editor_core::Document::from_text_with_path(&content, path))
-                    },
-                    |msg| msg,
-                )
+                // Use the document from editor state to avoid recreating it
+                if let Some(ref editor_state) = app.editor_state {
+                    let doc = editor_state.document().clone();
+                    Command::perform(
+                        async move {
+                            Message::EditorSetDocument(doc)
+                        },
+                        |msg| msg,
+                    )
+                } else {
+                    Command::none()
+                }
             } else {
                 // Don't trigger syntax highlighting for large files
                 Command::none()

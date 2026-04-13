@@ -41,32 +41,53 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
                     .size(11)
                     .style(iced::theme::Text::Color(style.colors.text_secondary)),
                 iced::widget::horizontal_space(),
-                // Show syntax highlight indicator - more visible
-                if app.syntax_highlight_span_count > 0 {
-                    container(
-                        row![
-                            text("●")
-                                .size(10)
-                                .style(iced::theme::Text::Color(style.colors.accent)),
-                            text(format!("{} syntax spans", app.syntax_highlight_span_count))
-                                .size(9)
-                                .style(iced::theme::Text::Color(style.colors.accent)),
-                        ]
-                        .spacing(4)
-                        .align_items(iced::Alignment::Center)
-                    )
-                    .padding([3, 8])
-                    .style(iced::theme::Container::Custom(Box::new(SyntaxIndicatorStyle {
-                        colors: style.colors,
-                        is_active: true,
-                    })))
+                // Show syntax highlight indicator - only for files with syntax highlighting enabled
+                if app.syntax_highlighting_enabled {
+                    if app.syntax_highlight_span_count > 0 {
+                        container(
+                            row![
+                                text("●")
+                                    .size(10)
+                                    .style(iced::theme::Text::Color(style.colors.accent)),
+                                text(format!("{} spans", app.syntax_highlight_span_count.min(9999)))
+                                    .size(9)
+                                    .style(iced::theme::Text::Color(style.colors.accent)),
+                            ]
+                            .spacing(4)
+                            .align_items(iced::Alignment::Center)
+                        )
+                        .padding([3, 8])
+                        .style(iced::theme::Container::Custom(Box::new(SyntaxIndicatorStyle {
+                            colors: style.colors,
+                            is_active: true,
+                        })))
+                    } else {
+                        container(
+                            row![
+                                text("○")
+                                    .size(10)
+                                    .style(iced::theme::Text::Color(style.colors.text_muted)),
+                                text("No syntax")
+                                    .size(9)
+                                    .style(iced::theme::Text::Color(style.colors.text_muted)),
+                            ]
+                            .spacing(4)
+                            .align_items(iced::Alignment::Center)
+                        )
+                        .padding([3, 8])
+                        .style(iced::theme::Container::Custom(Box::new(SyntaxIndicatorStyle {
+                            colors: style.colors,
+                            is_active: false,
+                        })))
+                    }
                 } else {
+                    // For files without syntax highlighting, show a simple indicator
                     container(
                         row![
-                            text("○")
+                            text("—")
                                 .size(10)
                                 .style(iced::theme::Text::Color(style.colors.text_muted)),
-                            text("No syntax")
+                            text("Plain text")
                                 .size(9)
                                 .style(iced::theme::Text::Color(style.colors.text_muted)),
                         ]
@@ -143,18 +164,11 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
             FileLoadingState::LargeFileWarning { .. } |
             FileLoadingState::VeryLargeFileWarning { .. } |
             FileLoadingState::ReadOnlyPreview { .. } => {
-                // Show loading indicator
+                // Show simple loading indicator to reduce UI complexity
                 container(
-                    column![
-                        text("Loading file...")
-                            .size(16)
-                            .style(iced::theme::Text::Color(style.colors.text_primary)),
-                        text("Please wait")
-                            .size(12)
-                            .style(iced::theme::Text::Color(style.colors.text_secondary)),
-                    ]
-                    .spacing(12)
-                    .align_items(iced::Alignment::Center)
+                    text("Loading...")
+                        .size(14)
+                        .style(iced::theme::Text::Color(style.colors.text_secondary))
                 )
                 .center_y()
                 .center_x()
@@ -242,11 +256,12 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
         .into()
     };
     
-    // Syntax highlight legend
-    let legend = if !app.syntax_highlight_spans.is_empty() {
+    // Syntax highlight legend - only show for small files with syntax highlighting enabled
+    let legend = if app.syntax_highlighting_enabled && !app.syntax_highlight_spans.is_empty() {
         use std::collections::HashSet;
         let mut unique_highlights = HashSet::new();
-        for span in &app.syntax_highlight_spans {
+        // Limit the number of spans we process for performance
+        for span in app.syntax_highlight_spans.iter().take(1000) {
             unique_highlights.insert(span.highlight);
         }
         let mut items = Vec::new();
@@ -283,7 +298,7 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
         }
         container(
             row![
-                text(format!("{} spans", app.syntax_highlight_span_count))
+                text(format!("{} spans", app.syntax_highlight_span_count.min(1000)))
                     .size(9)
                     .style(iced::theme::Text::Color(style.colors.text_muted)),
                 iced::widget::Space::with_width(Length::Fixed(4.0)),
