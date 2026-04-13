@@ -23,7 +23,6 @@
 
 ; Tables
 (table) @type
-(array_table) @type
 
 ; Keys in key-value pairs
 (pair (bare_key) @property)
