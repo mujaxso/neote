@@ -61,11 +61,10 @@
 ; Type definitions
 (type_identifier) @type
 (primitive_type) @type
-(Self) @type
 
 ; Variables
 (identifier) @variable
-(self) @variable
+(self) @variable.builtin
 
 ; Constants
 (const_item (identifier) @constant)
