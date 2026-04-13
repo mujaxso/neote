@@ -9,80 +9,54 @@
 (raw_string_literal) @string
 (char_literal) @string
 
-; Keywords
+; Keywords - minimal set to avoid parsing errors
 [
-  "as"
-  "async"
-  "await"
-  "break"
-  "const"
-  "continue"
-  "dyn"
-  "else"
-  "enum"
-  "extern"
-  "false"
   "fn"
-  "for"
-  "if"
-  "impl"
-  "in"
   "let"
-  "loop"
+  "if"
+  "else"
+  "for"
+  "while"
   "match"
-  "mod"
-  "move"
-  "mut"
+  "struct"
+  "enum"
+  "impl"
+  "trait"
+  "use"
   "pub"
-  "ref"
+  "mod"
+  "type"
+  "const"
+  "static"
+  "unsafe"
   "return"
+  "break"
+  "continue"
+  "as"
+  "in"
+  "where"
+  "loop"
+  "move"
+  "ref"
+  "mut"
   "self"
   "Self"
-  "static"
-  "struct"
   "super"
-  "trait"
+  "extern"
+  "crate"
   "true"
-  "type"
-  "union"
-  "unsafe"
-  "use"
-  "where"
-  "while"
+  "false"
+  "async"
+  "await"
+  "dyn"
 ] @keyword
-
-; Built-in types
-[
-  "bool"
-  "char"
-  "f32"
-  "f64"
-  "i8"
-  "i16"
-  "i32"
-  "i64"
-  "i128"
-  "isize"
-  "str"
-  "u8"
-  "u16"
-  "u32"
-  "u64"
-  "u128"
-  "usize"
-] @type.builtin
 
 ; Function definitions
 (function_item
   name: (identifier) @function)
 
-; Function calls
-(call_expression
-  function: (identifier) @function.call)
-
 ; Type definitions
 (type_identifier) @type
-(primitive_type) @type.builtin
 
 ; Variables
 (identifier) @variable
@@ -90,17 +64,6 @@
 ; Constants
 (const_item
   name: (identifier) @constant)
-
-; Parameters
-(parameter
-  pattern: (identifier) @variable.parameter)
-
-; Attributes
-(attribute_item) @attribute
-
-; Macros
-(macro_invocation
-  macro: (identifier) @macro)
 
 ; Operators
 [
