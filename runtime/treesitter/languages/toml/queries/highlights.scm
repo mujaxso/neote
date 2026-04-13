@@ -14,7 +14,8 @@
 
 ; Constants
 (boolean) @constant.builtin
-(date_time) @constant.builtin
+; date_time node type may not exist in this version of the grammar
+; (date_time) @constant.builtin
 
 ; Tables
 (table_header (identifier) @type)
