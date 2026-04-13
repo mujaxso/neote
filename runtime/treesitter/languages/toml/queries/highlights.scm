@@ -1,5 +1,5 @@
 ; TOML highlight queries for Tree‑sitter
-; Based on the official tree-sitter-toml grammar repository
+; Based on tree-sitter-toml grammar version 0.20
 
 (comment) @comment
 
@@ -11,22 +11,14 @@
 
 (boolean) @boolean
 
-(date) @string.special
-(time) @string.special
-(date_time) @string.special
-
 ; Keys
 (bare_key) @property
-(dotted_key (bare_key) @property)
 
 ; Table headers
 (table_header (bare_key) @type)
-(table_header (dotted_key (bare_key) @type))
 (table_array_header (bare_key) @type)
-(table_array_header (dotted_key (bare_key) @type))
 
 ; Punctuation
-"." @punctuation.delimiter
 "=" @operator
 "[" @punctuation.bracket
 "]" @punctuation.bracket
