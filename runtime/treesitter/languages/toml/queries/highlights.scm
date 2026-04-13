@@ -16,6 +16,15 @@
 (boolean) @constant.builtin
 ; date_time node type may not exist in this version of the grammar
 ; (date_time) @constant.builtin
+; Try alternative node types for date/time values:
+; (date-time) @constant.builtin
+; (datetime) @constant.builtin
+; Try alternative node types for date/time values:
+; (date-time) @constant.builtin
+; (datetime) @constant.builtin
+; If date/time values need highlighting, try one of these node types:
+; (date-time) @constant.builtin
+; (datetime) @constant.builtin
 
 ; Tables
 (table_header (identifier) @type)
