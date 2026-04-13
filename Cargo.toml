@@ -13,7 +13,6 @@ members = [
   "crates/settings",
   "crates/permissions",
   "crates/file-ops",
-  "crates/syntax-core",
   "services/workspace-daemon",
   "services/ai-daemon",
 ]
@@ -32,6 +31,3 @@ tracing = "0.1"
 uuid = { version = "1", features = ["v4", "serde"] }
 thiserror = "2"
 rfd = { version = "0.14", default-features = false, features = ["tokio", "xdg-portal"] }
-libloading = "0.8"
-toml = "0.8"
-
