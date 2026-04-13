@@ -12,6 +12,8 @@ use crate::settings::editor::EditorTypographySettings;
 struct SyntaxHighlighter {
     line_cache: Vec<Vec<(Range<usize>, Color)>>,
     current_line: usize,
+    // Track if we've started highlighting a new document
+    is_new_document: bool,
 }
 
 impl iced_core::text::highlighter::Highlighter for SyntaxHighlighter {
@@ -23,16 +25,22 @@ impl iced_core::text::highlighter::Highlighter for SyntaxHighlighter {
         Self {
             line_cache: settings.clone(),
             current_line: 0,
+            is_new_document: true,
         }
     }
 
     fn update(&mut self, settings: &Self::Settings) {
         self.line_cache = settings.clone();
+        // Reset when we get new settings (new document)
+        self.current_line = 0;
+        self.is_new_document = true;
     }
 
     fn change_line(&mut self, line: usize) {
         eprintln!("DEBUG: SyntaxHighlighter::change_line: {}", line);
         self.current_line = line;
+        // Reset the new document flag since change_line was called
+        self.is_new_document = false;
     }
 
     fn current_line(&self) -> usize {
@@ -40,33 +48,32 @@ impl iced_core::text::highlighter::Highlighter for SyntaxHighlighter {
     }
 
     fn highlight_line(&mut self, line: &str) -> Self::Iterator<'_> {
-        use std::sync::atomic::{AtomicUsize, Ordering};
-        
         let mut ranges = Vec::new();
         
-        // Track the current line based on text patterns
-        // This is a simple heuristic: if the text length changes significantly, move to the next line
-        static LAST_TEXT_LEN: AtomicUsize = AtomicUsize::new(0);
-        static LINE_COUNTER: AtomicUsize = AtomicUsize::new(0);
+        // Determine which line index to use
+        let line_index = if !self.is_new_document {
+            // change_line was called, so use current_line
+            self.current_line
+        } else {
+            // change_line wasn't called, so we need to find the line ourselves
+            match self.find_best_line_match(line) {
+                Some(found_index) => {
+                    // If we found line 0, reset current_line to 0
+                    // This helps when re-rendering starts from the beginning
+                    if found_index == 0 {
+                        self.current_line = 0;
+                    }
+                    found_index
+                }
+                None => {
+                    // No match found, use current_line
+                    self.current_line
+                }
+            }
+        };
         
-        let current_len = line.len();
-        
-        // Load current values
-        let last_len = LAST_TEXT_LEN.load(Ordering::Relaxed);
-        let mut line_counter = LINE_COUNTER.load(Ordering::Relaxed);
-        
-        // If this is the first call or the text length is very different, increment the line counter
-        if line_counter == 0 || (current_len > 0 && (current_len as isize - last_len as isize).abs() > 2) {
-            line_counter = line_counter.wrapping_add(1);
-            LINE_COUNTER.store(line_counter, Ordering::Relaxed);
-        }
-        LAST_TEXT_LEN.store(current_len, Ordering::Relaxed);
-        
-        // Use the line counter, but don't exceed cache bounds
-        let line_index = if line_counter > 0 { line_counter - 1 } else { 0 };
-        
-        eprintln!("DEBUG: highlight_line called with text length {}, line_counter = {}, line_index = {}", 
-                 current_len, line_counter, line_index);
+        eprintln!("DEBUG: highlight_line called with text length {}, line_index = {}, current_line = {}, is_new_document = {}", 
+                 line.len(), line_index, self.current_line, self.is_new_document);
         
         if line_index < self.line_cache.len() {
             if let Some(line_highlights) = self.line_cache.get(line_index) {
@@ -104,6 +111,12 @@ impl iced_core::text::highlighter::Highlighter for SyntaxHighlighter {
             eprintln!("DEBUG: line_index {} out of bounds (cache size: {})", line_index, self.line_cache.len());
         }
         
+        // If we're in new document mode (change_line wasn't called), increment current_line
+        // for the next call, assuming the next call will be for the next line
+        if self.is_new_document {
+            self.current_line += 1;
+        }
+        
         eprintln!("DEBUG: returning {} ranges", ranges.len());
         // The iterator must be sorted by position ascending.
         ranges.sort_by_key(|(range, _)| range.start);
@@ -112,31 +125,34 @@ impl iced_core::text::highlighter::Highlighter for SyntaxHighlighter {
 }
 
 impl SyntaxHighlighter {
-    // Try to find which line index corresponds to the given text
-    // This is a heuristic approach since we don't have the full context
-    fn find_line_index(&self, line_text: &str) -> Option<usize> {
+    // Try to find the best line match for the given text
+    fn find_best_line_match(&self, line_text: &str) -> Option<usize> {
         let line_text_len = line_text.chars().count();
         
-        // First, try to find a line where the highlights match the text length
-        // Also, the highlights should be reasonable for the text length
+        // First, try to find a line where all highlights fit within the text
         for (i, highlights) in self.line_cache.iter().enumerate() {
             if !highlights.is_empty() {
-                // Check if all highlights fit within the text length
                 let all_fit = highlights.iter().all(|(range, _)| range.end <= line_text_len);
                 if all_fit {
-                    // Also check that at least one highlight is not empty
+                    // Check that at least one highlight is not empty
                     let has_valid = highlights.iter().any(|(range, _)| range.start < range.end);
                     if has_valid {
-                        // Additional check: the highlights should be somewhat evenly distributed
-                        // This helps avoid matching lines with very different highlight patterns
                         return Some(i);
                     }
                 }
             }
         }
         
-        // If no line with highlights matches, return None
-        // This is better than returning a wrong line index
+        // If no perfect match, try to find a line where at least some highlights fit
+        for (i, highlights) in self.line_cache.iter().enumerate() {
+            if !highlights.is_empty() {
+                let some_fit = highlights.iter().any(|(range, _)| range.end <= line_text_len);
+                if some_fit {
+                    return Some(i);
+                }
+            }
+        }
+        
         None
     }
 }
@@ -146,6 +162,7 @@ impl Default for SyntaxHighlighter {
         Self {
             line_cache: Vec::new(),
             current_line: 0,
+            is_new_document: true,
         }
     }
 }
