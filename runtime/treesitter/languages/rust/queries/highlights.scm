@@ -9,45 +9,45 @@
 (raw_string_literal) @string
 (char_literal) @string
 
-; Keywords - using node patterns
-(fn) @keyword
-(let) @keyword
-(if) @keyword
-(else) @keyword
-(for) @keyword
-(while) @keyword
-(match) @keyword
-(struct) @keyword
-(enum) @keyword
-(impl) @keyword
-(trait) @keyword
-(use) @keyword
-(pub) @keyword
-(mod) @keyword
-(type) @keyword
-(const) @keyword
-(static) @keyword
-(unsafe) @keyword
-(return) @keyword
-(break) @keyword
-(continue) @keyword
-(as) @keyword
-(in) @keyword
-(where) @keyword
-(loop) @keyword
-(move) @keyword
-(ref) @keyword
-(mut) @keyword
-(self) @keyword
-(Self) @keyword
-(super) @keyword
-(extern) @keyword
-(crate) @keyword
-(true) @keyword
-(false) @keyword
-(async) @keyword
-(await) @keyword
-(dyn) @keyword
+; Keywords - using string literals
+[
+  "fn"
+  "let"
+  "if"
+  "else"
+  "for"
+  "while"
+  "match"
+  "struct"
+  "enum"
+  "impl"
+  "trait"
+  "use"
+  "pub"
+  "mod"
+  "type"
+  "const"
+  "static"
+  "unsafe"
+  "return"
+  "break"
+  "continue"
+  "as"
+  "in"
+  "where"
+  "loop"
+  "move"
+  "ref"
+  "self"
+  "Self"
+  "super"
+  "extern"
+  "true"
+  "false"
+  "async"
+  "await"
+  "dyn"
+] @keyword
 
 ; Function definitions
 (function_item
