@@ -1,5 +1,6 @@
 ; TOML highlight queries for Tree‑sitter
 ; Based on tree-sitter-toml grammar version 0.20
+; Updated to match actual node types from the grammar
 
 ; Comments
 (comment) @comment
@@ -14,22 +15,15 @@
 
 ; Constants
 (boolean) @constant.builtin
-; date_time node type may not exist in this version of the grammar
+; Date/time values - check if these node types exist in the grammar
 ; (date_time) @constant.builtin
-; Try alternative node types for date/time values:
-; (date-time) @constant.builtin
-; (datetime) @constant.builtin
-; Try alternative node types for date/time values:
-; (date-time) @constant.builtin
-; (datetime) @constant.builtin
-; If date/time values need highlighting, try one of these node types:
-; (date-time) @constant.builtin
-; (datetime) @constant.builtin
+; (local_date) @constant.builtin
+; (local_time) @constant.builtin
+; (local_date_time) @constant.builtin
 
 ; Tables
-(table_header (identifier) @type)
-(table (identifier) @type)
-(table_array_element (identifier) @type)
+(table (key) @type)
+(array_table (key) @type)
 
 ; Keys in key-value pairs
 (pair (key) @property)
