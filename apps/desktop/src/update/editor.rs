@@ -230,12 +230,20 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
             let editor_state = EditorState::from_document(document);
             let char_count = editor_state.document().len_chars();
             
+            // Debug log to understand what's happening
+            eprintln!("DEBUG: EditorSetDocument: char_count = {}, VERY_LARGE_CHAR_THRESHOLD = {}, LARGE_CHAR_THRESHOLD = {}", 
+                     char_count, 100_000_000, 10_000_000);
+            
             // Use consistent thresholds with workspace logic
             // VERY_LARGE_FILE_THRESHOLD is 100 MB = 100 * 1024 * 1024 bytes ≈ 100 million characters
             // LARGE_FILE_THRESHOLD is 10 MB = 10 * 1024 * 1024 bytes ≈ 10 million characters
             const VERY_LARGE_CHAR_THRESHOLD: usize = 100_000_000; // 100 million characters
             const LARGE_CHAR_THRESHOLD: usize = 10_000_000; // 10 million characters
             
+            // Safety check: if the file was already marked as not too large in handle_file_loaded,
+            // don't mark it as too large here unless it's truly huge (> 100 MB)
+            // This prevents race conditions where handle_file_loaded sets it to false
+            // and then EditorSetDocument incorrectly sets it to true
             if char_count > VERY_LARGE_CHAR_THRESHOLD {
                 // Files > 100 MB: read-only mode
                 app.is_file_too_large_for_editor = true;
@@ -244,21 +252,22 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                     "File is very large ({} MB) - editing disabled",
                     char_count / 1_000_000
                 );
-            } else if char_count > LARGE_CHAR_THRESHOLD {
-                // Files 10-100 MB: editing enabled with warning
-                app.is_file_too_large_for_editor = false;
-                let text = editor_state.document().text();
-                app.text_editor = iced::widget::text_editor::Content::with_text(&text);
-                app.status_message = format!(
-                    "Large file ({} MB) - editing enabled",
-                    char_count / 1_000_000
-                );
+                eprintln!("DEBUG: EditorSetDocument: Marked as too large (char_count > VERY_LARGE_CHAR_THRESHOLD)");
             } else {
-                // Files < 10 MB: normal editing
+                // Files <= 100 MB: always editable
                 app.is_file_too_large_for_editor = false;
                 let text = editor_state.document().text();
                 app.text_editor = iced::widget::text_editor::Content::with_text(&text);
-                app.status_message = format!("Loaded file ({} chars)", char_count);
+                if char_count > LARGE_CHAR_THRESHOLD {
+                    app.status_message = format!(
+                        "Large file ({} MB) - editing enabled",
+                        char_count / 1_000_000
+                    );
+                    eprintln!("DEBUG: EditorSetDocument: Marked as large but editable (10M < char_count <= 100M)");
+                } else {
+                    app.status_message = format!("Loaded file ({} chars)", char_count);
+                    eprintln!("DEBUG: EditorSetDocument: Marked as normal (char_count <= 10M)");
+                }
             }
             
             // Initialize syntax document
