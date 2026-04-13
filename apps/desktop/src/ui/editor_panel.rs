@@ -60,7 +60,6 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
                         colors: style.colors,
                         is_active: true,
                     })))
-                    .into()
                 } else {
                     container(
                         row![
@@ -79,7 +78,6 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
                         colors: style.colors,
                         is_active: false,
                     })))
-                    .into()
                 },
                 if app.is_dirty {
                     Icon::Warning.render_with_color(
