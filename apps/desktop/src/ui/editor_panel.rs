@@ -166,9 +166,12 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
         } else {
             // Use the interactive text editor (editable) with syntax highlighting
             // Always pass the syntax highlight cache
-            eprintln!("DEBUG: editor_panel: syntax_highlight_cache has {} lines with {} total highlights", 
+            // Include syntax_cache_version to force re-render when cache changes
+            let _version = app.syntax_cache_version;
+            eprintln!("DEBUG: editor_panel: syntax_highlight_cache has {} lines with {} total highlights, version {}", 
                      app.syntax_highlight_cache.len(),
-                     app.syntax_highlight_cache.iter().map(|line| line.len()).sum::<usize>());
+                     app.syntax_highlight_cache.iter().map(|line| line.len()).sum::<usize>(),
+                     _version);
             eprintln!("DEBUG: editor_panel: text_editor text length: {}", app.text_editor.text().len());
             editor::editor(
                 &app.text_editor,

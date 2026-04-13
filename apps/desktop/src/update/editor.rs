@@ -121,7 +121,8 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                                             eprintln!("DEBUG: Building line cache with {} spans, text length {}", spans.len(), current_text.len());
                                             app.syntax_highlight_cache =
                                                 build_line_cache(&current_text, &spans, app.theme);
-                                            eprintln!("DEBUG: Built cache with {} lines", app.syntax_highlight_cache.len());
+                                            app.syntax_cache_version += 1;
+                                            eprintln!("DEBUG: Built cache with {} lines, version {}", app.syntax_highlight_cache.len(), app.syntax_cache_version);
                                             if spans.is_empty() {
                                                 app.status_message = format!(
                                                     "No syntax spans for {} (language: {:?})",
@@ -292,7 +293,8 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                             eprintln!("DEBUG: Initial load: building line cache with {} spans, text length {}", spans.len(), text.len());
                             app.syntax_highlight_cache =
                                 build_line_cache(&text, &spans, app.theme);
-                            eprintln!("DEBUG: Initial cache built with {} lines", app.syntax_highlight_cache.len());
+                            app.syntax_cache_version += 1;
+                            eprintln!("DEBUG: Initial cache built with {} lines, version {}", app.syntax_highlight_cache.len(), app.syntax_cache_version);
                             if !spans.is_empty() {
                                 app.status_message = format!("Syntax highlighting applied ({} spans)", spans.len());
                             } else {

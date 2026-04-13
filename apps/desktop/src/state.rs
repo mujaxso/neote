@@ -195,6 +195,8 @@ pub struct App {
     pub syntax_highlight_spans: Vec<syntax_core::HighlightSpan>,
     // Per‑line cache of highlight ranges for the real editor widget
     pub syntax_highlight_cache: Vec<Vec<(std::ops::Range<usize>, iced::Color)>>,
+    // Version counter to force UI updates when cache changes
+    pub syntax_cache_version: u32,
 }
 
 impl App {
@@ -240,6 +242,7 @@ impl App {
                 syntax_highlight_span_count: 0,
                 syntax_highlight_spans: Vec::new(),
                 syntax_highlight_cache: Vec::new(),
+                syntax_cache_version: 0,
             },
             iced::Command::none(),
         )

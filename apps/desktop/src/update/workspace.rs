@@ -103,6 +103,7 @@ fn handle_file_selected(app: &mut App, index: usize) -> Command<Message> {
             app.syntax_highlight_cache.clear();
             app.syntax_highlight_spans.clear();
             app.syntax_highlight_span_count = 0;
+            app.syntax_cache_version += 1;
             
             // Load metadata using the file-ops crate
             Command::perform(
