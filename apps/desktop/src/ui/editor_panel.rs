@@ -135,36 +135,69 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
         })))
     };
     
-    let editor_content: Element<'_, Message> = if let Some(_) = &app.active_file_path {
-        // Check if file is too large for editing (read-only mode)
-        if app.is_file_too_large_for_editor {
-            // Very large files: show read-only preview with message
-            container(
-                column![
-                    Icon::Warning.render_with_color(
-                        &app.editor_typography,
-                        style.colors.warning,
-                        Some(24),
-                    ),
-                    text("File opened in read-only mode")
-                        .size(16)
-                        .style(iced::theme::Text::Color(style.colors.text_primary)),
-                    text("This file is very large. Editing is disabled for performance.")
-                        .size(12)
-                        .style(iced::theme::Text::Color(style.colors.text_secondary)),
-                    text("You can view the first 100KB of the file.")
-                        .size(12)
-                        .style(iced::theme::Text::Color(style.colors.text_muted)),
-                ]
-                .spacing(12)
-                .align_items(iced::Alignment::Center)
-            )
-            .center_y()
-            .center_x()
-            .width(Length::Fill)
-            .height(Length::Fill)
-            .into()
-        } else {
+    let editor_content: Element<'_, Message> = if let Some(active_path) = &app.active_file_path {
+        eprintln!("DEBUG: editor_panel: Rendering for active file: {}, is_file_too_large_for_editor={}, file_loading_state={:?}, text_editor.len={}", 
+                 active_path, app.is_file_too_large_for_editor, app.file_loading_state, app.text_editor.text().len());
+        
+        // Check if we're in a loading state
+        match &app.file_loading_state {
+            FileLoadingState::LoadingMetadata { .. } |
+            FileLoadingState::LoadingContent { .. } |
+            FileLoadingState::LargeFileWarning { .. } |
+            FileLoadingState::VeryLargeFileWarning { .. } |
+            FileLoadingState::ReadOnlyPreview { .. } => {
+                // Show loading indicator
+                eprintln!("DEBUG: editor_panel: Showing loading state");
+                container(
+                    column![
+                        text("Loading file...")
+                            .size(16)
+                            .style(iced::theme::Text::Color(style.colors.text_primary)),
+                        text("Please wait")
+                            .size(12)
+                            .style(iced::theme::Text::Color(style.colors.text_secondary)),
+                    ]
+                    .spacing(12)
+                    .align_items(iced::Alignment::Center)
+                )
+                .center_y()
+                .center_x()
+                .width(Length::Fill)
+                .height(Length::Fill)
+                .into()
+            }
+            FileLoadingState::Idle => {
+                // File is loaded, check if it's too large
+                if app.is_file_too_large_for_editor {
+                    eprintln!("DEBUG: editor_panel: File is marked as too large for editor - showing read-only message");
+                    // Very large files (> 100 MB): show read-only preview with message
+                    container(
+                        column![
+                            Icon::Warning.render_with_color(
+                                &app.editor_typography,
+                                style.colors.warning,
+                                Some(24),
+                            ),
+                            text("File opened in read-only mode")
+                                .size(16)
+                                .style(iced::theme::Text::Color(style.colors.text_primary)),
+                            text("This file is very large (> 100 MB). Editing is disabled for performance.")
+                                .size(12)
+                                .style(iced::theme::Text::Color(style.colors.text_secondary)),
+                            text("You can view the first 100KB of the file.")
+                                .size(12)
+                                .style(iced::theme::Text::Color(style.colors.text_muted)),
+                        ]
+                        .spacing(12)
+                        .align_items(iced::Alignment::Center)
+                    )
+                    .center_y()
+                    .center_x()
+                    .width(Length::Fill)
+                    .height(Length::Fill)
+                    .into()
+                } else {
+                    eprintln!("DEBUG: editor_panel: Showing editor for file (is_file_too_large_for_editor=false)");
             // Use the interactive text editor (editable) with syntax highlighting
             // Only pass the cache if it's ready (non-empty) and the file is loaded
             // This prevents rendering with empty cache during file load
