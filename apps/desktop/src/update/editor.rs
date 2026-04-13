@@ -279,8 +279,16 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
             // Initialize syntax document
             if let Some(path) = editor_state.path() {
                 let doc_id = path.to_string();
+                let text = editor_state.text();
                 let mut syntax_manager = app.syntax_manager.lock().unwrap();
-                if let Err(e) = syntax_manager.update_document(&doc_id, &editor_state.text(), Path::new(path)) {
+                
+                // Clear cache first to ensure we don't use stale data
+                app.syntax_highlight_cache.clear();
+                app.syntax_highlight_spans.clear();
+                app.syntax_highlight_span_count = 0;
+                app.syntax_cache_version += 1;
+                
+                if let Err(e) = syntax_manager.update_document(&doc_id, &text, Path::new(path)) {
                     app.status_message = format!("Syntax init failed: {}", e);
                 } else {
                     // Retrieve highlight spans for UI
@@ -288,8 +296,7 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                         Ok(spans) => {
                             app.syntax_highlight_span_count = spans.len();
                             app.syntax_highlight_spans = spans.clone();
-                            // Always build per‑line cache for the real editor
-                            let text = editor_state.text();
+                            // Build per‑line cache for the real editor
                             eprintln!("DEBUG: Initial load: building line cache with {} spans, text length {}", spans.len(), text.len());
                             app.syntax_highlight_cache =
                                 build_line_cache(&text, &spans, app.theme);
@@ -314,6 +321,7 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                 app.syntax_highlight_cache.clear();
                 app.syntax_highlight_spans.clear();
                 app.syntax_highlight_span_count = 0;
+                app.syntax_cache_version += 1;
             }
             
             app.editor_state = Some(editor_state);

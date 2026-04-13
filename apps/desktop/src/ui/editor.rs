@@ -51,88 +51,38 @@ impl iced_core::text::highlighter::Highlighter for SyntaxHighlighter {
     fn highlight_line(&mut self, line: &str) -> Self::Iterator<'_> {
         let mut ranges = Vec::new();
         
-        // Always try to find the best line match when we have a cache
-        let line_index = if !self.line_cache.is_empty() {
-            // First, try to use current_line if it's within bounds and the line has highlights
-            if self.current_line < self.line_cache.len() {
-                if let Some(highlights) = self.line_cache.get(self.current_line) {
-                    if !highlights.is_empty() {
-                        // Check if all highlights fit within the current line
-                        let line_len = line.chars().count();
-                        let all_fit = highlights.iter().all(|(range, _)| range.end <= line_len);
-                        if all_fit {
-                            let idx = self.current_line;
-                            // Increment current_line for the next call
-                            self.current_line += 1;
-                            idx
-                        } else {
-                            // Highlights don't fit, try to find a better match
-                            match self.find_best_line_match(line) {
-                                Some(found_index) => {
-                                    self.current_line = found_index + 1;
-                                    found_index
-                                }
-                                None => {
-                                    // No match found, use current_line and increment
-                                    let idx = self.current_line;
-                                    self.current_line += 1;
-                                    idx
-                                }
-                            }
-                        }
-                    } else {
-                        // No highlights at current_line, try to find a line with highlights
-                        match self.find_best_line_match(line) {
-                            Some(found_index) => {
-                                self.current_line = found_index + 1;
-                                found_index
-                            }
-                            None => {
-                                // No match found, use current_line and increment
-                                let idx = self.current_line;
-                                self.current_line += 1;
-                                idx
-                            }
-                        }
+        // If the cache is empty, return empty ranges immediately
+        if self.line_cache.is_empty() {
+            eprintln!("DEBUG: highlight_line called with empty cache, returning 0 ranges");
+            return ranges.into_iter();
+        }
+        
+        // Determine which line index to use
+        let line_index = if !self.is_new_document {
+            // change_line was called, so use current_line
+            self.current_line
+        } else {
+            // change_line wasn't called, so we need to find the line ourselves
+            match self.find_best_line_match(line) {
+                Some(found_index) => {
+                    // If we found line 0, reset current_line to 0
+                    // This helps when re-rendering starts from the beginning
+                    if found_index == 0 {
+                        self.current_line = 0;
                     }
-                } else {
-                    // current_line is out of bounds, find best match
-                    match self.find_best_line_match(line) {
-                        Some(found_index) => {
-                            self.current_line = found_index + 1;
-                            found_index
-                        }
-                        None => {
-                            // No match found, use 0
-                            self.current_line = 1;
-                            0
-                        }
-                    }
+                    found_index
                 }
-            } else {
-                // current_line is out of bounds, find best match
-                match self.find_best_line_match(line) {
-                    Some(found_index) => {
-                        self.current_line = found_index + 1;
-                        found_index
-                    }
-                    None => {
-                        // No match found, use 0
-                        self.current_line = 1;
-                        0
-                    }
+                None => {
+                    // No match found, use current_line
+                    self.current_line
                 }
             }
-        } else {
-            // Empty cache, use current_line
-            let idx = self.current_line;
-            self.current_line += 1;
-            idx
         };
         
-        eprintln!("DEBUG: highlight_line called with text length {}, line_index = {}, current_line = {}, is_new_document = {}", 
-                 line.len(), line_index, self.current_line, self.is_new_document);
+        eprintln!("DEBUG: highlight_line called with text length {}, line_index = {}, current_line = {}, is_new_document = {}, cache_size = {}", 
+                 line.len(), line_index, self.current_line, self.is_new_document, self.line_cache.len());
         
+        // Check bounds
         if line_index < self.line_cache.len() {
             if let Some(line_highlights) = self.line_cache.get(line_index) {
                 eprintln!("DEBUG: line {} has {} highlights", line_index, line_highlights.len());
@@ -167,6 +117,12 @@ impl iced_core::text::highlighter::Highlighter for SyntaxHighlighter {
             }
         } else {
             eprintln!("DEBUG: line_index {} out of bounds (cache size: {})", line_index, self.line_cache.len());
+        }
+        
+        // If we're in new document mode (change_line wasn't called), increment current_line
+        // for the next call, assuming the next call will be for the next line
+        if self.is_new_document {
+            self.current_line += 1;
         }
         
         eprintln!("DEBUG: returning {} ranges", ranges.len());
@@ -304,28 +260,35 @@ pub fn editor<'a>(
         text_color,
     }));
     
-    // Always use the SyntaxHighlighter, even if the cache is empty
-    // This ensures consistent code path and highlights will be applied if available
+    // Check if we have a valid cache
     let cache = line_cache.unwrap_or_else(|| Vec::new());
-    eprintln!("DEBUG: Using editor with cache of {} lines, total highlights: {}", 
-              cache.len(),
-              cache.iter().map(|line| line.len()).sum::<usize>());
+    let has_cache = !cache.is_empty();
     
-    // Create editor with syntax highlighting
+    eprintln!("DEBUG: Using editor with cache of {} lines, total highlights: {}, has_cache={}", 
+              cache.len(),
+              cache.iter().map(|line| line.len()).sum::<usize>(),
+              has_cache);
+    
+    // Create editor with syntax highlighting only if we have a cache
     let base_editor = text_editor::TextEditor::new(text_editor_content)
         .on_action(Message::EditorContentChanged)
         .font(font)
         .style(custom_style);
     
-    let editor = base_editor.highlight::<SyntaxHighlighter>(
-        cache,
-        |color: &Color, _theme: &Theme| -> Format<Font> {
-            Format {
-                color: Some(*color),
-                font: None,
-            }
-        },
-    );
+    let editor = if has_cache {
+        base_editor.highlight::<SyntaxHighlighter>(
+            cache,
+            |color: &Color, _theme: &Theme| -> Format<Font> {
+                Format {
+                    color: Some(*color),
+                    font: None,
+                }
+            },
+        )
+    } else {
+        // Use plain text editor without highlighting when cache is empty
+        base_editor
+    };
     
     container(editor)
         .padding(0)

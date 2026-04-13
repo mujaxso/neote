@@ -165,24 +165,31 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
             .into()
         } else {
             // Use the interactive text editor (editable) with syntax highlighting
-            // Always pass the syntax highlight cache
-            // Include syntax_cache_version to force re-render when cache changes
+            // Only pass the cache if it's ready (non-empty) and the file is loaded
+            // This prevents rendering with empty cache during file load
             let version = app.syntax_cache_version;
-            eprintln!("DEBUG: editor_panel: syntax_highlight_cache has {} lines with {} total highlights, version {}", 
+            let cache_ready = !app.syntax_highlight_cache.is_empty();
+        
+            eprintln!("DEBUG: editor_panel: syntax_highlight_cache has {} lines with {} total highlights, version {}, cache_ready={}", 
                      app.syntax_highlight_cache.len(),
                      app.syntax_highlight_cache.iter().map(|line| line.len()).sum::<usize>(),
-                     version);
+                     version,
+                     cache_ready);
             eprintln!("DEBUG: editor_panel: text_editor text length: {}", app.text_editor.text().len());
-            // Create a cache that includes the version to force recreation when version changes
-            let mut cache_with_version = app.syntax_highlight_cache.clone();
-            // We can't directly include version in the cache type, but we can ensure the editor
-            // is recreated by using a different key. Let's use a container with the version as a key.
+        
+            // Only pass the cache if it's ready
+            let line_cache = if cache_ready {
+                Some(app.syntax_highlight_cache.clone())
+            } else {
+                None
+            };
+        
             editor::editor(
                 &app.text_editor,
                 &app.editor_typography,
                 style.colors.editor_background,
                 style.colors.text_primary,
-                Some(cache_with_version),
+                line_cache,
             )
         }
     } else {
