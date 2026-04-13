@@ -275,7 +275,7 @@ pub fn editor<'a>(
         .font(font)
         .style(custom_style);
     
-    let editor = if has_cache {
+    let editor: Element<'_, Message> = if has_cache {
         base_editor.highlight::<SyntaxHighlighter>(
             cache,
             |color: &Color, _theme: &Theme| -> Format<Font> {
@@ -285,9 +285,10 @@ pub fn editor<'a>(
                 }
             },
         )
+        .into()
     } else {
         // Use plain text editor without highlighting when cache is empty
-        base_editor
+        base_editor.into()
     };
     
     container(editor)
