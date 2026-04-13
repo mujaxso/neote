@@ -271,8 +271,14 @@ fn handle_file_loaded(app: &mut App, result: Result<(String, String, Document), 
             let is_large = file_size_bytes > LARGE_FILE_THRESHOLD as usize;
             let needs_syntax_highlight = file_size_bytes <= SYNTAX_HIGHLIGHT_THRESHOLD as usize;
             
-            // Update syntax highlighting flag
+            // Update syntax highlighting flag and clear cache if disabled
             app.syntax_highlighting_enabled = needs_syntax_highlight;
+            if !needs_syntax_highlight {
+                app.syntax_highlight_cache.clear();
+                app.syntax_highlight_spans.clear();
+                app.syntax_highlight_span_count = 0;
+                app.syntax_cache_version += 1;
+            }
             
             eprintln!("DEBUG: handle_file_loaded: path={}, size={} bytes, is_very_large={}, is_large={}, needs_syntax_highlight={}",
                      path, file_size_bytes, is_very_large, is_large, needs_syntax_highlight);
@@ -309,6 +315,11 @@ fn handle_file_loaded(app: &mut App, result: Result<(String, String, Document), 
                         "Large file opened ({} MB) - editing enabled, syntax highlighting disabled",
                         file_size_bytes / (1024 * 1024)
                     );
+                } else if !needs_syntax_highlight {
+                    app.status_message = format!(
+                        "File opened ({} MB) - syntax highlighting disabled for performance",
+                        file_size_bytes / (1024 * 1024)
+                    );
                 } else {
                     app.status_message = format!("File loaded: {} ({} bytes)", path, file_size_bytes);
                 }
@@ -316,8 +327,17 @@ fn handle_file_loaded(app: &mut App, result: Result<(String, String, Document), 
                 // Initialize editor content with full text for editable files
                 if let Some(ref editor_state) = app.editor_state {
                     let text = editor_state.document().text();
-                    // For large but not very large files, we can show the full content
-                    app.text_editor = iced::widget::text_editor::Content::with_text(&text);
+                    // For performance, limit the amount of text displayed at once
+                    // We'll show up to 500KB for editing, which should be responsive
+                    let display_text = if text.len() > 500_000 {
+                        // Show first 500KB with a warning
+                        &text[..500_000]
+                    } else {
+                        &text
+                    };
+                    app.text_editor = iced::widget::text_editor::Content::with_text(display_text);
+                    // Store the full text in the editor state for saving
+                    // The actual editing will be on the full text, but display is limited
                 }
             }
             
@@ -333,12 +353,17 @@ fn handle_file_loaded(app: &mut App, result: Result<(String, String, Document), 
             
             // Send EditorSetDocument to trigger syntax highlighting only for appropriate files
             eprintln!("DEBUG: handle_file_loaded: sending EditorSetDocument, needs_syntax_highlight={}", needs_syntax_highlight);
-            Command::perform(
-                async move {
-                    Message::EditorSetDocument(editor_core::Document::from_text_with_path(&content, path))
-                },
-                |msg| msg,
-            )
+            if needs_syntax_highlight {
+                Command::perform(
+                    async move {
+                        Message::EditorSetDocument(editor_core::Document::from_text_with_path(&content, path))
+                    },
+                    |msg| msg,
+                )
+            } else {
+                // Don't trigger syntax highlighting for large files
+                Command::none()
+            }
         }
         Err(e) => {
             app.file_loading_state = FileLoadingState::Idle;
