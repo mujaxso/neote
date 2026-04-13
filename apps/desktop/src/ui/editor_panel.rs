@@ -135,10 +135,7 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
         })))
     };
     
-    let editor_content: Element<'_, Message> = if let Some(active_path) = &app.active_file_path {
-        eprintln!("DEBUG: editor_panel: Rendering for active file: {}, is_file_too_large_for_editor={}, file_loading_state={:?}, text_editor.len={}", 
-                 active_path, app.is_file_too_large_for_editor, app.file_loading_state, app.text_editor.text().len());
-        
+    let editor_content: Element<'_, Message> = if let Some(_active_path) = &app.active_file_path {
         // Check if we're in a loading state
         match &app.file_loading_state {
             FileLoadingState::LoadingMetadata { .. } |
@@ -147,7 +144,6 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
             FileLoadingState::VeryLargeFileWarning { .. } |
             FileLoadingState::ReadOnlyPreview { .. } => {
                 // Show loading indicator
-                eprintln!("DEBUG: editor_panel: Showing loading state");
                 container(
                     column![
                         text("Loading file...")
@@ -169,7 +165,6 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
             FileLoadingState::Idle => {
                 // File is loaded, check if it's too large
                 if app.is_file_too_large_for_editor {
-                    eprintln!("DEBUG: editor_panel: File is marked as too large for editor - showing read-only message");
                     // Very large files (> 100 MB): show read-only preview with message
                     container(
                         column![
@@ -197,19 +192,10 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
                     .height(Length::Fill)
                     .into()
                 } else {
-                    eprintln!("DEBUG: editor_panel: Showing editor for file (is_file_too_large_for_editor=false)");
                     // Use the interactive text editor (editable) with syntax highlighting
                     // Only pass the cache if it's ready (non-empty) and the file is loaded
                     // This prevents rendering with empty cache during file load
-                    let version = app.syntax_cache_version;
                     let cache_ready = !app.syntax_highlight_cache.is_empty();
-                    
-                    eprintln!("DEBUG: editor_panel: syntax_highlight_cache has {} lines with {} total highlights, version {}, cache_ready={}", 
-                             app.syntax_highlight_cache.len(),
-                             app.syntax_highlight_cache.iter().map(|line| line.len()).sum::<usize>(),
-                             version,
-                             cache_ready);
-                    eprintln!("DEBUG: editor_panel: text_editor text length: {}", app.text_editor.text().len());
                     
                     // Only pass the cache if it's ready
                     let line_cache = if cache_ready {

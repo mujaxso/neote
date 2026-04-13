@@ -86,7 +86,6 @@ fn handle_workspace_loaded(app: &mut App, result: Result<(String, Vec<core_types
 }
 
 fn handle_file_selected(app: &mut App, index: usize) -> Command<Message> {
-    eprintln!("DEBUG: FileSelected: index {}", index);
     if index < app.file_entries.len() {
         let entry = &app.file_entries[index];
         // Only handle files, not directories
@@ -144,9 +143,6 @@ fn handle_file_selected_by_path(app: &mut App, path: String) -> Command<Message>
 fn handle_file_metadata_loaded(app: &mut App, result: Result<FileMetadata, String>) -> Command<Message> {
     match result {
         Ok(metadata) => {
-            eprintln!("DEBUG: FileMetadataLoaded: path={}, size={} bytes", metadata.path, metadata.size);
-            eprintln!("DEBUG: Thresholds: syntax={}B, large={}B, very_large={}B", 
-                     SYNTAX_HIGHLIGHT_THRESHOLD, LARGE_FILE_THRESHOLD, VERY_LARGE_FILE_THRESHOLD);
             
             // Always proceed to load the file, but track which mode we're in
             if metadata.size > VERY_LARGE_FILE_THRESHOLD {
@@ -283,9 +279,6 @@ fn handle_file_loaded(app: &mut App, result: Result<(String, String, Document), 
                 app.syntax_cache_version += 1;
             }
             
-            eprintln!("DEBUG: handle_file_loaded: path={}, size={} bytes, is_very_large={}, is_large={}, needs_syntax_highlight={}",
-                     path, file_size_bytes, is_very_large, is_large, needs_syntax_highlight);
-            
             // Handle based on size tier
             if is_very_large {
                 // Very large files: read-only mode with limited preview
@@ -326,16 +319,10 @@ fn handle_file_loaded(app: &mut App, result: Result<(String, String, Document), 
                 } else {
                     app.status_message = format!("File loaded: {} ({} bytes)", path, file_size_bytes);
                 }
-                // Log the state for debugging
-                eprintln!("DEBUG: File state - is_file_read_only={}, is_file_too_large_for_editor={}", 
-                         app.is_file_read_only, app.is_file_too_large_for_editor);
                 
                 // Initialize editor content with full text for editable files
                 if let Some(ref editor_state) = app.editor_state {
                     let text = editor_state.document().text();
-                    // For files up to 10 MB, show the full content
-                    // For larger files, we need to be more careful about performance
-                    // 7.4 MB should be manageable
                     app.text_editor = iced::widget::text_editor::Content::with_text(&text);
                 }
             }
@@ -351,7 +338,6 @@ fn handle_file_loaded(app: &mut App, result: Result<(String, String, Document), 
             }
             
             // Send EditorSetDocument to trigger syntax highlighting only for appropriate files
-            eprintln!("DEBUG: handle_file_loaded: sending EditorSetDocument, needs_syntax_highlight={}", needs_syntax_highlight);
             if needs_syntax_highlight {
                 Command::perform(
                     async move {

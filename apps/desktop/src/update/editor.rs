@@ -230,10 +230,6 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
             let editor_state = EditorState::from_document(document);
             let char_count = editor_state.document().len_chars();
             
-            // Debug log to understand what's happening
-            eprintln!("DEBUG: EditorSetDocument: char_count = {}, VERY_LARGE_CHAR_THRESHOLD = {}, LARGE_CHAR_THRESHOLD = {}", 
-                     char_count, 100_000_000, 10_000_000);
-            
             // Use consistent thresholds with workspace logic
             // VERY_LARGE_FILE_THRESHOLD is 100 MB = 100 * 1024 * 1024 bytes ≈ 100 million characters
             // LARGE_FILE_THRESHOLD is 10 MB = 10 * 1024 * 1024 bytes ≈ 10 million characters
@@ -252,7 +248,6 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                     "File is very large ({} MB) - editing disabled",
                     char_count / 1_000_000
                 );
-                eprintln!("DEBUG: EditorSetDocument: Marked as too large (char_count > VERY_LARGE_CHAR_THRESHOLD)");
             } else {
                 // Files <= 100 MB: always editable
                 app.is_file_too_large_for_editor = false;
@@ -263,10 +258,8 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                         "Large file ({} MB) - editing enabled",
                         char_count / 1_000_000
                     );
-                    eprintln!("DEBUG: EditorSetDocument: Marked as large but editable (10M < char_count <= 100M)");
                 } else {
                     app.status_message = format!("Loaded file ({} chars)", char_count);
-                    eprintln!("DEBUG: EditorSetDocument: Marked as normal (char_count <= 10M)");
                 }
             }
             
