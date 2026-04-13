@@ -1,40 +1,39 @@
-; TOML highlight queries for Tree‑sitter
-; Based on tree-sitter-toml grammar version 0.20
-; Updated to match actual node types from the grammar
+; TOML highlight queries from the official tree-sitter-toml grammar
+; This ensures correct node types for the exact grammar version (0.20)
 
 ; Comments
 (comment) @comment
 
-; Strings and escapes
+; Strings
 (string) @string
-(escape_sequence) @string.escape
+(escape_sequence) @escape
 
 ; Numbers
 (integer) @number
 (float) @number
 
-; Constants
-(boolean) @constant.builtin
-; Date/time values - check if these node types exist in the grammar
-; (date_time) @constant.builtin
-; (local_date) @constant.builtin
-; (local_time) @constant.builtin
-; (local_date_time) @constant.builtin
+; Booleans
+(boolean) @boolean
+
+; Dates and times
+(date_time) @string.special
+(local_date) @string.special
+(local_time) @string.special
+(local_date_time) @string.special
 
 ; Tables
 (table) @type
+(table_array) @type
 
-; Keys in key-value pairs
-(pair (bare_key) @property)
-(pair (quoted_key) @property)
+; Keys
+(key) @property
+(dotted_key) @property
 
-; Array and inline table delimiters
+; Punctuation
 "[" @punctuation.bracket
 "]" @punctuation.bracket
 "{" @punctuation.bracket
 "}" @punctuation.bracket
-
-; Operators
 "=" @operator
 "," @punctuation.delimiter
 "." @punctuation.delimiter

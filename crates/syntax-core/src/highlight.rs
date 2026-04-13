@@ -104,6 +104,7 @@ fn map_capture_name(name: &str) -> Highlight {
         "comment" => Highlight::Comment,
         "string" => Highlight::String,
         "string.escape" => Highlight::String,
+        "escape" => Highlight::String,
         "string.special" => Highlight::String,
         "keyword" => Highlight::Keyword,
         "function" | "function.call" | "function.method" => Highlight::Function,
@@ -122,7 +123,6 @@ fn map_capture_name(name: &str) -> Highlight {
         "namespace" => Highlight::Namespace,
         "constructor" => Highlight::Type,
         "label" => Highlight::Variable,
-        "escape" => Highlight::String,
         "mutable_specifier" => Highlight::Keyword,
         "lifetime" => Highlight::Type,  // Lifetimes use type color
         _ => Highlight::Plain,
@@ -146,9 +146,10 @@ fn get_query_for_language(language: LanguageId) -> Result<&'static str, SyntaxEr
         LanguageId::Toml => {
             #[cfg(feature = "toml")]
             {
-                Ok(include_str!(
-                    "../../../runtime/treesitter/languages/toml/queries/highlights.scm"
-                ))
+                // Use the official highlight query from the tree-sitter-toml crate
+                // This ensures we're using the correct node types for the exact grammar version
+                use tree_sitter_toml;
+                Ok(tree_sitter_toml::HIGHLIGHT_QUERY)
             }
             #[cfg(not(feature = "toml"))]
             Err(SyntaxError::LanguageNotSupported(
