@@ -22,13 +22,13 @@
 ; (local_date_time) @constant.builtin
 
 ; Tables
-(table (identifier) @type)
-(array_table (identifier) @type)
+(table) @type
+(array_table) @type
 
 ; Keys in key-value pairs
 (pair (bare_key) @property)
 (pair (quoted_key) @property)
-(pair (dotted_key (identifier) @property))
+(pair (dotted_key (bare_key) @property))
 
 ; Array and inline table delimiters
 "[" @punctuation.bracket
