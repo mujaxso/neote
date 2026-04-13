@@ -252,82 +252,44 @@ pub fn editor<'a>(
         text_color,
     }));
     
-    // Check if we should use syntax highlighting
-    // We have syntax highlighting if any line in the cache has highlights
-    let use_syntax_highlighting = line_cache.as_ref().map_or(false, |cache| {
-        cache.iter().any(|line| !line.is_empty())
-    });
-    eprintln!("DEBUG: use_syntax_highlighting = {}, line_cache.is_some() = {}, line_cache.map_or(0, |c| c.len()) = {}, total_highlights = {}", 
-              use_syntax_highlighting, 
-              line_cache.is_some(),
-              line_cache.as_ref().map_or(0, |c| c.len()),
-              line_cache.as_ref().map_or(0, |c| c.iter().map(|line| line.len()).sum::<usize>()));
+    // Always use the SyntaxHighlighter, even if the cache is empty
+    // This ensures consistent code path and highlights will be applied if available
+    let cache = line_cache.unwrap_or_else(|| Vec::new());
+    eprintln!("DEBUG: Using editor with cache of {} lines, total highlights: {}", 
+              cache.len(),
+              cache.iter().map(|line| line.len()).sum::<usize>());
     
-    // Create a base editor with explicit theme type
-    fn create_base_editor<'b>(
-        content: &'b iced::widget::text_editor::Content,
-        font: Font,
-        custom_style: iced::theme::TextEditor,
-    ) -> iced::widget::TextEditor<'b, iced_core::text::highlighter::PlainText, Message, iced::Theme> {
-        text_editor::TextEditor::new(content)
-            .on_action(Message::EditorContentChanged)
-            .font(font)
-            .style(custom_style)
-    }
+    // Create editor with syntax highlighting
+    let base_editor = text_editor::TextEditor::new(text_editor_content)
+        .on_action(Message::EditorContentChanged)
+        .font(font)
+        .style(custom_style);
     
-    if use_syntax_highlighting {
-        let cache = line_cache.unwrap();
-        eprintln!("DEBUG: Using syntax highlighting with {} lines of cache", cache.len());
-        // Create editor with syntax highlighting
-        let base_editor = create_base_editor(text_editor_content, font, custom_style);
-        let editor = base_editor.highlight::<SyntaxHighlighter>(
-            cache,
-            |color: &Color, _theme: &Theme| -> Format<Font> {
-                Format {
-                    color: Some(*color),
-                    font: None,
-                }
-            },
-        );
-        
-        container(editor)
-            .padding(0)
-            .width(Length::Fill)
-            .height(Length::Fill)
-            .clip(true)
-            .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
-                container::Appearance {
-                    background: Some(background_color.into()),
-                    border: iced::Border {
-                        color: Color::TRANSPARENT,
-                        width: 0.0,
-                        radius: 0.0.into(),
-                    },
-                    ..Default::default()
-                }
-            })))
-            .into()
-    } else {
-        eprintln!("DEBUG: No syntax highlighting");
-        // Create editor without syntax highlighting
-        let editor = create_base_editor(text_editor_content, font, custom_style);
-        
-        container(editor)
-            .padding(0)
-            .width(Length::Fill)
-            .height(Length::Fill)
-            .clip(true)
-            .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
-                container::Appearance {
-                    background: Some(background_color.into()),
-                    border: iced::Border {
-                        color: Color::TRANSPARENT,
-                        width: 0.0,
-                        radius: 0.0.into(),
-                    },
-                    ..Default::default()
-                }
-            })))
-            .into()
-    }
+    let editor = base_editor.highlight::<SyntaxHighlighter>(
+        cache,
+        |color: &Color, _theme: &Theme| -> Format<Font> {
+            Format {
+                color: Some(*color),
+                font: None,
+            }
+        },
+    );
+    
+    container(editor)
+        .padding(0)
+        .width(Length::Fill)
+        .height(Length::Fill)
+        .clip(true)
+        .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
+            container::Appearance {
+                background: Some(background_color.into()),
+                border: iced::Border {
+                    color: Color::TRANSPARENT,
+                    width: 0.0,
+                    radius: 0.0.into(),
+                },
+                ..Default::default()
+            }
+        })))
+        .into()
 }
