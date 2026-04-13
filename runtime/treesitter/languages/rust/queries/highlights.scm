@@ -1,4 +1,4 @@
-; Rust highlight queries for Tree‑sitter (compatible with tree‑sitter‑rust 0.20)
+					; Rust highlight queries for Tree‑sitter (compatible with tree‑sitter‑rust 0.20)
 
 (block_comment) @comment
 (line_comment) @comment
