@@ -19,24 +19,60 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
                     .size(11)
                     .style(iced::theme::Text::Color(style.colors.text_secondary)),
                 iced::widget::horizontal_space(),
-                // Show syntax highlight indicator
-                container(
-                    text(format!("{} spans", app.syntax_highlight_span_count))
-                        .size(9)
-                        .style(iced::theme::Text::Color(style.colors.accent)),
-                )
-                .padding([2, 4])
-                .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
-                    container::Appearance {
-                        background: Some(style.colors.elevated_panel_background.into()),
-                        border: iced::Border {
-                            color: style.colors.border,
-                            width: 1.0,
-                            radius: 2.0.into(),
-                        },
-                        ..Default::default()
-                    }
-                }))),
+                // Show syntax highlight indicator - more visible
+                if app.syntax_highlight_span_count > 0 {
+                    container(
+                        row![
+                            text("●")
+                                .size(10)
+                                .style(iced::theme::Text::Color(style.colors.accent)),
+                            text(format!("{} syntax spans", app.syntax_highlight_span_count))
+                                .size(9)
+                                .style(iced::theme::Text::Color(style.colors.accent)),
+                        ]
+                        .spacing(4)
+                        .align_items(iced::Alignment::Center)
+                    )
+                    .padding([3, 8])
+                    .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
+                        container::Appearance {
+                            background: Some(style.colors.elevated_panel_background.into()),
+                            border: iced::Border {
+                                color: style.colors.accent,
+                                width: 1.0,
+                                radius: 6.0.into(),
+                            },
+                            ..Default::default()
+                        }
+                    })))
+                    .into()
+                } else {
+                    container(
+                        row![
+                            text("○")
+                                .size(10)
+                                .style(iced::theme::Text::Color(style.colors.text_muted)),
+                            text("No syntax")
+                                .size(9)
+                                .style(iced::theme::Text::Color(style.colors.text_muted)),
+                        ]
+                        .spacing(4)
+                        .align_items(iced::Alignment::Center)
+                    )
+                    .padding([3, 8])
+                    .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
+                        container::Appearance {
+                            background: Some(style.colors.elevated_panel_background.into()),
+                            border: iced::Border {
+                                color: style.colors.border,
+                                width: 1.0,
+                                radius: 6.0.into(),
+                            },
+                            ..Default::default()
+                        }
+                    })))
+                    .into()
+                },
                 if app.is_dirty {
                     Icon::Warning.render_with_color(
                         &app.editor_typography,
