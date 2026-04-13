@@ -230,28 +230,31 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
             let editor_state = EditorState::from_document(document);
             let char_count = editor_state.document().len_chars();
             
-            // Set thresholds for performance
-            const MODERATE_THRESHOLD: usize = 500_000; // 500k characters
-            const LARGE_THRESHOLD: usize = 1_000_000; // 1M characters
+            // Use consistent thresholds with workspace logic
+            // VERY_LARGE_FILE_THRESHOLD is 100 MB = 100 * 1024 * 1024 bytes ≈ 100 million characters
+            // LARGE_FILE_THRESHOLD is 10 MB = 10 * 1024 * 1024 bytes ≈ 10 million characters
+            const VERY_LARGE_CHAR_THRESHOLD: usize = 100_000_000; // 100 million characters
+            const LARGE_CHAR_THRESHOLD: usize = 10_000_000; // 10 million characters
             
-            if char_count > LARGE_THRESHOLD {
+            if char_count > VERY_LARGE_CHAR_THRESHOLD {
+                // Files > 100 MB: read-only mode
                 app.is_file_too_large_for_editor = true;
                 app.text_editor = iced::widget::text_editor::Content::new();
                 app.status_message = format!(
-                    "File is too large ({} chars) - editing disabled",
-                    char_count
+                    "File is very large ({} MB) - editing disabled",
+                    char_count / 1_000_000
                 );
-            } else if char_count > MODERATE_THRESHOLD {
-                // For moderate files, load but show a warning
+            } else if char_count > LARGE_CHAR_THRESHOLD {
+                // Files 10-100 MB: editing enabled with warning
                 app.is_file_too_large_for_editor = false;
                 let text = editor_state.document().text();
                 app.text_editor = iced::widget::text_editor::Content::with_text(&text);
                 app.status_message = format!(
-                    "File is moderate size ({} chars) - editing may be slow",
-                    char_count
+                    "Large file ({} MB) - editing enabled",
+                    char_count / 1_000_000
                 );
             } else {
-                // For small files, load normally
+                // Files < 10 MB: normal editing
                 app.is_file_too_large_for_editor = false;
                 let text = editor_state.document().text();
                 app.text_editor = iced::widget::text_editor::Content::with_text(&text);
