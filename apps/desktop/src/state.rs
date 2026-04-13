@@ -197,6 +197,8 @@ pub struct App {
     pub syntax_highlight_cache: Vec<Vec<(std::ops::Range<usize>, iced::Color)>>,
     // Version counter to force UI updates when cache changes
     pub syntax_cache_version: u32,
+    // Whether syntax highlighting should be enabled for the current file
+    pub syntax_highlighting_enabled: bool,
 }
 
 impl App {
@@ -243,6 +245,7 @@ impl App {
                 syntax_highlight_spans: Vec::new(),
                 syntax_highlight_cache: Vec::new(),
                 syntax_cache_version: 0,
+                syntax_highlighting_enabled: true,
             },
             iced::Command::none(),
         )

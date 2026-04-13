@@ -169,12 +169,12 @@ impl Document {
 
     /// Check if the document is considered large (for performance considerations).
     pub fn is_large(&self) -> bool {
-        self.len_chars() > 1_000_000
+        self.len_chars() > 100_000  // More reasonable threshold
     }
 
     /// Check if the document is considered very large (read-only recommended).
     pub fn is_very_large(&self) -> bool {
-        self.len_chars() > 10_000_000
+        self.len_chars() > 1_000_000  // More reasonable threshold
     }
 
     /// Get byte offset for character position

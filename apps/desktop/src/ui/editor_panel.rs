@@ -136,8 +136,9 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
     };
     
     let editor_content: Element<'_, Message> = if let Some(_) = &app.active_file_path {
+        // Check if file is too large for editing (read-only mode)
         if app.is_file_too_large_for_editor {
-            // Show a message for large files instead of the editor
+            // Very large files: show read-only preview with message
             container(
                 column![
                     Icon::Warning.render_with_color(
@@ -145,13 +146,13 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
                         style.colors.warning,
                         Some(24),
                     ),
-                    text("File is too large for editing")
+                    text("File opened in read-only mode")
                         .size(16)
                         .style(iced::theme::Text::Color(style.colors.text_primary)),
-                    text("The file is too large to open in the editor for performance reasons.")
+                    text("This file is very large. Editing is disabled for performance.")
                         .size(12)
                         .style(iced::theme::Text::Color(style.colors.text_secondary)),
-                    text("Consider using a different tool for very large files.")
+                    text("You can view the first 100KB of the file.")
                         .size(12)
                         .style(iced::theme::Text::Color(style.colors.text_muted)),
                 ]
@@ -169,21 +170,21 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
             // This prevents rendering with empty cache during file load
             let version = app.syntax_cache_version;
             let cache_ready = !app.syntax_highlight_cache.is_empty();
-        
+            
             eprintln!("DEBUG: editor_panel: syntax_highlight_cache has {} lines with {} total highlights, version {}, cache_ready={}", 
                      app.syntax_highlight_cache.len(),
                      app.syntax_highlight_cache.iter().map(|line| line.len()).sum::<usize>(),
                      version,
                      cache_ready);
             eprintln!("DEBUG: editor_panel: text_editor text length: {}", app.text_editor.text().len());
-        
+            
             // Only pass the cache if it's ready
             let line_cache = if cache_ready {
                 Some(app.syntax_highlight_cache.clone())
             } else {
                 None
             };
-        
+            
             editor::editor(
                 &app.text_editor,
                 &app.editor_typography,

@@ -6,9 +6,10 @@ use iced::Command;
 use tokio::time;
 use editor_core::Document;
 
-// File size thresholds
-const LARGE_FILE_THRESHOLD: u64 = 5 * 1024 * 1024; // 5MB
-const VERY_LARGE_FILE_THRESHOLD: u64 = 50 * 1024 * 1024; // 50MB
+// File size thresholds for tiered handling
+const SYNTAX_HIGHLIGHT_THRESHOLD: u64 = 2 * 1024 * 1024; // 2MB - disable syntax highlighting above this
+const LARGE_FILE_THRESHOLD: u64 = 10 * 1024 * 1024; // 10MB - reduce features but keep editing
+const VERY_LARGE_FILE_THRESHOLD: u64 = 100 * 1024 * 1024; // 100MB - read-only mode
 
 pub fn update(app: &mut App, message: Message) -> Command<Message> {
     match message {
@@ -140,15 +141,19 @@ fn handle_file_selected_by_path(app: &mut App, path: String) -> Command<Message>
 fn handle_file_metadata_loaded(app: &mut App, result: Result<FileMetadata, String>) -> Command<Message> {
     match result {
         Ok(metadata) => {
-            eprintln!("DEBUG: FileMetadataLoaded: path={}, size={}", metadata.path, metadata.size);
-            // Check file size thresholds
+            eprintln!("DEBUG: FileMetadataLoaded: path={}, size={} bytes", metadata.path, metadata.size);
+            eprintln!("DEBUG: Thresholds: syntax={}B, large={}B, very_large={}B", 
+                     SYNTAX_HIGHLIGHT_THRESHOLD, LARGE_FILE_THRESHOLD, VERY_LARGE_FILE_THRESHOLD);
+            
+            // Always proceed to load the file, but track which mode we're in
             if metadata.size > VERY_LARGE_FILE_THRESHOLD {
                 app.file_loading_state = FileLoadingState::VeryLargeFileWarning {
                     path: metadata.path.clone(),
                     size: metadata.size,
                 };
-                app.status_message = format!("Very large file detected ({} MB)", metadata.size / (1024 * 1024));
-                // For now, automatically open in read-only mode
+                app.status_message = format!("Very large file detected ({} MB) - opening in read-only mode", 
+                                           metadata.size / (1024 * 1024));
+                // For very large files, open in read-only mode
                 return Command::perform(
                     async move {
                         // Small delay to show the warning
@@ -162,8 +167,9 @@ fn handle_file_metadata_loaded(app: &mut App, result: Result<FileMetadata, Strin
                     path: metadata.path.clone(),
                     size: metadata.size,
                 };
-                app.status_message = format!("Large file detected ({} KB)", metadata.size / 1024);
-                // Automatically proceed with loading, but show warning
+                app.status_message = format!("Large file detected ({} MB) - editing enabled, some features reduced", 
+                                           metadata.size / (1024 * 1024));
+                // For large files, still load normally but we'll disable expensive features
                 return Command::perform(
                     async move {
                         Message::ConfirmOpenLargeFile(metadata.path, metadata.size)
@@ -171,7 +177,7 @@ fn handle_file_metadata_loaded(app: &mut App, result: Result<FileMetadata, Strin
                     |msg| msg,
                 );
             } else {
-                // Small file, proceed with normal loading
+                // Normal file, proceed with full features
                 app.file_loading_state = FileLoadingState::LoadingContent {
                     path: metadata.path.clone(),
                     size: metadata.size,
@@ -258,52 +264,60 @@ fn handle_file_loaded(app: &mut App, result: Result<(String, String, Document), 
             app.editor_state = Some(editor_state);
             app.file_loading_state = FileLoadingState::Idle;
             
-            let file_size = content.len();
+            let file_size_bytes = content.len();
             
-            // Use the read-only flag to determine how to handle the file
-            if app.is_file_read_only {
+            // Determine file mode based on size
+            let is_very_large = file_size_bytes > VERY_LARGE_FILE_THRESHOLD as usize;
+            let is_large = file_size_bytes > LARGE_FILE_THRESHOLD as usize;
+            let needs_syntax_highlight = file_size_bytes <= SYNTAX_HIGHLIGHT_THRESHOLD as usize;
+            
+            // Update syntax highlighting flag
+            app.syntax_highlighting_enabled = needs_syntax_highlight;
+            
+            eprintln!("DEBUG: handle_file_loaded: path={}, size={} bytes, is_very_large={}, is_large={}, needs_syntax_highlight={}",
+                     path, file_size_bytes, is_very_large, is_large, needs_syntax_highlight);
+            
+            // Handle based on size tier
+            if is_very_large {
+                // Very large files: read-only mode with limited preview
+                app.is_file_read_only = true;
                 app.is_file_too_large_for_editor = true;
                 app.status_message = format!(
-                    "Very large file opened in read-only preview ({} bytes shown)",
-                    file_size
+                    "Very large file opened in read-only preview ({} MB total, showing first 100KB)",
+                    file_size_bytes / (1024 * 1024)
                 );
-                // For read-only preview, show the content directly
-                // Limit the content to prevent crashes
+                
+                // Limit preview content
                 let preview_content = if content.len() > 100_000 {
                     &content[..100_000]
                 } else {
                     &content
                 };
                 app.text_editor = iced::widget::text_editor::Content::with_text(&format!(
-                    "// Read-only preview (first {} bytes)\n// File is very large\n\n{}",
+                    "// Read-only preview (first {} bytes)\n// File is very large ({} MB total)\n\n{}",
                     preview_content.len(),
+                    file_size_bytes / (1024 * 1024),
                     preview_content
                 ));
-                // Reset the flag for next time
-                app.is_file_read_only = false;
             } else {
-                // Check thresholds for normal files
-                if file_size > LARGE_FILE_THRESHOLD as usize {
+                // Large or normal files: editing enabled
+                app.is_file_read_only = false;
+                app.is_file_too_large_for_editor = false;
+                
+                if is_large {
                     app.status_message = format!(
-                        "Large file opened ({} MB) - editing enabled",
-                        file_size / (1024 * 1024)
+                        "Large file opened ({} MB) - editing enabled, syntax highlighting disabled",
+                        file_size_bytes / (1024 * 1024)
                     );
-                    app.is_file_too_large_for_editor = false;
                 } else {
-                    app.status_message = format!("File loaded: {} ({} bytes)", path, file_size);
-                    app.is_file_too_large_for_editor = false;
+                    app.status_message = format!("File loaded: {} ({} bytes)", path, file_size_bytes);
                 }
                 
-                // Initialize editor content
+                // Initialize editor content with full text for editable files
                 if let Some(ref editor_state) = app.editor_state {
                     let text = editor_state.document().text();
-                    // For very large files, limit the text to prevent crashes
-                    let display_text = if text.len() > 1_000_000 {
-                        &text[..1_000_000]
-                    } else {
-                        &text
-                    };
-                    app.text_editor = iced::widget::text_editor::Content::with_text(display_text);
+                    // For large but not very large files, we can show the full content
+                    app.text_editor = iced::widget::text_editor::Content::with_text(&text);
                 }
             }
             
@@ -317,8 +331,8 @@ fn handle_file_loaded(app: &mut App, result: Result<(String, String, Document), 
                 state.open_buffer(&path, content_clone);
             }
             
-            // Send EditorSetDocument to trigger syntax highlighting
-            eprintln!("DEBUG: handle_file_loaded: sending EditorSetDocument");
+            // Send EditorSetDocument to trigger syntax highlighting only for appropriate files
+            eprintln!("DEBUG: handle_file_loaded: sending EditorSetDocument, needs_syntax_highlight={}", needs_syntax_highlight);
             Command::perform(
                 async move {
                     Message::EditorSetDocument(editor_core::Document::from_text_with_path(&content, path))
@@ -329,6 +343,7 @@ fn handle_file_loaded(app: &mut App, result: Result<(String, String, Document), 
         Err(e) => {
             app.file_loading_state = FileLoadingState::Idle;
             app.is_file_read_only = false;
+            app.is_file_too_large_for_editor = false;
             app.error_message = Some(e);
             app.status_message = "Failed to load file".to_string();
             Command::none()
