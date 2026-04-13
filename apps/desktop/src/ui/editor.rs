@@ -42,9 +42,15 @@ impl iced_core::text::highlighter::Highlighter for SyntaxHighlighter {
     fn highlight_line(&mut self, line: &str) -> Self::Iterator<'_> {
         let line_index = self.current_line;
         let mut ranges = Vec::new();
-        eprintln!("DEBUG: highlight_line called for line {} with text length {}", line_index, line.len());
+        // Only print debug for the first few calls to reduce noise
+        static mut CALL_COUNT: usize = 0;
+        unsafe {
+            if CALL_COUNT < 10 {
+                eprintln!("DEBUG: highlight_line called for line {} with text length {}", line_index, line.len());
+                CALL_COUNT += 1;
+            }
+        }
         if let Some(line_highlights) = self.line_cache.get(line_index) {
-            eprintln!("DEBUG: highlight_line: line {} has {} highlights", line_index, line_highlights.len());
             // Convert character ranges to byte ranges
             let line_chars: Vec<char> = line.chars().collect();
             for (char_range, color) in line_highlights {
@@ -59,23 +65,12 @@ impl iced_core::text::highlighter::Highlighter for SyntaxHighlighter {
                     
                     if byte_start < byte_end && byte_end <= line.len() {
                         ranges.push((byte_start..byte_end, *color));
-                        eprintln!("DEBUG: highlight_line: line {}: adding range [{}, {}) with color {:?}", 
-                                 line_index, byte_start, byte_end, color);
-                    } else {
-                        eprintln!("DEBUG: highlight_line: line {}: char_range {:?} -> byte [{}, {}] but line length is {}", 
-                                 line_index, char_range, byte_start, byte_end, line.len());
                     }
-                } else {
-                    eprintln!("DEBUG: highlight_line: line {}: char_range {:?} is invalid for line length {}", 
-                             line_index, char_range, line_chars.len());
                 }
             }
-        } else {
-            eprintln!("DEBUG: highlight_line: line {} has no highlights in cache", line_index);
         }
         // The iterator must be sorted by position ascending.
         ranges.sort_by_key(|(range, _)| range.start);
-        eprintln!("DEBUG: highlight_line: line {} returning {} ranges", line_index, ranges.len());
         ranges.into_iter()
     }
 }

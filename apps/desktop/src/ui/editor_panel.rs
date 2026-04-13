@@ -265,11 +265,10 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
     }
     
     // Add editor content - the editor widget has its own scrolling
-    // Use a fixed height for testing to ensure editor shows multiple lines
     column_children.push(
         container(editor_content)
             .width(Length::Fill)
-            .height(Length::Fixed(400.0))
+            .height(Length::Fill)
             .clip(true) // Ensure content doesn't overflow
             .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
                 container::Appearance {
