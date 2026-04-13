@@ -47,24 +47,8 @@
 "while" @keyword
 "yield" @keyword
 
-; Built-in types
-"bool" @type
-"char" @type
-"f32" @type
-"f64" @type
-"i8" @type
-"i16" @type
-"i32" @type
-"i64" @type
-"i128" @type
-"isize" @type
-"str" @type
-"u8" @type
-"u16" @type
-"u32" @type
-"u64" @type
-"u128" @type
-"usize" @type
+; Built-in types are captured via primitive_type node
+; No need for string literals
 
 ; Function definitions
 (function_item (identifier) @function)
