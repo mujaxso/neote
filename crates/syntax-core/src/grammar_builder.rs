@@ -23,7 +23,8 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
     let repo_dir = temp_dir.path().join("repo");
     
     // Create repo directory
-    fs::create_dir_all(&repo_dir)?;
+    fs::create_dir_all(&repo_dir)
+        .map_err(|e| format!("Failed to create directory {}: {}", repo_dir.display(), e))?;
     
     // Download zip file from GitHub
     // Extract repo owner and name from the URL
@@ -54,22 +55,32 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
     })?;
     
     // Extract zip
-    let extract_ok = if cfg!(windows) {
+    let extract_result = if cfg!(windows) {
         Command::new("powershell")
             .args(["-Command", &format!("Expand-Archive -Path {} -DestinationPath {}", zip_path.display(), repo_dir.display())])
             .status()
-            .map(|s| s.success())
-            .unwrap_or(false)
+            .map_err(|e| format!("Failed to run powershell: {}", e))
     } else {
-        Command::new("unzip")
+        // Try unzip with -q first, then without if it fails
+        let status = Command::new("unzip")
             .args(["-q", zip_path.to_str().unwrap(), "-d", repo_dir.to_str().unwrap()])
-            .status()
-            .map(|s| s.success())
-            .unwrap_or(false)
+            .status();
+        
+        if status.is_err() || !status.as_ref().unwrap().success() {
+            // Try without -q flag
+            Command::new("unzip")
+                .args([zip_path.to_str().unwrap(), "-d", repo_dir.to_str().unwrap()])
+                .status()
+                .map_err(|e| format!("Failed to run unzip: {}", e))
+        } else {
+            status.map_err(|e| format!("Failed to run unzip: {}", e))
+        }
     };
     
-    if !extract_ok {
-        return Err("Failed to extract source zip".to_string());
+    match extract_result {
+        Ok(status) if status.success() => (),
+        Ok(_) => return Err("Failed to extract source zip (command failed)".to_string()),
+        Err(e) => return Err(format!("Failed to extract source zip: {}", e)),
     }
     
     // Find the extracted directory (usually ends with -main or -master)
@@ -274,13 +285,11 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
 
 /// Download a file from a URL to a local path
 fn download_file(url: &str, path: &std::path::Path) -> Result<(), String> {
-    use std::io::Write;
+    use std::io::{Read, Write};
     
     // Try using ureq for HTTP requests (no authentication required)
     let response = ureq::get(url)
-        .timeout_connect(10_000)  // 10 seconds
-        .timeout_read(30_000)     // 30 seconds
-        .timeout_write(10_000)    // 10 seconds
+        .timeout(std::time::Duration::from_secs(30))
         .call();
     
     match response {
@@ -288,14 +297,16 @@ fn download_file(url: &str, path: &std::path::Path) -> Result<(), String> {
             let mut file = std::fs::File::create(path)
                 .map_err(|e| format!("Failed to create file {}: {}", path.display(), e))?;
             
-            let mut reader = resp.into_reader();
-            std::io::copy(&mut reader, &mut file)
+            // Read response body into a Vec<u8> first
+            let mut bytes: Vec<u8> = Vec::new();
+            resp.into_reader().read_to_end(&mut bytes)
+                .map_err(|e| format!("Failed to read response: {}", e))?;
+            
+            // Write bytes to file
+            std::io::Write::write_all(&mut file, &bytes)
                 .map_err(|e| format!("Failed to write to file: {}", e))?;
             
             Ok(())
-        }
-        Err(ureq::Error::Status(code, resp)) => {
-            Err(format!("HTTP error {}: {}", code, resp.status_text()))
         }
         Err(ureq::Error::Status(code, resp)) => {
             Err(format!("HTTP error {}: {}", code, resp.status_text()))
