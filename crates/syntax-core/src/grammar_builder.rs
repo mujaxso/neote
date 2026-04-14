@@ -37,10 +37,10 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
     let repo_name = parts[parts.len() - 1];
     
     // Use GitHub's archive URL which doesn't require authentication
-    // Try both main and master branches
+    // Try both main and master branches (without refs/heads/)
     let zip_urls = vec![
-        format!("https://github.com/{}/{}/archive/refs/heads/main.zip", repo_owner, repo_name),
-        format!("https://github.com/{}/{}/archive/refs/heads/master.zip", repo_owner, repo_name),
+        format!("https://github.com/{}/{}/archive/main.zip", repo_owner, repo_name),
+        format!("https://github.com/{}/{}/archive/master.zip", repo_owner, repo_name),
     ];
     
     let zip_path = temp_dir.path().join("source.zip");
@@ -64,7 +64,21 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
     }
     
     if let Some(e) = last_error {
-        return Err(format!("Failed to download source: {}. Please install curl/wget.", e));
+        println!("All download attempts failed. Trying git clone as last resort...");
+        // Try git clone as fallback
+        match Command::new("git")
+            .args(["clone", "--depth", "1", &grammar_info.repo_url, repo_dir.to_str().unwrap()])
+            .status() {
+                Ok(status) if status.success() => {
+                    println!("Successfully cloned repository using git");
+                }
+                Ok(_) => {
+                    return Err(format!("Failed to download source: {}. Also git clone failed.", e));
+                }
+                Err(git_err) => {
+                    return Err(format!("Failed to download source: {}. Also git clone failed: {}", e, git_err));
+                }
+            }
     }
     
     // Extract zip
