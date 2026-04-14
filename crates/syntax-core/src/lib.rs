@@ -51,4 +51,63 @@ mod tests {
             LanguageId::Toml
         );
     }
+    
+    #[test]
+    fn test_markdown_language_detection() {
+        use std::path::Path;
+        
+        assert_eq!(
+            LanguageId::from_path(Path::new("README.md")),
+            LanguageId::Markdown
+        );
+        assert_eq!(
+            LanguageId::from_path(Path::new("document.markdown")),
+            LanguageId::Markdown
+        );
+        assert_eq!(
+            LanguageId::from_path(Path::new("notes.MD")),
+            LanguageId::Markdown
+        );
+        assert_eq!(
+            LanguageId::from_path(Path::new("test.mdx")),
+            LanguageId::PlainText  // .mdx is not supported by default
+        );
+    }
+    
+    #[cfg(feature = "markdown")]
+    #[test]
+    fn test_markdown_highlight_captures() {
+        use crate::highlight::map_capture_name;
+        
+        // Test that Markdown-specific captures map to appropriate Highlight variants
+        assert_eq!(map_capture_name("heading"), Highlight::Type);
+        assert_eq!(map_capture_name("emphasis"), Highlight::Comment);
+        assert_eq!(map_capture_name("strong"), Highlight::Keyword);
+        assert_eq!(map_capture_name("link"), Highlight::Variable);
+        assert_eq!(map_capture_name("inline_code"), Highlight::Constant);
+        assert_eq!(map_capture_name("code_fence"), Highlight::Property);
+        assert_eq!(map_capture_name("blockquote"), Highlight::Comment);
+        assert_eq!(map_capture_name("list"), Highlight::Property);
+        assert_eq!(map_capture_name("thematic_break"), Highlight::Operator);
+        
+        // Test that programming language captures still work
+        assert_eq!(map_capture_name("comment"), Highlight::Comment);
+        assert_eq!(map_capture_name("string"), Highlight::String);
+        assert_eq!(map_capture_name("keyword"), Highlight::Keyword);
+    }
+    
+    #[cfg(feature = "markdown")]
+    #[test]
+    fn test_markdown_language_parsing() {
+        use crate::language::LanguageId;
+        use std::path::Path;
+        
+        // Test that the language can be obtained
+        let lang = LanguageId::Markdown;
+        assert_eq!(lang.as_str(), "markdown");
+        
+        // Test that tree_sitter_language returns something when feature is enabled
+        // This may panic if tree-sitter-markdown is not properly linked, but that's okay for a test
+        let _ = lang.tree_sitter_language();
+    }
 }

@@ -7,6 +7,7 @@ use tree_sitter;
 pub enum LanguageId {
     Rust,
     Toml,
+    Markdown,
     PlainText,
 }
 
@@ -23,6 +24,11 @@ impl LanguageId {
         // Check for TOML files
         if ext.eq_ignore_ascii_case("toml") {
             return LanguageId::Toml;
+        }
+        
+        // Check for Markdown files
+        if ext.eq_ignore_ascii_case("md") || ext.eq_ignore_ascii_case("markdown") {
+            return LanguageId::Markdown;
         }
         
         // Check for specific TOML filenames
@@ -44,6 +50,7 @@ impl LanguageId {
         match self {
             LanguageId::Rust => "rust",
             LanguageId::Toml => "toml",
+            LanguageId::Markdown => "markdown",
             LanguageId::PlainText => "plaintext",
         }
     }
@@ -59,6 +66,10 @@ impl LanguageId {
             LanguageId::Toml => Some(tree_sitter_toml::language()),
             #[cfg(not(feature = "toml"))]
             LanguageId::Toml => None,
+            #[cfg(feature = "markdown")]
+            LanguageId::Markdown => Some(tree_sitter_markdown::language()),
+            #[cfg(not(feature = "markdown"))]
+            LanguageId::Markdown => None,
             LanguageId::PlainText => None,
         }
     }

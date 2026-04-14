@@ -45,6 +45,10 @@ pub fn highlight(
         LanguageId::Toml => highlight_with_query(language, source, tree),
         #[cfg(not(feature = "toml"))]
         LanguageId::Toml => Ok(Vec::new()),
+        #[cfg(feature = "markdown")]
+        LanguageId::Markdown => highlight_with_query(language, source, tree),
+        #[cfg(not(feature = "markdown"))]
+        LanguageId::Markdown => Ok(Vec::new()),
         LanguageId::PlainText => Ok(Vec::new()),
     }
 }
@@ -98,6 +102,7 @@ fn highlight_with_query(
 
 pub fn map_capture_name(name: &str) -> Highlight {
     match name {
+        // Programming language captures
         "comment" => Highlight::Comment,
         "string" => Highlight::String,
         "string.escape" => Highlight::String,
@@ -122,6 +127,34 @@ pub fn map_capture_name(name: &str) -> Highlight {
         "label" => Highlight::Variable,
         "mutable_specifier" => Highlight::Keyword,
         "lifetime" => Highlight::Type,  // Lifetimes use type color
+        
+        // Markdown-specific captures
+        "heading" => Highlight::Type,        // Headings use type color (distinct but not gaudy)
+        "heading.1" => Highlight::Type,
+        "heading.2" => Highlight::Type,
+        "heading.3" => Highlight::Type,
+        "heading.4" => Highlight::Type,
+        "heading.5" => Highlight::Type,
+        "heading.6" => Highlight::Type,
+        "emphasis" => Highlight::Comment,    // Emphasis uses comment color (elegant)
+        "strong" => Highlight::Keyword,      // Strong emphasis uses keyword color
+        "link" => Highlight::Variable,       // Links use variable color (recognizable)
+        "link_text" => Highlight::Variable,
+        "link_url" => Highlight::String,     // URLs use string color
+        "link_title" => Highlight::String,
+        "inline_code" => Highlight::Constant, // Inline code uses constant color (readable)
+        "code_fence" => Highlight::Property, // Code fences use property color
+        "code_fence_content" => Highlight::Plain, // Code fence content will be injected
+        "blockquote" => Highlight::Comment,  // Blockquotes use comment color
+        "list" => Highlight::Property,       // Lists use property color
+        "list_item" => Highlight::Property,
+        "thematic_break" => Highlight::Operator, // Thematic breaks use operator color
+        "html_block" => Highlight::Attribute, // HTML blocks use attribute color
+        "html_inline" => Highlight::Attribute,
+        "table" => Highlight::Property,      // Tables use property color
+        "table_header" => Highlight::Type,
+        "table_row" => Highlight::Property,
+        "table_cell" => Highlight::Plain,
         _ => Highlight::Plain,
     }
 }
@@ -151,6 +184,19 @@ pub fn get_query_for_language(language: LanguageId) -> Result<&'static str, Synt
             #[cfg(not(feature = "toml"))]
             Err(SyntaxError::LanguageNotSupported(
                 "toml support not compiled".to_string(),
+            ))
+        }
+        LanguageId::Markdown => {
+            #[cfg(feature = "markdown")]
+            {
+                // Use the official highlight query from the tree-sitter-markdown crate
+                // This ensures we're using the correct node types for the exact grammar version
+                use tree_sitter_markdown;
+                Ok(tree_sitter_markdown::HIGHLIGHT_QUERY)
+            }
+            #[cfg(not(feature = "markdown"))]
+            Err(SyntaxError::LanguageNotSupported(
+                "markdown support not compiled".to_string(),
             ))
         }
         LanguageId::PlainText => Err(SyntaxError::LanguageNotSupported(

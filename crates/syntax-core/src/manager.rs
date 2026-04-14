@@ -128,7 +128,7 @@ impl SyntaxManager {
     
     // Precompile queries for supported languages to speed up highlighting
     pub fn precompile_queries(&mut self) {
-        let languages = [LanguageId::Rust, LanguageId::Toml];
+        let languages = [LanguageId::Rust, LanguageId::Toml, LanguageId::Markdown];
         for &language in &languages {
             if let Some(ts_lang) = language.tree_sitter_language() {
                 if let Ok(query_str) = get_query_for_language(language) {
