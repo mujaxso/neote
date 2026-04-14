@@ -48,7 +48,7 @@ pub fn current_colors(theme: QyzerTheme) -> SemanticColors {
     theme.colors()
 }
 
-/// Semantic color roles for Neote IDE - Premium dark theme
+/// Semantic color roles for Qyzer IDE - Premium dark theme
 #[derive(Debug, Clone, Copy)]
 pub struct SemanticColors {
     // Background surfaces - Premium dark palette
