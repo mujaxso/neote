@@ -33,4 +33,4 @@ uuid = { version = "1", features = ["v4", "serde"] }
 thiserror = "2"
 rfd = { version = "0.14", default-features = false, features = ["tokio", "xdg-portal"] }
 tree-sitter-toml = "0.20"
-tree-sitter-markdown = "0.2"
+tree-sitter-markdown = "0.7"
