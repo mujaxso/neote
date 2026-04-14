@@ -283,7 +283,7 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                         Ok(spans) => {
                             app.syntax_highlight_span_count = spans.len();
                             app.syntax_highlight_spans = spans.clone();
-                            app.syntax_highlight_cache = build_line_cache(&text, &spans, app.theme);
+                            app.syntax_highlight_cache = build_line_cache(&text, &spans, app.current_theme);
                             app.syntax_cache_version += 1;
                             if !spans.is_empty() {
                                 app.status_message = format!("Syntax highlighting applied ({} spans)", spans.len());

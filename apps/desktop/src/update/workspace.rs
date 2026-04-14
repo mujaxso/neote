@@ -346,7 +346,7 @@ fn handle_file_loaded(app: &mut App, result: Result<(String, String, Document), 
                 if let Some(path) = &app.active_file_path {
                     let doc_id = path.clone();
                     let text = content.clone();
-                    let theme = app.theme;
+                    let theme = app.current_theme;
                     
                     // Update syntax manager and get spans
                     let spans = {

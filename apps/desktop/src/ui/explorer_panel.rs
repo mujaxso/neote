@@ -409,7 +409,7 @@ fn explorer_row(row: crate::explorer::state::VisibleRow, app: &App, is_compact: 
 
 fn inline_edit_row(app: &App, depth: usize, is_dir: bool) -> Element<'static, Message> {
     let indent = depth * 12;
-    let style = StyleHelpers::new(app.theme);
+    let style = StyleHelpers::new(app.current_theme);
     let icon = if is_dir { Icon::Folder } else { Icon::File };
     
     let input = text_input("Name", &app.explorer_state.inline_edit_name)

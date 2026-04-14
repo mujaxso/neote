@@ -106,11 +106,21 @@ pub struct SemanticColors {
 }
 
 /// Theme variants for Neote
-#[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum NeoteTheme {
     Dark,
     Light,
     System,
+}
+
+impl std::fmt::Display for NeoteTheme {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            NeoteTheme::Dark => write!(f, "Dark"),
+            NeoteTheme::Light => write!(f, "Light"),
+            NeoteTheme::System => write!(f, "System"),
+        }
+    }
 }
 
 impl NeoteTheme {

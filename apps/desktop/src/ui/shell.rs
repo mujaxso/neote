@@ -14,7 +14,7 @@ use super::{
 
 /// Main shell that composes all UI components - Premium compact layout
 pub fn shell(app: &App) -> Element<'_, Message> {
-    let style = StyleHelpers::new(app.theme);
+    let style = StyleHelpers::new(app.current_theme);
     
     // Get panel widths based on layout mode - reasonable widths
     let (explorer_width, assistant_width) = match app.layout_mode {

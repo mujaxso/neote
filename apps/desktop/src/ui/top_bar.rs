@@ -6,7 +6,7 @@ use crate::theme::SemanticColors;
 use crate::ui::icons::{Icon, icon_button};
 
 pub fn top_bar(app: &App) -> Element<'_, Message> {
-    let style = StyleHelpers::new(app.theme);
+    let style = StyleHelpers::new(app.current_theme);
     
     // Create a custom style sheet for the text input
     struct WorkspaceInputStyle {

@@ -66,7 +66,7 @@ pub enum Message {
     // Save typography settings
     SaveTypographySettings,
     // Load typography settings
-    TypographySettingsLoaded(Result<crate::settings::editor::EditorTypographySettings, String>),
+    TypographySettingsLoaded(Result<(crate::settings::editor::EditorTypographySettings, crate::theme::NeoteTheme), String>),
     // Workspace dialog was cancelled
     WorkspaceDialogCancelled,
     // Manual workspace path submission (fallback when native dialog fails)

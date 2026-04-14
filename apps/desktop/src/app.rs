@@ -21,11 +21,13 @@ impl iced::Application for App {
         
         // Load saved typography settings
         match crate::settings::persistence::load_settings() {
-            Ok(settings) => {
-                app.editor_typography = settings;
+            Ok((typography, theme_preference)) => {
+                app.editor_typography = typography;
+                app.theme_preference = theme_preference;
+                app.update_current_theme();
             }
             Err(e) => {
-                eprintln!("Failed to load typography settings: {}", e);
+                eprintln!("Failed to load settings: {}", e);
                 // Continue with defaults
             }
         }
@@ -106,7 +108,7 @@ impl iced::Application for App {
     }
 
     fn theme(&self) -> iced::Theme {
-        self.theme.to_iced_theme()
+        self.current_theme.to_iced_theme()
     }
 
     fn update(&mut self, message: Message) -> Command<Message> {
