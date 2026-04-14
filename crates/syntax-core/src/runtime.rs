@@ -79,12 +79,9 @@ impl Runtime {
     /// The library filename is expected to follow the pattern
     /// `libtree-sitter-{language}.{ext}` on Unix and `tree-sitter-{language}.dll` on Windows.
     pub fn grammar_library_path(&self, language_id: &str) -> PathBuf {
-        let mut lib_name = if cfg!(windows) {
-            format!("tree-sitter-{}", language_id)
-        } else {
-            format!("libtree-sitter-{}", language_id)
-        };
-        lib_name.push_str(env::consts::DLL_EXTENSION);
+        let prefix = if cfg!(windows) { "" } else { "lib" };
+        let extension = env::consts::DLL_EXTENSION;
+        let lib_name = format!("{}tree-sitter-{}{}", prefix, language_id, extension);
         self.grammar_dir().join(lib_name)
     }
 

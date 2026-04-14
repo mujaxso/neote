@@ -37,22 +37,35 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
     let repo_name = parts[parts.len() - 1];
     
     // Use GitHub's archive URL which doesn't require authentication
-    let zip_url = format!("https://github.com/{}/{}/archive/refs/heads/main.zip", repo_owner, repo_name);
+    // Try both main and master branches
+    let zip_urls = vec![
+        format!("https://github.com/{}/{}/archive/refs/heads/main.zip", repo_owner, repo_name),
+        format!("https://github.com/{}/{}/archive/refs/heads/master.zip", repo_owner, repo_name),
+    ];
+    
     let zip_path = temp_dir.path().join("source.zip");
+    let mut last_error = None;
     
-    // Try main branch first, then master as fallback
-    let download_result = download_file(&zip_url, &zip_path);
-    let zip_url = if download_result.is_err() {
-        // Try master branch
-        format!("https://github.com/{}/{}/archive/refs/heads/master.zip", repo_owner, repo_name)
-    } else {
-        zip_url
-    };
+    for zip_url in zip_urls {
+        println!("Trying to download from: {}", zip_url);
+        match download_file(&zip_url, &zip_path) {
+            Ok(()) => {
+                println!("Successfully downloaded from {}", zip_url);
+                last_error = None;
+                break;
+            }
+            Err(e) => {
+                println!("Failed to download from {}: {}", zip_url, e);
+                last_error = Some(e);
+                // Try to remove the file if it exists
+                let _ = std::fs::remove_file(&zip_path);
+            }
+        }
+    }
     
-    // Download the file
-    download_file(&zip_url, &zip_path).map_err(|e| {
-        format!("Failed to download source from {}: {}. Please install curl/wget.", zip_url, e)
-    })?;
+    if let Some(e) = last_error {
+        return Err(format!("Failed to download source: {}. Please install curl/wget.", e));
+    }
     
     // Extract zip
     let extract_result = if cfg!(windows) {
@@ -199,21 +212,24 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
         for source_file in &grammar_info.source_files {
             let source_path = source_dir.join(source_file);
             if !source_path.exists() {
+                println!("Warning: Source file {} does not exist, skipping", source_file);
                 continue; // Skip missing files (some grammars don't have scanner.c)
             }
             
             let object_file = temp_dir.path().join(format!("{}.o", source_file.replace('/', "_")));
             
-            let status = Command::new("cc")
+            println!("Compiling {}...", source_file);
+            let output = Command::new("cc")
                 .args(["-c", "-fPIC", "-I./src", "-o"])
                 .arg(&object_file)
                 .arg(&source_path)
                 .current_dir(&source_dir)
-                .status()
+                .output()
                 .map_err(|e| format!("Failed to compile {}: {}", source_file, e))?;
             
-            if !status.success() {
-                return Err(format!("Failed to compile {}", source_file));
+            if !output.status.success() {
+                let stderr = String::from_utf8_lossy(&output.stderr);
+                return Err(format!("Failed to compile {}: {}", source_file, stderr));
             }
             
             object_files.push(object_file);
@@ -287,9 +303,19 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
 fn download_file(url: &str, path: &std::path::Path) -> Result<(), String> {
     use std::io::{Read, Write};
     
-    // Try using ureq for HTTP requests (no authentication required)
+    println!("Downloading {} to {}...", url, path.display());
+    
+    // First try using system commands (curl/wget) which might be more reliable
+    if let Ok(()) = fallback_download(url, path) {
+        println!("Download successful using system command");
+        return Ok(());
+    }
+    
+    println!("System command failed, trying ureq...");
+    
+    // Try using ureq as fallback
     let response = ureq::get(url)
-        .timeout(std::time::Duration::from_secs(30))
+        .timeout(std::time::Duration::from_secs(60))
         .call();
     
     match response {
@@ -297,58 +323,108 @@ fn download_file(url: &str, path: &std::path::Path) -> Result<(), String> {
             let mut file = std::fs::File::create(path)
                 .map_err(|e| format!("Failed to create file {}: {}", path.display(), e))?;
             
+            // Get content length for progress
+            let content_length = resp.header("Content-Length")
+                .and_then(|s| s.parse::<usize>().ok())
+                .unwrap_or(0);
+            
+            println!("Downloading {} bytes...", content_length);
+            
             // Read response body into a Vec<u8> first
             let mut bytes: Vec<u8> = Vec::new();
             resp.into_reader().read_to_end(&mut bytes)
                 .map_err(|e| format!("Failed to read response: {}", e))?;
             
+            println!("Read {} bytes", bytes.len());
+            
             // Write bytes to file
             std::io::Write::write_all(&mut file, &bytes)
                 .map_err(|e| format!("Failed to write to file: {}", e))?;
             
+            println!("Download completed successfully");
             Ok(())
         }
         Err(ureq::Error::Status(code, resp)) => {
-            Err(format!("HTTP error {}: {}", code, resp.status_text()))
+            let err = format!("HTTP error {}: {}", code, resp.status_text());
+            println!("{}", err);
+            Err(err)
         }
         Err(e) => {
-            // Fall back to curl/wget if ureq fails
-            eprintln!("ureq download failed: {}. Trying fallback...", e);
-            fallback_download(url, path)
+            let err = format!("ureq download failed: {}", e);
+            println!("{}", err);
+            Err(err)
         }
     }
 }
 
 /// Fallback download using system commands
 fn fallback_download(url: &str, path: &std::path::Path) -> Result<(), String> {
-    let download_ok = if cfg!(windows) {
-        Command::new("powershell")
-            .args(["-Command", &format!("Invoke-WebRequest -Uri {} -OutFile {}", url, path.display())])
-            .status()
-            .map(|s| s.success())
-            .unwrap_or(false)
+    println!("Trying to download using system command...");
+    
+    if cfg!(windows) {
+        let output = Command::new("powershell")
+            .args(["-Command", &format!("Invoke-WebRequest -Uri '{}' -OutFile '{}'", url, path.display())])
+            .output()
+            .map_err(|e| format!("Failed to run powershell: {}", e))?;
+        
+        if output.status.success() {
+            Ok(())
+        } else {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            Err(format!("Powershell failed: {}", stderr))
+        }
     } else {
         // Try curl first
-        let curl_status = Command::new("curl")
-            .args(["-L", "-o", path.to_str().unwrap(), url])
-            .status();
+        let curl_result = Command::new("curl")
+            .args(["-L", "-f", "-o", path.to_str().unwrap(), url])
+            .output();
         
-        if curl_status.is_err() || !curl_status.unwrap().success() {
-            // Try wget as fallback
-            Command::new("wget")
-                .args(["-O", path.to_str().unwrap(), url])
-                .status()
-                .map(|s| s.success())
-                .unwrap_or(false)
-        } else {
-            true
+        match curl_result {
+            Ok(output) if output.status.success() => {
+                println!("curl download successful");
+                Ok(())
+            }
+            Ok(output) => {
+                let stderr = String::from_utf8_lossy(&output.stderr);
+                println!("curl failed: {}", stderr);
+                
+                // Try wget as fallback
+                let wget_result = Command::new("wget")
+                    .args(["-O", path.to_str().unwrap(), url])
+                    .output();
+                
+                match wget_result {
+                    Ok(output) if output.status.success() => {
+                        println!("wget download successful");
+                        Ok(())
+                    }
+                    Ok(output) => {
+                        let stderr = String::from_utf8_lossy(&output.stderr);
+                        Err(format!("wget failed: {}", stderr))
+                    }
+                    Err(e) => Err(format!("Failed to run wget: {}", e)),
+                }
+            }
+            Err(e) => {
+                println!("curl not available: {}", e);
+                // Try wget as fallback
+                let wget_result = Command::new("wget")
+                    .args(["-O", path.to_str().unwrap(), url])
+                    .output();
+                
+                match wget_result {
+                    Ok(output) if output.status.success() => {
+                        println!("wget download successful");
+                        Ok(())
+                    }
+                    Ok(output) => {
+                        let stderr = String::from_utf8_lossy(&output.stderr);
+                        Err(format!("wget failed: {}", stderr))
+                    }
+                    Err(e) => Err(format!("Failed to run wget: {}", e)),
+                }
+            }
         }
-    };
-    
-    if download_ok {
-        Ok(())
-    } else {
-        Err("Failed to download using curl/wget/powershell".to_string())
     }
 }
 
