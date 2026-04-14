@@ -415,14 +415,66 @@ fn handle_file_saved(app: &mut App, result: Result<(), String>) -> Command<Messa
     Command::none()
 }
 
+pub fn load_directory_recursive(path: &str) -> Result<Vec<core_types::workspace::DirectoryEntry>, String> {
+    use std::fs;
+    use std::path::Path;
+    
+    let mut entries = Vec::new();
+    let mut stack = vec![path.to_string()];
+    
+    while let Some(current_path) = stack.pop() {
+        match fs::read_dir(&current_path) {
+            Ok(read_dir) => {
+                for entry_result in read_dir {
+                    match entry_result {
+                        Ok(entry) => {
+                            let entry_path = entry.path();
+                            let path_str = entry_path.to_string_lossy().to_string();
+                            
+                            // Get file name
+                            let name = entry.file_name().to_string_lossy().to_string();
+                            
+                            // Check if it's a directory
+                            let is_dir = entry_path.is_dir();
+                            
+                            // Add to entries
+                            entries.push(core_types::workspace::DirectoryEntry {
+                                path: path_str.clone(),
+                                name,
+                                is_dir,
+                            });
+                            
+                            // If it's a directory, add to stack for further processing
+                            if is_dir {
+                                stack.push(path_str);
+                            }
+                        }
+                        Err(e) => {
+                            // Skip entries we can't read (like permission errors)
+                            // But continue with other entries
+                            eprintln!("Warning: Failed to read directory entry in {}: {}", current_path, e);
+                        }
+                    }
+                }
+            }
+            Err(e) => {
+                return Err(format!("Failed to read directory {}: {}", current_path, e));
+            }
+        }
+    }
+    
+    Ok(entries)
+}
+
 fn handle_refresh_workspace(app: &mut App) -> Command<Message> {
     if !app.workspace_path.is_empty() {
         let path = app.workspace_path.clone();
         Command::perform(
             async move {
-                match WorkspaceLoader::list_directory(&path) {
-                    Ok(entries) => Message::WorkspaceLoaded(Ok((path, entries))),
-                    Err(e) => Message::WorkspaceLoaded(Err(format!("Failed to refresh workspace: {}", e))),
+                match tokio::task::spawn_blocking(move || load_directory_recursive(&path)).await {
+                    Ok(Ok(entries)) => Message::WorkspaceLoaded(Ok((path, entries))),
+                    Ok(Err(e)) => Message::WorkspaceLoaded(Err(format!("Failed to refresh workspace: {}", e))),
+                    Err(e) => Message::WorkspaceLoaded(Err(format!("Task failed: {}", e))),
                 }
             },
             |result| result,
@@ -454,13 +506,10 @@ fn handle_submit_manual_workspace_path(app: &mut App, path: String) -> Command<M
         let path_clone = path.clone();
         Command::perform(
             async move {
-                match WorkspaceLoader::list_directory(&path_clone) {
-                    Ok(entries) => {
-                        Message::WorkspaceLoaded(Ok((path_clone, entries)))
-                    },
-                    Err(e) => {
-                        Message::WorkspaceLoaded(Err(format!("Manual workspace load failed: {}", e)))
-                    },
+                match tokio::task::spawn_blocking(move || load_directory_recursive(&path_clone)).await {
+                    Ok(Ok(entries)) => Message::WorkspaceLoaded(Ok((path_clone, entries))),
+                    Ok(Err(e)) => Message::WorkspaceLoaded(Err(format!("Manual workspace load failed: {}", e))),
+                    Err(e) => Message::WorkspaceLoaded(Err(format!("Task failed: {}", e))),
                 }
             },
             |result| result,

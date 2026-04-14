@@ -52,53 +52,20 @@ impl ExplorerState {
     
     pub fn set_workspace_root(&mut self, root: PathBuf) {
         self.workspace_root = normalize_path(&root);
-        println!("Explorer: workspace root set to '{}'", self.workspace_root.display());
     }
     
     pub fn set_file_tree(&mut self, entries: Vec<DirectoryEntry>) {
-        println!("Explorer: building tree from {} entries", entries.len());
         self.file_tree = build_explorer_tree(&entries, &self.workspace_root);
-        println!("Explorer: tree built with {} root nodes", self.file_tree.len());
-        // Print first few entries for debugging
-        for (i, entry) in entries.iter().take(5).enumerate() {
-            println!("  Entry {}: path='{}', is_dir={}", i, entry.path, entry.is_dir);
-        }
-        // Debug: print tree structure
-        self.print_tree_structure();
-    }
-    
-    fn print_tree_structure(&self) {
-        println!("Explorer tree structure:");
-        fn print_node(node: &ExplorerNode, depth: usize) {
-            let indent = "  ".repeat(depth);
-            println!("{}{} (children: {})", indent, node.path.display(), node.children.len());
-            for child in &node.children {
-                print_node(child, depth + 1);
-            }
-        }
-        for node in &self.file_tree {
-            print_node(node, 0);
-        }
     }
     
     pub fn toggle_directory(&mut self, path: PathBuf) {
         let normalized_path = normalize_path(&path);
         
-        let was_expanded = self.expanded_directories.contains(&normalized_path);
-        if was_expanded {
+        if self.expanded_directories.contains(&normalized_path) {
             self.expanded_directories.remove(&normalized_path);
         } else {
-            self.expanded_directories.insert(normalized_path.clone());
+            self.expanded_directories.insert(normalized_path);
         }
-        
-        // Diagnostic log
-        println!(
-            "Explorer: toggled directory '{}' (normalized: '{}') from {} to {}",
-            path.display(),
-            normalized_path.display(),
-            was_expanded,
-            !was_expanded
-        );
     }
     
     pub fn select_file(&mut self, path: PathBuf) {
@@ -183,13 +150,6 @@ impl ExplorerState {
     pub fn visible_rows(&self) -> Vec<VisibleRow> {
         let mut rows = Vec::new();
         self.collect_visible_rows(&self.file_tree, 0, &mut rows);
-        
-        // Diagnostic log
-        println!(
-            "Explorer: generated {} visible rows ({} expanded directories)",
-            rows.len(),
-            self.expanded_directories.len()
-        );
         rows
     }
     
@@ -198,18 +158,6 @@ impl ExplorerState {
             let is_expanded = self.is_expanded(&node.path);
             let is_selected = self.is_selected(&node.path);
             let is_hovered = self.hovered_row.as_ref().map_or(false, |hovered| hovered == &node.path);
-            
-            // Debug: print node info only for directories or when expanded
-            if node.is_dir || is_expanded {
-                println!(
-                    "Explorer node: path='{}', is_dir={}, depth={}, is_expanded={}, children={}",
-                    node.path.display(),
-                    node.is_dir,
-                    depth,
-                    is_expanded,
-                    node.children.len()
-                );
-            }
             
             rows.push(VisibleRow {
                 path: node.path.clone(),
