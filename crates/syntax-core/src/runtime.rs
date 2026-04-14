@@ -88,6 +88,50 @@ impl Runtime {
         self.grammar_dir().join(lib_name)
     }
 
+    /// Load a Tree-sitter language from a shared library in the runtime directory.
+    ///
+    /// This uses `libloading` to dynamically load the grammar library and retrieve
+    /// the `tree_sitter_{language}` function.
+    #[cfg(feature = "dynamic-loading")]
+    pub fn load_language(&self, language_id: &str) -> Result<tree_sitter::Language, String> {
+        use libloading::{Library, Symbol};
+        
+        let library_path = self.grammar_library_path(language_id);
+        if !library_path.exists() {
+            return Err(format!(
+                "Grammar library not found at {}",
+                library_path.display()
+            ));
+        }
+
+        // Safety: We're loading a shared library that we expect to be a valid
+        // Tree-sitter grammar. The library should export a function named
+        // `tree_sitter_{language}`.
+        unsafe {
+            let lib = Library::new(&library_path)
+                .map_err(|e| format!("Failed to load library {}: {}", library_path.display(), e))?;
+            
+            let symbol_name = format!("tree_sitter_{}", language_id);
+            let language_fn: Symbol<unsafe extern "C" fn() -> tree_sitter::Language> = lib
+                .get(symbol_name.as_bytes())
+                .map_err(|e| format!("Failed to get symbol {}: {}", symbol_name, e))?;
+            
+            // The library must not be unloaded while the language is in use.
+            // We leak the library handle to keep it loaded for the lifetime of the program.
+            std::mem::forget(lib);
+            
+            Ok(language_fn())
+        }
+    }
+
+    #[cfg(not(feature = "dynamic-loading"))]
+    pub fn load_language(&self, language_id: &str) -> Result<tree_sitter::Language, String> {
+        Err(format!(
+            "Dynamic loading not enabled (feature 'dynamic-loading' required) for language {}",
+            language_id
+        ))
+    }
+
     /// Get a reference to the runtime root directory.
     pub fn root(&self) -> &PathBuf {
         &self.root
