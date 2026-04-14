@@ -420,10 +420,10 @@ pub fn load_directory_recursive(path: &str) -> Result<Vec<core_types::workspace:
     use std::path::Path;
     
     let mut entries = Vec::new();
-    let mut stack = vec![path.to_string()];
     
-    while let Some(current_path) = stack.pop() {
-        match fs::read_dir(&current_path) {
+    // Helper function to walk directories recursively
+    fn walk_directory(dir_path: &Path, entries: &mut Vec<core_types::workspace::DirectoryEntry>) -> Result<(), String> {
+        match fs::read_dir(dir_path) {
             Ok(read_dir) => {
                 for entry_result in read_dir {
                     match entry_result {
@@ -444,24 +444,27 @@ pub fn load_directory_recursive(path: &str) -> Result<Vec<core_types::workspace:
                                 is_dir,
                             });
                             
-                            // If it's a directory, add to stack for further processing
+                            // If it's a directory, recursively process it
                             if is_dir {
-                                stack.push(path_str);
+                                walk_directory(&entry_path, entries)?;
                             }
                         }
                         Err(e) => {
                             // Skip entries we can't read (like permission errors)
-                            // But continue with other entries
-                            eprintln!("Warning: Failed to read directory entry in {}: {}", current_path, e);
+                            eprintln!("Warning: Failed to read directory entry in {}: {}", dir_path.display(), e);
                         }
                     }
                 }
+                Ok(())
             }
             Err(e) => {
-                return Err(format!("Failed to read directory {}: {}", current_path, e));
+                Err(format!("Failed to read directory {}: {}", dir_path.display(), e))
             }
         }
     }
+    
+    let root_path = Path::new(path);
+    walk_directory(root_path, &mut entries)?;
     
     Ok(entries)
 }
