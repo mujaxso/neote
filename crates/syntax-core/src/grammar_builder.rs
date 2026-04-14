@@ -37,9 +37,14 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
     let repo_name = parts[parts.len() - 1];
     
     // Use GitHub's archive URL which doesn't require authentication
-    // Try HEAD.zip first (points to default branch), then try main/master as fallback
+    // Try multiple URL formats
     let zip_urls = vec![
-        format!("https://github.com/{}/{}/archive/HEAD.zip", repo_owner, repo_name),
+        // GitHub API zipball endpoint (always works)
+        format!("https://api.github.com/repos/{}/{}/zipball", repo_owner, repo_name),
+        // Standard archive URLs
+        format!("https://github.com/{}/{}/archive/refs/heads/main.zip", repo_owner, repo_name),
+        format!("https://github.com/{}/{}/archive/refs/heads/master.zip", repo_owner, repo_name),
+        // Legacy format
         format!("https://github.com/{}/{}/archive/main.zip", repo_owner, repo_name),
         format!("https://github.com/{}/{}/archive/master.zip", repo_owner, repo_name),
     ];
@@ -153,7 +158,14 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
         if path.is_dir() {
             if let Some(dir_name) = path.file_name().and_then(|n| n.to_str()) {
                 // Look for directories that contain the language name or are likely the source
-                if dir_name.contains(language_id) || dir_name.contains("-main") || dir_name.contains("-master") || dir_name.contains("-HEAD") {
+                // GitHub API zipball creates directories like "tree-sitter-tree-sitter-markdown-<hash>"
+                // Standard archives create directories like "tree-sitter-markdown-master"
+                if dir_name.contains(language_id) || 
+                   dir_name.contains("-main") || 
+                   dir_name.contains("-master") || 
+                   dir_name.contains("-HEAD") ||
+                   dir_name.starts_with(&format!("{}-{}", repo_name, repo_name)) ||
+                   dir_name.contains("zipball") {
                     extracted_dir = Some(path);
                     break;
                 }
@@ -363,9 +375,15 @@ fn download_file(url: &str, path: &std::path::Path) -> Result<(), String> {
     println!("System command failed, trying ureq...");
     
     // Try using ureq as fallback
-    let response = ureq::get(url)
-        .timeout(std::time::Duration::from_secs(60))
-        .call();
+    let mut request = ureq::get(url)
+        .timeout(std::time::Duration::from_secs(60));
+    
+    // Add User-Agent for GitHub API
+    if url.contains("api.github.com") {
+        request = request.set("User-Agent", "qyzer-studio/0.1.0");
+    }
+    
+    let response = request.call();
     
     match response {
         Ok(resp) => {
@@ -424,8 +442,14 @@ fn fallback_download(url: &str, path: &std::path::Path) -> Result<(), String> {
         }
     } else {
         // Try curl first
+        let mut curl_args = vec!["-L", "-f", "-o", path.to_str().unwrap(), url];
+        // Add headers for GitHub API
+        if url.contains("api.github.com") {
+            curl_args = vec!["-L", "-f", "-H", "User-Agent: qyzer-studio/0.1.0", "-o", path.to_str().unwrap(), url];
+        }
+        
         let curl_result = Command::new("curl")
-            .args(["-L", "-f", "-o", path.to_str().unwrap(), url])
+            .args(&curl_args)
             .output();
         
         match curl_result {
