@@ -103,26 +103,11 @@ fn load_dynamic_language(language_id: &str) -> Option<tree_sitter::Language> {
             Some(lang)
         }
         Err(e) => {
-            // Log error and try to install automatically
-            eprintln!("{}", e);
-            eprintln!("\nAttempting to install {} grammar automatically...", language_id);
-            
-            // Try to install using the grammar builder
-            if let Ok(()) = crate::grammar_builder::build_and_install_grammar(language_id) {
-                eprintln!("Successfully installed {} grammar!", language_id);
-                // Try loading again
-                match runtime.load_language(language_id) {
-                    Ok(lang) => Some(lang),
-                    Err(e2) => {
-                        eprintln!("Failed to load even after installation: {}", e2);
-                        None
-                    }
-                }
-            } else {
-                eprintln!("Failed to install {} grammar automatically.", language_id);
-                eprintln!("Please install manually with: cargo run --bin download-grammars -- install {}", language_id);
-                None
-            }
+            // Just log the error and return None - don't try to install automatically
+            // This prevents blocking the UI during startup
+            eprintln!("Note: {} grammar not found. {}", language_id, e);
+            eprintln!("To install, run: cargo run --bin download-grammars -- install {}", language_id);
+            None
         }
     }
 }

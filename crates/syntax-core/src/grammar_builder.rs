@@ -26,179 +26,66 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
     fs::create_dir_all(&repo_dir)
         .map_err(|e| format!("Failed to create directory {}: {}", repo_dir.display(), e))?;
     
-    // Download zip file from GitHub
-    // Extract repo owner and name from the URL
-    let repo_url = grammar_info.repo_url.trim_end_matches(".git");
-    let parts: Vec<&str> = repo_url.split('/').collect();
-    if parts.len() < 2 {
-        return Err(format!("Invalid repo URL: {}", repo_url));
-    }
-    let repo_owner = parts[parts.len() - 2];
-    let repo_name = parts[parts.len() - 1];
+    // Use git clone with timeout and no credential helper
+    println!("Cloning {}...", grammar_info.repo_url);
     
-    // Use GitHub's archive URL which doesn't require authentication
-    // Try multiple URL formats
-    let zip_urls = vec![
-        // GitHub API zipball endpoint (always works)
-        format!("https://api.github.com/repos/{}/{}/zipball", repo_owner, repo_name),
-        // Standard archive URLs
-        format!("https://github.com/{}/{}/archive/refs/heads/main.zip", repo_owner, repo_name),
-        format!("https://github.com/{}/{}/archive/refs/heads/master.zip", repo_owner, repo_name),
-        // Legacy format
-        format!("https://github.com/{}/{}/archive/main.zip", repo_owner, repo_name),
-        format!("https://github.com/{}/{}/archive/master.zip", repo_owner, repo_name),
-    ];
+    // Set up git command with timeout and no credential helper
+    let mut cmd = Command::new("timeout");
+    cmd.args(["30", "git", "clone", "--depth", "1"]);
     
-    let zip_path = temp_dir.path().join("source.zip");
-    let mut last_error = None;
+    // Disable credential helper to avoid prompts
+    cmd.args(["--config", "credential.helper="]);
     
-    for zip_url in zip_urls {
-        println!("Trying to download from: {}", zip_url);
-        match download_file(&zip_url, &zip_path) {
-            Ok(()) => {
-                println!("Successfully downloaded from {}", zip_url);
-                last_error = None;
-                break;
-            }
-            Err(e) => {
-                println!("Failed to download from {}: {}", zip_url, e);
-                last_error = Some(e);
-                // Try to remove the file if it exists
-                let _ = std::fs::remove_file(&zip_path);
-            }
+    cmd.args([&grammar_info.repo_url, repo_dir.to_str().unwrap()]);
+    
+    match cmd.status() {
+        Ok(status) if status.success() => {
+            println!("Successfully cloned repository");
         }
-    }
-    
-    if let Some(e) = last_error {
-        println!("All download attempts failed: {}", e);
-        println!("Trying git clone as last resort...");
-        // Try git clone as fallback using multiple URL formats
-        let git_urls = vec![
-            // git:// protocol (no authentication, but may be blocked)
-            grammar_info.repo_url.replace("https://", "git://").replace("http://", "git://"),
-            // SSH format (requires SSH key setup, but no interactive auth)
-            grammar_info.repo_url.replace("https://github.com/", "git@github.com:").replace("http://github.com/", "git@github.com:"),
-            // Original HTTPS URL with credential helper disabled
-            grammar_info.repo_url.clone(),
-        ];
-        
-        let mut last_git_error = None;
-        
-        for (i, git_url) in git_urls.iter().enumerate() {
-            println!("Trying git clone with URL {}: {}", i + 1, git_url);
+        Ok(_) => {
+            // Try without timeout command (for systems without timeout)
+            let mut cmd2 = Command::new("git");
+            cmd2.args(["clone", "--depth", "1", "--config", "credential.helper=", &grammar_info.repo_url, repo_dir.to_str().unwrap()]);
             
-            let mut cmd = Command::new("git");
-            cmd.args(["clone", "--depth", "1"]);
-            
-            // For HTTPS URL, disable credential helper to avoid prompts
-            if git_url.starts_with("https://") {
-                cmd.args(["--config", "credential.helper="]);
-            }
-            
-            cmd.args([git_url, repo_dir.to_str().unwrap()]);
-            
-            match cmd.status() {
-                Ok(status) if status.success() => {
-                    println!("Successfully cloned repository using git");
-                    last_git_error = None;
-                    break;
+            match cmd2.status() {
+                Ok(status2) if status2.success() => {
+                    println!("Successfully cloned repository");
                 }
                 Ok(_) => {
-                    last_git_error = Some(format!("git clone failed with URL: {}", git_url));
-                    // Clean up repo_dir for next attempt
-                    let _ = std::fs::remove_dir_all(&repo_dir);
+                    return Err("Failed to clone repository (git clone failed)".to_string());
                 }
-                Err(git_err) => {
-                    last_git_error = Some(format!("git clone failed with URL {}: {}", git_url, git_err));
-                    // Clean up repo_dir for next attempt
-                    let _ = std::fs::remove_dir_all(&repo_dir);
+                Err(e) => {
+                    return Err(format!("Failed to run git clone: {}", e));
                 }
             }
         }
-        
-        if let Some(git_err) = last_git_error {
-            return Err(format!("Failed to download source: {}. Also git clone failed: {}", e, git_err));
-        }
-    }
-    
-    // Extract zip
-    let extract_result = if cfg!(windows) {
-        Command::new("powershell")
-            .args(["-Command", &format!("Expand-Archive -Path {} -DestinationPath {}", zip_path.display(), repo_dir.display())])
-            .status()
-            .map_err(|e| format!("Failed to run powershell: {}", e))
-    } else {
-        // Try unzip with -q first, then without if it fails
-        let status = Command::new("unzip")
-            .args(["-q", zip_path.to_str().unwrap(), "-d", repo_dir.to_str().unwrap()])
-            .status();
-        
-        if status.is_err() || !status.as_ref().unwrap().success() {
-            // Try without -q flag
-            Command::new("unzip")
-                .args([zip_path.to_str().unwrap(), "-d", repo_dir.to_str().unwrap()])
-                .status()
-                .map_err(|e| format!("Failed to run unzip: {}", e))
-        } else {
-            status.map_err(|e| format!("Failed to run unzip: {}", e))
-        }
-    };
-    
-    match extract_result {
-        Ok(status) if status.success() => (),
-        Ok(_) => return Err("Failed to extract source zip (command failed)".to_string()),
-        Err(e) => return Err(format!("Failed to extract source zip: {}", e)),
-    }
-    
-    // Find the extracted directory (usually ends with -main or -master)
-    let mut extracted_dir = None;
-    for entry in fs::read_dir(&repo_dir).map_err(|e| format!("Failed to read repo dir: {}", e))? {
-        let entry = entry.map_err(|e| format!("Failed to read entry: {}", e))?;
-        let path = entry.path();
-        if path.is_dir() {
-            if let Some(dir_name) = path.file_name().and_then(|n| n.to_str()) {
-                // Look for directories that contain the language name or are likely the source
-                // GitHub API zipball creates directories like "tree-sitter-tree-sitter-markdown-<hash>"
-                // Standard archives create directories like "tree-sitter-markdown-master"
-                if dir_name.contains(language_id) || 
-                   dir_name.contains("-main") || 
-                   dir_name.contains("-master") || 
-                   dir_name.contains("-HEAD") ||
-                   dir_name.starts_with(&format!("{}-{}", repo_name, repo_name)) ||
-                   dir_name.contains("zipball") {
-                    extracted_dir = Some(path);
-                    break;
-                }
-            }
-        }
-    }
-    
-    // If we didn't find a specific directory, use the first directory in repo_dir
-    let extracted_dir = match extracted_dir {
-        Some(dir) => dir,
-        None => {
-            // List all entries and find the first directory
-            let mut entries: Vec<_> = fs::read_dir(&repo_dir)
-                .map_err(|e| format!("Failed to read repo dir: {}", e))?
-                .filter_map(|entry| entry.ok())
-                .filter(|entry| entry.path().is_dir())
-                .collect();
+        Err(e) => {
+            // timeout command not available, try git directly
+            let mut cmd2 = Command::new("git");
+            cmd2.args(["clone", "--depth", "1", "--config", "credential.helper=", &grammar_info.repo_url, repo_dir.to_str().unwrap()]);
             
-            if entries.is_empty() {
-                return Err(format!("No directories found in {:?}", repo_dir));
+            match cmd2.status() {
+                Ok(status2) if status2.success() => {
+                    println!("Successfully cloned repository");
+                }
+                Ok(_) => {
+                    return Err("Failed to clone repository (git clone failed)".to_string());
+                }
+                Err(e2) => {
+                    return Err(format!("Failed to run git clone: {}", e2));
+                }
             }
-            
-            // Sort to get a consistent result
-            entries.sort_by_key(|entry| entry.path());
-            entries[0].path()
         }
-    };
+    }
     
+    // No zip extraction needed - we cloned directly into repo_dir
+    
+    // We cloned directly into repo_dir, so source_dir is repo_dir
     // Navigate to subdirectory if needed
     let source_dir = if let Some(subdir) = &grammar_info.subdirectory {
-        extracted_dir.join(subdir)
+        repo_dir.join(subdir)
     } else {
-        extracted_dir
+        repo_dir.clone()
     };
     
     // Verify source directory exists
