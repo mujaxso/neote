@@ -11,6 +11,7 @@ use iced::{
 use crate::message::Message;
 use crate::state::App;
 use crate::settings::editor::FontFamily;
+use crate::theme::NeoteTheme;
 use super::super::style::StyleHelpers;
 
 /// Preview code snippet to demonstrate typography settings
@@ -38,8 +39,23 @@ fn main() {
 }"#;
 
 pub fn editor_font_settings_panel(app: &App) -> Element<'_, Message> {
-    let style = StyleHelpers::new(app.theme);
+    let style = StyleHelpers::new(app.current_theme);
     let typography = &app.editor_typography;
+    
+    // Theme switcher
+    let theme_switcher = column![
+        text("Theme")
+            .size(12)
+            .style(iced::theme::Text::Color(style.colors.text_secondary)),
+        pick_list(
+            NeoteTheme::all(),
+            Some(app.theme_preference),
+            Message::ThemeChanged
+        )
+        .width(Length::Fixed(200.0))
+        .padding(8)
+    ]
+    .spacing(4);
     
     // Font family picker
     let font_family_picker = column![
@@ -169,6 +185,8 @@ pub fn editor_font_settings_panel(app: &App) -> Element<'_, Message> {
     // Main content
     let content = scrollable(
         column![
+            theme_switcher,
+            horizontal_rule(1),
             font_family_picker,
             font_size_control,
             line_height_control,

@@ -4,6 +4,22 @@ use iced::Command;
 
 pub fn update(app: &mut App, message: Message) -> Command<Message> {
     match message {
+        Message::ThemeChanged(theme) => {
+            app.theme_preference = theme;
+            app.update_current_theme();
+            app.status_message = format!("Theme changed to {}", theme.display_name());
+            
+            // Save settings
+            match crate::settings::persistence::save_settings(&app.editor_typography, app.theme_preference) {
+                Ok(_) => {
+                    app.error_message = None;
+                }
+                Err(e) => {
+                    app.error_message = Some(e);
+                }
+            }
+            Command::none()
+        }
         Message::FontFamilyChanged(font_family) => {
             app.editor_typography.font_family = font_family;
             app.status_message = format!("Font changed to {}", font_family.to_family_string());
@@ -71,28 +87,30 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
             Command::none()
         }
         Message::SaveTypographySettings => {
-            match crate::settings::persistence::save_settings(&app.editor_typography) {
+            match crate::settings::persistence::save_settings(&app.editor_typography, app.theme_preference) {
                 Ok(_) => {
-                    app.status_message = "Typography settings saved".to_string();
+                    app.status_message = "Settings saved".to_string();
                     app.error_message = None;
                 }
                 Err(e) => {
                     app.error_message = Some(e);
-                    app.status_message = "Failed to save typography settings".to_string();
+                    app.status_message = "Failed to save settings".to_string();
                 }
             }
             Command::none()
         }
         Message::TypographySettingsLoaded(result) => {
             match result {
-                Ok(settings) => {
-                    app.editor_typography = settings;
-                    app.status_message = "Typography settings loaded".to_string();
+                Ok((typography, theme_preference)) => {
+                    app.editor_typography = typography;
+                    app.theme_preference = theme_preference;
+                    app.update_current_theme();
+                    app.status_message = "Settings loaded".to_string();
                     app.error_message = None;
                 }
                 Err(e) => {
                     app.error_message = Some(e);
-                    app.status_message = "Failed to load typography settings".to_string();
+                    app.status_message = "Failed to load settings".to_string();
                 }
             }
             Command::none()

@@ -218,7 +218,7 @@ pub fn explorer_panel<'a>(app: &'a App) -> Element<'a, Message> {
 }
 
 fn explorer_row(row: crate::explorer::state::VisibleRow, app: &App, is_compact: bool) -> Element<'static, Message> {
-    let style = StyleHelpers::new(app.theme);
+    let style = StyleHelpers::new(app.current_theme);
     let indent = row.depth * 12;
     
     // Choose icon based on type and state using semantic icon system

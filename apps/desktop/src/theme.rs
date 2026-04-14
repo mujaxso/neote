@@ -138,6 +138,20 @@ impl NeoteTheme {
             }
         }
     }
+    
+    /// Get all available theme variants
+    pub fn all() -> Vec<Self> {
+        vec![NeoteTheme::System, NeoteTheme::Light, NeoteTheme::Dark]
+    }
+    
+    /// Get display name for the theme
+    pub fn display_name(&self) -> &'static str {
+        match self {
+            NeoteTheme::System => "System",
+            NeoteTheme::Light => "Light",
+            NeoteTheme::Dark => "Dark",
+        }
+    }
 }
 
 impl SemanticColors {

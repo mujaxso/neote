@@ -1,12 +1,29 @@
-//! Persistence for editor typography settings.
+//! Persistence for editor typography and theme settings.
 //!
-//! Handles saving and loading editor font settings to/from disk.
+//! Handles saving and loading editor font settings and theme preference to/from disk.
 
 use std::fs;
 use std::path::PathBuf;
 use crate::settings::editor::EditorTypographySettings;
+use crate::theme::NeoteTheme;
 
-const SETTINGS_FILE_NAME: &str = "editor_typography.json";
+const SETTINGS_FILE_NAME: &str = "neote_settings.json";
+
+/// Settings that can be persisted
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct AppSettings {
+    pub typography: EditorTypographySettings,
+    pub theme_preference: NeoteTheme,
+}
+
+impl Default for AppSettings {
+    fn default() -> Self {
+        Self {
+            typography: EditorTypographySettings::default(),
+            theme_preference: NeoteTheme::System,
+        }
+    }
+}
 
 /// Get the path to the settings file in the user's config directory.
 fn settings_path() -> Result<PathBuf, String> {
@@ -20,11 +37,16 @@ fn settings_path() -> Result<PathBuf, String> {
     Ok(path)
 }
 
-/// Save editor typography settings to disk.
-pub fn save_settings(settings: &EditorTypographySettings) -> Result<(), String> {
+/// Save app settings to disk.
+pub fn save_settings(typography: &EditorTypographySettings, theme_preference: NeoteTheme) -> Result<(), String> {
     let path = settings_path()?;
     
-    let json = serde_json::to_string_pretty(settings)
+    let settings = AppSettings {
+        typography: typography.clone(),
+        theme_preference,
+    };
+    
+    let json = serde_json::to_string_pretty(&settings)
         .map_err(|e| format!("Failed to serialize settings: {}", e))?;
     
     fs::write(&path, json)
@@ -33,24 +55,24 @@ pub fn save_settings(settings: &EditorTypographySettings) -> Result<(), String> 
     Ok(())
 }
 
-/// Load editor typography settings from disk.
+/// Load app settings from disk.
 /// Returns default settings if file doesn't exist or can't be read.
-pub fn load_settings() -> Result<EditorTypographySettings, String> {
+pub fn load_settings() -> Result<(EditorTypographySettings, NeoteTheme), String> {
     let path = settings_path()?;
     
     if !path.exists() {
-        return Ok(EditorTypographySettings::default());
+        return Ok((EditorTypographySettings::default(), NeoteTheme::System));
     }
     
     let json = fs::read_to_string(&path)
         .map_err(|e| format!("Failed to read settings from {}: {}", path.display(), e))?;
     
-    let settings: EditorTypographySettings = serde_json::from_str(&json)
+    let settings: AppSettings = serde_json::from_str(&json)
         .map_err(|e| format!("Failed to parse settings JSON: {}", e))?;
     
-    // Validate loaded settings
-    let mut validated = settings;
-    validated.validate();
+    // Validate loaded typography settings
+    let mut typography = settings.typography;
+    typography.validate();
     
-    Ok(validated)
+    Ok((typography, settings.theme_preference))
 }

@@ -179,8 +179,10 @@ pub struct App {
     pub file_loading_state: FileLoadingState,
     // Track if current file was loaded in read-only mode
     pub is_file_read_only: bool,
-    // Theme
-    pub theme: NeoteTheme,
+    // Theme preference
+    pub theme_preference: NeoteTheme,
+    // Current resolved theme (based on preference and system)
+    pub current_theme: NeoteTheme,
     // Window dimensions for responsive layout
     pub window_width: u32,
     pub window_height: u32,
@@ -220,36 +222,51 @@ impl App {
             }
         }
 
+        // Load settings from disk
+        let (editor_typography, theme_preference) = match crate::settings::persistence::load_settings() {
+            Ok(settings) => settings,
+            Err(e) => {
+                eprintln!("Failed to load settings: {}", e);
+                (EditorTypographySettings::default(), NeoteTheme::System)
+            }
+        };
+
+        let mut app = App {
+            workspace_path: String::new(),
+            file_entries: Vec::new(),
+            explorer_state: ExplorerState::new(),
+            active_file_path: None,
+            editor_state: None,
+            is_dirty: false,
+            status_message: "Ready".to_string(),
+            error_message: None,
+            workspace_state: Arc::new(Mutex::new(WorkspaceState::new(""))),
+            workbench_layout: WorkbenchLayoutState::default(),
+            prompt_input: String::new(),
+            text_editor: text_editor::Content::new(),
+            is_file_too_large_for_editor: false,
+            file_loading_state: FileLoadingState::Idle,
+            is_file_read_only: false,
+            theme_preference,
+            current_theme: NeoteTheme::Dark, // Will be updated by update_current_theme
+            window_width: 1200,
+            window_height: 800,
+            layout_mode: LayoutMode::Wide,
+            editor_typography,
+            syntax_manager: Arc::new(Mutex::new(syntax_core::SyntaxManager::new())),
+            syntax_highlight_span_count: 0,
+            syntax_highlight_spans: Vec::new(),
+            syntax_highlight_cache: Vec::new(),
+            syntax_cache_version: 0,
+            syntax_highlighting_enabled: true,
+            file_cache: std::collections::HashMap::new(),
+        };
+        
+        // Update current theme based on preference
+        app.update_current_theme();
+        
         (
-            App {
-                workspace_path: String::new(),
-                file_entries: Vec::new(),
-                explorer_state: ExplorerState::new(),
-                active_file_path: None,
-                editor_state: None,
-                is_dirty: false,
-                status_message: "Ready".to_string(),
-                error_message: None,
-                workspace_state: Arc::new(Mutex::new(WorkspaceState::new(""))),
-                workbench_layout: WorkbenchLayoutState::default(),
-                prompt_input: String::new(),
-                text_editor: text_editor::Content::new(),
-                is_file_too_large_for_editor: false,
-                file_loading_state: FileLoadingState::Idle,
-                is_file_read_only: false,
-                theme: NeoteTheme::Dark, // Always use premium dark theme
-                window_width: 1200,
-                window_height: 800,
-                layout_mode: LayoutMode::Wide,
-                editor_typography: EditorTypographySettings::default(),
-                syntax_manager: Arc::new(Mutex::new(syntax_core::SyntaxManager::new())),
-                syntax_highlight_span_count: 0,
-                syntax_highlight_spans: Vec::new(),
-                syntax_highlight_cache: Vec::new(),
-                syntax_cache_version: 0,
-                syntax_highlighting_enabled: true,
-                file_cache: std::collections::HashMap::new(),
-            },
+            app,
             iced::Command::none(),
         )
     }
@@ -279,6 +296,19 @@ impl App {
             LayoutMode::Medium
         } else {
             LayoutMode::Narrow
+        };
+    }
+    
+    /// Update the current theme based on preference and system detection
+    pub fn update_current_theme(&mut self) {
+        self.current_theme = match self.theme_preference {
+            NeoteTheme::System => {
+                // For now, default to Dark for System mode
+                // In a real implementation, we'd detect system preference
+                NeoteTheme::Dark
+            }
+            NeoteTheme::Light => NeoteTheme::Light,
+            NeoteTheme::Dark => NeoteTheme::Dark,
         };
     }
 }
