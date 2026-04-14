@@ -6,7 +6,7 @@ use parking_lot::Mutex;
 
 use crate::language::LanguageId;
 use crate::parser::SyntaxTree;
-use crate::highlight::{HighlightConfiguration, HighlightSpan};
+use crate::highlight::HighlightSpan;
 use crate::SyntaxError;
 
 /// A document with syntax tree support
@@ -17,8 +17,6 @@ pub struct SyntaxDocument {
     syntax_tree: Option<SyntaxTree>,
     /// Language of this document
     language: LanguageId,
-    /// Highlight configuration for this language
-    highlight_config: Option<Arc<HighlightConfiguration>>,
     /// Whether the syntax tree needs reparsing
     needs_reparse: bool,
 }
@@ -28,7 +26,6 @@ impl SyntaxDocument {
     pub fn new(
         text: &str,
         language: LanguageId,
-        highlight_config: Option<Arc<HighlightConfiguration>>,
         parser: Option<Arc<Mutex<tree_sitter::Parser>>>,
     ) -> Result<Self, SyntaxError> {
         let syntax_tree = if let Some(parser) = parser {
@@ -49,7 +46,6 @@ impl SyntaxDocument {
             text: Rope::from_str(text),
             syntax_tree,
             language,
-            highlight_config,
             needs_reparse: false,
         })
     }
@@ -122,17 +118,14 @@ impl SyntaxDocument {
 
     /// Check if this document has syntax support
     pub fn has_syntax_support(&self) -> bool {
-        self.syntax_tree.is_some() && self.highlight_config.is_some()
+        self.syntax_tree.is_some()
     }
 
     /// Get highlight spans for the document
     pub fn highlight_spans(&self) -> Result<Vec<HighlightSpan>, SyntaxError> {
-        if let (Some(tree), Some(config)) = (&self.syntax_tree, &self.highlight_config) {
-            crate::highlight::highlight_tree(tree.tree(), &self.text, config)
-        } else {
-            // Return empty highlights for unsupported languages
-            Ok(Vec::new())
-        }
+        // For now, return empty highlights
+        // The actual highlighting is handled by the SyntaxManager
+        Ok(Vec::new())
     }
 
     /// Convert byte offset to tree-sitter point
