@@ -104,7 +104,7 @@ impl iced::Application for App {
     }
 
     fn title(&self) -> String {
-        String::from("Neote")
+        String::from(crate::brand::WINDOW_TITLE)
     }
 
     fn theme(&self) -> iced::Theme {
