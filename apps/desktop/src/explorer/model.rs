@@ -21,10 +21,13 @@ impl ExplorerNode {
     }
 }
 
-pub fn build_explorer_tree(entries: &[DirectoryEntry]) -> Vec<ExplorerNode> {
+pub fn build_explorer_tree(entries: &[DirectoryEntry], workspace_root: &PathBuf) -> Vec<ExplorerNode> {
     if entries.is_empty() {
         return Vec::new();
     }
+    
+    // Normalize workspace root
+    let workspace_root = normalize_path(workspace_root);
     
     // Create all nodes
     let mut nodes: HashMap<PathBuf, ExplorerNode> = HashMap::new();
@@ -43,7 +46,7 @@ pub fn build_explorer_tree(entries: &[DirectoryEntry]) -> Vec<ExplorerNode> {
     let mut root_nodes = Vec::new();
     let mut path_list: Vec<PathBuf> = nodes.keys().cloned().collect();
     
-    // Sort paths by length (deepest first) to ensure children are processed before their parents
+    // Sort paths by depth (deepest first) to ensure children are processed before their parents
     path_list.sort_by_key(|path| std::cmp::Reverse(path.components().count()));
     
     for path in path_list {
@@ -51,14 +54,24 @@ pub fn build_explorer_tree(entries: &[DirectoryEntry]) -> Vec<ExplorerNode> {
             // Find parent
             if let Some(parent_path) = path.parent() {
                 let parent_path = normalize_path(parent_path);
-                if let Some(parent_node) = nodes.get_mut(&parent_path) {
-                    // Add as child to parent
+                // Check if parent is the workspace root
+                if parent_path == workspace_root {
+                    // This is a direct child of workspace root
+                    root_nodes.push(node);
+                } else if let Some(parent_node) = nodes.get_mut(&parent_path) {
+                    // Parent exists in the tree (nested directory)
                     parent_node.children.push(node);
                     continue;
+                } else {
+                    // Parent not found in nodes, but it's not workspace root
+                    // This shouldn't happen if the tree is complete
+                    // For safety, treat as root node
+                    root_nodes.push(node);
                 }
+            } else {
+                // No parent (should be workspace root itself, but workspace root is not in entries)
+                root_nodes.push(node);
             }
-            // No parent found or parent not in the list -> it's a root node
-            root_nodes.push(node);
         }
     }
     
