@@ -1,6 +1,6 @@
 use iced::{Color, Theme};
 
-/// Design system tokens for Neote IDE
+/// Design system tokens for Qyzer IDE
 #[derive(Debug, Clone, Copy)]
 pub struct DesignTokens {
     // Spacing scale (in pixels)
@@ -165,7 +165,7 @@ impl QyzerTheme {
 }
 
 impl SemanticColors {
-    /// Premium professional dark theme for Neote IDE
+    /// Premium professional dark theme for Qyzer IDE
     pub fn dark() -> Self {
         Self {
             // Background surfaces - Clean, deep charcoal with subtle blue undertones

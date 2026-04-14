@@ -7,7 +7,7 @@ use std::path::PathBuf;
 use crate::settings::editor::EditorTypographySettings;
 use crate::theme::QyzerTheme;
 
-const SETTINGS_FILE_NAME: &str = "neote_settings.json";
+const SETTINGS_FILE_NAME: &str = "qyzer_settings.json";
 
 /// Settings that can be persisted
 #[derive(serde::Serialize, serde::Deserialize)]

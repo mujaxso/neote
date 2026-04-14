@@ -1,4 +1,4 @@
-// Common UI primitives and helpers for Neote - designed for both core and extensions
+// Common UI primitives and helpers for Qyzer - designed for both core and extensions
 use iced::{Color, widget::{button, container, text}};
 use crate::theme::SemanticColors;
 use crate::settings::editor::EditorTypographySettings;
@@ -29,7 +29,7 @@ pub const ACTIVITY_BAR_WIDTH: f32 = 48.0;
 pub const TOP_BAR_HEIGHT: f32 = 40.0;
 
 /// Extension-friendly theme access interface
-/// This trait allows extensions to access Neote's semantic colors and styles
+/// This trait allows extensions to access Qyzer's semantic colors and styles
 pub trait ThemeConsumer {
     /// Get the full semantic colors palette
     fn colors(&self) -> SemanticColors;

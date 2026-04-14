@@ -11,7 +11,7 @@ use iced::{
 use crate::message::Message;
 use crate::state::App;
 use crate::settings::editor::FontFamily;
-use crate::theme::NeoteTheme;
+use crate::theme::QyzerTheme;
 use super::super::style::StyleHelpers;
 
 /// Preview code snippet to demonstrate typography settings
@@ -48,7 +48,7 @@ pub fn editor_font_settings_panel(app: &App) -> Element<'_, Message> {
             .size(12)
             .style(iced::theme::Text::Color(style.colors.text_secondary)),
         pick_list(
-            NeoteTheme::all(),
+            QyzerTheme::all(),
             Some(app.theme_preference),
             Message::ThemeChanged
         )
