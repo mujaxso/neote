@@ -542,10 +542,12 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
     let target_lib_path = target_dir.join(get_library_name(language_id));
     
     // For markdown, if the built library has a different name, rename it
-    let source_lib_path = if language_id == "markdown" && lib_path.file_name()
-        .and_then(|n: &std::ffi::OsStr| n.to_str())
-        .map(|n: &str| n.contains("markdown-inline"))
-        .unwrap_or(false) {
+    let source_lib_path = if language_id == "markdown" {
+        let has_inline_name = lib_path.file_name()
+            .and_then(|n: &std::ffi::OsStr| n.to_str())
+            .map(|n: &str| n.contains("markdown-inline"))
+            .unwrap_or(false);
+        if has_inline_name {
         // Rename markdown-inline.so to libtree-sitter-markdown.so
         let renamed_path = lib_path.parent().unwrap().join(get_library_name(language_id));
         fs::copy(&lib_path, &renamed_path)
