@@ -12,21 +12,6 @@ static QUERY_CACHE: OnceLock<Mutex<HashMap<String, Result<&'static Query, String
 
 /// Get a compiled query for a language
 pub fn get_query(language_id: &str, query_type: &str) -> Option<&'static Query> {
-    // For markdown, always reload the query to avoid caching issues
-    if language_id == "markdown" {
-        match load_query_from_file(language_id, query_type) {
-            Ok(query) => {
-                // Box and leak the query to get a static reference
-                let query_ptr = Box::leak(Box::new(query));
-                return Some(query_ptr);
-            }
-            Err(e) => {
-                eprintln!("DEBUG: Failed to load markdown query: {}", e);
-                return None;
-            }
-        }
-    }
-    
     let cache_key = format!("{}:{}", language_id, query_type);
     let cache = QUERY_CACHE.get_or_init(|| Mutex::new(HashMap::new()));
     
