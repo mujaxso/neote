@@ -20,8 +20,5 @@ default = ["dynamic-loading"]
 dynamic-loading = ["libloading"]
 
 [[bin]]
-name = "download-grammars"
-path = "src/bin/download_grammars.rs"
-[[bin]]
 name = "build-grammar"
 path = "src/bin/build_grammar.rs"

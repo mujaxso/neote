@@ -33,29 +33,18 @@ impl SyntaxManager {
         text: &str,
         path: &Path,
     ) -> Result<(), SyntaxError> {
-        eprintln!("DEBUG: update_document for path: {}", path.display());
         let language = LanguageId::from_path(path);
-        eprintln!("DEBUG: Language determined: {:?}", language);
         
         // Try to get the language
         let ts_lang = match language.tree_sitter_language() {
-            Some(lang) => {
-                // Check if the language is compatible with the current tree-sitter version
-                // We can't directly check the version, but we can try to create a parser and set the language
-                // If it fails, we'll know it's incompatible
-                eprintln!("DEBUG: Got tree-sitter language for {:?}", language);
-                eprintln!("DEBUG: Language ABI version: {}", lang.abi_version());
-                lang
-            }
+            Some(lang) => lang,
             None => {
-                eprintln!("DEBUG: No tree-sitter language available for {:?}", language);
                 let doc = SyntaxDocument {
                     text: text.to_string(),
                     language,
                     tree: None,
                 };
                 self.documents.insert(doc_id.to_string(), doc);
-                eprintln!("DEBUG: Document updated without tree");
                 return Ok(());
             }
         };
@@ -64,13 +53,10 @@ impl SyntaxManager {
         let mut parser = Parser::new();
         
         // Try to set the language on the parser
-        eprintln!("DEBUG: Setting tree-sitter language");
         match parser.set_language(&ts_lang) {
             Ok(_) => {
                 // Parse the document
-                eprintln!("DEBUG: Parsing document with available language");
                 let tree = parser.parse(text, None);
-                eprintln!("DEBUG: Parse result: {}", if tree.is_some() { "Some" } else { "None" });
 
                 let doc = SyntaxDocument {
                     text: text.to_string(),
@@ -78,13 +64,9 @@ impl SyntaxManager {
                     tree,
                 };
                 self.documents.insert(doc_id.to_string(), doc);
-                eprintln!("DEBUG: Document updated successfully");
                 Ok(())
             }
-            Err(e) => {
-                eprintln!("DEBUG: Failed to set language: {:?}", e);
-                eprintln!("DEBUG: Language ABI version may be incompatible with tree-sitter library (using tree-sitter v0.26.8)");
-                eprintln!("DEBUG: Try rebuilding the grammar with: cargo run --bin build-grammar -- {}", language.as_str());
+            Err(_) => {
                 // If setting fails, document will have no tree
                 let doc = SyntaxDocument {
                     text: text.to_string(),
@@ -92,7 +74,6 @@ impl SyntaxManager {
                     tree: None,
                 };
                 self.documents.insert(doc_id.to_string(), doc);
-                eprintln!("DEBUG: Document updated without tree");
                 Ok(())
             }
         }

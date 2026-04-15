@@ -35,85 +35,22 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
     
     println!("Cloning {}...", repo_url);
     
-    // Try multiple approaches to clone
-    let mut success = false;
-    let mut last_error = None;
+    // Clone repository with git
+    println!("Cloning {}...", repo_url);
     
-    // Approach 1: HTTPS with GIT_TERMINAL_PROMPT=0
-    {
-        let mut cmd = Command::new("git");
-        cmd.args(["clone", "--depth", "1"]);
-        cmd.env("GIT_TERMINAL_PROMPT", "0");
-        cmd.args([&repo_url, repo_dir.to_str().unwrap()]);
-        
-        if let Ok(status) = cmd.status() {
-            if status.success() {
-                println!("Successfully cloned repository (approach 1)");
-                success = true;
-            } else {
-                last_error = Some(format!("HTTPS with GIT_TERMINAL_PROMPT=0 failed with exit code: {:?}", status.code()));
-            }
-        } else {
-            last_error = Some("Failed to run git command (approach 1)".to_string());
-        }
+    let mut cmd = Command::new("git");
+    cmd.args(["clone", "--depth", "1"]);
+    cmd.env("GIT_TERMINAL_PROMPT", "0");
+    cmd.args([&repo_url, repo_dir.to_str().unwrap()]);
+    
+    let status = cmd.status()
+        .map_err(|e| format!("Failed to run git clone: {}", e))?;
+    
+    if !status.success() {
+        return Err(format!("Failed to clone repository. Exit code: {:?}", status.code()));
     }
     
-    // If approach 1 failed, try approach 2: HTTPS with credential.helper=
-    if !success {
-        println!("First clone attempt failed, trying alternative approach...");
-        let _ = std::fs::remove_dir_all(&repo_dir);
-        
-        let mut cmd = Command::new("git");
-        cmd.args(["clone", "--depth", "1", "--config", "credential.helper=", &repo_url, repo_dir.to_str().unwrap()]);
-        
-        if let Ok(status) = cmd.status() {
-            if status.success() {
-                println!("Successfully cloned repository (approach 2)");
-                success = true;
-            } else {
-                last_error = Some(format!("HTTPS with credential.helper= failed with exit code: {:?}", status.code()));
-            }
-        } else {
-            last_error = Some("Failed to run git command (approach 2)".to_string());
-        }
-    }
-    
-    // If approach 2 failed, try approach 3: Convert HTTPS to SSH URL
-    if !success {
-        println!("HTTPS cloning failed, trying SSH URL...");
-        let _ = std::fs::remove_dir_all(&repo_dir);
-        
-        // Convert HTTPS URL to SSH URL
-        let ssh_url = if repo_url.starts_with("https://github.com/") {
-            repo_url.replace("https://github.com/", "git@github.com:")
-        } else if repo_url.starts_with("https://") {
-            // Generic conversion
-            repo_url.replacen("https://", "git@", 1).replace("/", ":/")
-        } else {
-            repo_url.clone()
-        };
-        
-        println!("Trying SSH URL: {}", ssh_url);
-        
-        let mut cmd = Command::new("git");
-        cmd.args(["clone", "--depth", "1", &ssh_url, repo_dir.to_str().unwrap()]);
-        
-        if let Ok(status) = cmd.status() {
-            if status.success() {
-                println!("Successfully cloned repository (approach 3 - SSH)");
-                success = true;
-            } else {
-                last_error = Some(format!("SSH cloning failed with exit code: {:?}", status.code()));
-            }
-        } else {
-            last_error = Some("Failed to run git command (approach 3)".to_string());
-        }
-    }
-    
-    if !success {
-        return Err(format!("Failed to clone repository after multiple attempts. Last error: {}. Try manually cloning: {}", 
-                          last_error.unwrap_or_default(), repo_url));
-    }
+    println!("Successfully cloned repository");
     
     // No zip extraction needed - we cloned directly into repo_dir
     
@@ -130,23 +67,6 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
         return Err(format!("Source directory does not exist: {:?}", source_dir));
     }
     
-    // Debug: list files in source directory for markdown
-    if language_id == "markdown" {
-        println!("DEBUG: Source directory for markdown: {:?}", source_dir);
-        if let Ok(entries) = std::fs::read_dir(&source_dir) {
-            for entry in entries.flatten() {
-                println!("DEBUG: Found in source_dir: {:?}", entry.path());
-            }
-        }
-        if let Some(parent) = source_dir.parent() {
-            println!("DEBUG: Parent directory: {:?}", parent);
-            if let Ok(entries) = std::fs::read_dir(parent) {
-                for entry in entries.flatten() {
-                    println!("DEBUG: Found in parent: {:?}", entry.path());
-                }
-            }
-        }
-    }
     
     // Check if tree-sitter CLI is available and at a compatible version
     let has_tree_sitter_cli = Command::new("tree-sitter")
@@ -191,76 +111,24 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
         }
         
         // Check if we need to run tree-sitter generate
-        // Only run if grammar.js exists and parser.c doesn't exist
-        // For markdown, check multiple locations
-        let (grammar_js_exists, parser_c_exists) = if language_id == "markdown" {
-            // Check in current directory
-            let grammar_js_current = source_dir.join("grammar.js").exists();
-            // Check in parent directory (repo root)
-            let grammar_js_parent = source_dir.parent().map(|p| p.join("grammar.js").exists()).unwrap_or(false);
-            let grammar_js_exists = grammar_js_current || grammar_js_parent;
-            
-            // Check for parser.c in src/ directory
-            let parser_c_current = source_dir.join("src/parser.c").exists();
-            // Also check in parent/src/ (unlikely but just in case)
-            let parser_c_parent = source_dir.parent().map(|p| p.join("src/parser.c").exists()).unwrap_or(false);
-            let parser_c_exists = parser_c_current || parser_c_parent;
-            
-            (grammar_js_exists, parser_c_exists)
-        } else {
-            let grammar_js_exists = source_dir.join("grammar.js").exists();
-            let parser_c_exists = source_dir.join("src/parser.c").exists();
-            (grammar_js_exists, parser_c_exists)
-        };
+        let grammar_js_exists = source_dir.join("grammar.js").exists();
+        let parser_c_exists = source_dir.join("src/parser.c").exists();
         
         if grammar_js_exists && !parser_c_exists {
-            // Determine the directory to run tree-sitter generate from
-            // For markdown, if grammar.js is in parent directory, use that
-            let generate_dir = if language_id == "markdown" && source_dir.parent().map(|p| p.join("grammar.js").exists()).unwrap_or(false) {
-                source_dir.parent().unwrap().to_path_buf()
-            } else {
-                source_dir.clone()
-            };
-            
-            // Run tree-sitter generate and capture output
+            // Run tree-sitter generate
             let generate_output = Command::new("tree-sitter")
-                .current_dir(&generate_dir)
+                .current_dir(&source_dir)
                 .arg("generate")
                 .output()
                 .map_err(|e| format!("Failed to run tree-sitter generate: {}", e))?;
             
             if !generate_output.status.success() {
-                let stderr = String::from_utf8_lossy(&generate_output.stderr);
-                let stdout = String::from_utf8_lossy(&generate_output.stdout);
-                eprintln!("tree-sitter generate failed, trying with npx...");
-                
-                // Try with npx tree-sitter generate
-                let npx_output = Command::new("npx")
-                    .current_dir(&generate_dir)
-                    .args(["tree-sitter", "generate"])
-                    .output()
-                    .map_err(|e| format!("Failed to run npx tree-sitter generate: {}", e))?;
-                
-                if !npx_output.status.success() {
-                    let npx_stderr = String::from_utf8_lossy(&npx_output.stderr);
-                    let npx_stdout = String::from_utf8_lossy(&npx_output.stdout);
-                    return Err(format!("tree-sitter generate failed with both tree-sitter CLI and npx:\nFirst error:\nstdout: {}\nstderr: {}\n\nNpx error:\nstdout: {}\nstderr: {}", 
-                        stdout, stderr, npx_stdout, npx_stderr));
-                }
-                println!("tree-sitter generate succeeded with npx");
-            } else {
-                println!("tree-sitter generate succeeded");
+                return Err("tree-sitter generate failed".to_string());
             }
+            println!("tree-sitter generate succeeded");
         } else if !parser_c_exists {
-            // No parser.c and no grammar.js - we can't generate
-            // For markdown, provide more specific error
-            if language_id == "markdown" {
-                return Err(format!("Cannot build markdown: parser.c doesn't exist and grammar.js not found. Checked in: {} and parent directory", source_dir.display()));
-            } else {
-                return Err(format!("Cannot build {}: parser.c doesn't exist and grammar.js not found", language_id));
-            }
+            return Err(format!("Cannot build {}: parser.c doesn't exist and grammar.js not found", language_id));
         } else {
-            // parser.c already exists, skip generation
             println!("parser.c already exists, skipping tree-sitter generate");
         }
         
@@ -311,12 +179,8 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
                 println!("Library already exists, skipping tree-sitter build");
             }
             
-            // Find the built library - tree-sitter CLI may place it in several locations
-            // tree-sitter build typically creates a file named parser.so (or parser.dylib/parser.dll)
-            // in the source directory, not libtree-sitter-{language}.so
+            // Find the built library
             let lib_name = get_library_name(language_id);
-            
-            // First, look for the standard tree-sitter CLI output: parser.{so,dylib,dll}
             let parser_lib_name = if cfg!(windows) {
                 "parser.dll"
             } else if cfg!(target_os = "macos") {
@@ -325,81 +189,44 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
                 "parser.so"
             };
             
-            // For markdown, also check for markdown-inline.so
-            let markdown_inline_lib_name = if cfg!(windows) {
-                "markdown-inline.dll"
-            } else if cfg!(target_os = "macos") {
-                "markdown-inline.dylib"
+            // Check common locations
+            let possible_paths = vec![
+                source_dir.join(parser_lib_name),
+                source_dir.join(&lib_name),
+                source_dir.join("target").join("release").join(parser_lib_name),
+                source_dir.join("target").join("release").join(&lib_name),
+            ];
+            
+            // For markdown, also check markdown-inline.so
+            let markdown_paths = if language_id == "markdown" {
+                let markdown_lib_name = if cfg!(windows) {
+                    "markdown-inline.dll"
+                } else if cfg!(target_os = "macos") {
+                    "markdown-inline.dylib"
+                } else {
+                    "markdown-inline.so"
+                };
+                vec![
+                    source_dir.join(markdown_lib_name),
+                    source_dir.join("target").join("release").join(markdown_lib_name),
+                ]
             } else {
-                "markdown-inline.so"
+                vec![]
             };
             
-            // Possible locations where tree-sitter CLI might place the library
-            let mut possible_paths = vec![
-                source_dir.join(parser_lib_name),                     // parser.so in source directory
-                source_dir.join(&lib_name),                           // libtree-sitter-{language}.so in source directory
-                source_dir.join("target").join("release").join(parser_lib_name), // target/release/parser.so
-                source_dir.join("target").join("release").join(&lib_name), // target/release/libtree-sitter-{language}.so
-                source_dir.join("target").join(parser_lib_name),      // target/parser.so
-                source_dir.join("target").join(&lib_name),            // target/libtree-sitter-{language}.so
-                source_dir.join("out").join(parser_lib_name),         // out/parser.so (some grammars)
-                source_dir.join("out").join(&lib_name),               // out/libtree-sitter-{language}.so (some grammars)
-                source_dir.join("build").join(parser_lib_name),       // build/parser.so (some grammars)
-                source_dir.join("build").join(&lib_name),             // build/libtree-sitter-{language}.so (some grammars)
-            ];
-            
-            // Add markdown-specific library names
-            if language_id == "markdown" {
-                possible_paths.insert(0, source_dir.join(markdown_inline_lib_name));
-                possible_paths.insert(1, source_dir.join("target").join("release").join(markdown_inline_lib_name));
-                possible_paths.insert(2, source_dir.join("target").join(markdown_inline_lib_name));
-                possible_paths.insert(3, source_dir.join("out").join(markdown_inline_lib_name));
-                possible_paths.insert(4, source_dir.join("build").join(markdown_inline_lib_name));
-            }
-            
-            // Also check for debug builds
-            let debug_paths = vec![
-                source_dir.join("target").join("debug").join(parser_lib_name),
-                source_dir.join("target").join("debug").join(&lib_name),
-            ];
-            let all_paths: Vec<_> = possible_paths.into_iter().chain(debug_paths.into_iter()).collect();
+            let all_paths: Vec<_> = possible_paths.into_iter().chain(markdown_paths.into_iter()).collect();
             
             let mut found = None;
-            println!("Checking possible library paths:");
             for path in &all_paths {
-                println!("  Checking: {}", path.display());
                 if path.exists() {
-                    println!("Found library at: {}", path.display());
                     found = Some(path.clone());
                     break;
                 }
             }
             
-            if let Some(found_path) = found {
-                lib_path = found_path;
-            } else {
-                // If not found, try to list files to debug
-                println!("Searching for library {} or {} in {}...", parser_lib_name, lib_name, source_dir.display());
-                if let Ok(entries) = std::fs::read_dir(&source_dir) {
-                    for entry in entries.flatten() {
-                        println!("  Found: {}", entry.path().display());
-                    }
-                }
-                
-                // Also check target directory
-                let target_dir = source_dir.join("target");
-                if target_dir.exists() {
-                    println!("Checking target directory...");
-                    if let Ok(entries) = std::fs::read_dir(&target_dir) {
-                        for entry in entries.flatten() {
-                            println!("  Found in target: {}", entry.path().display());
-                        }
-                    }
-                }
-                
-                return Err(format!("Could not find built library {} or {} after tree-sitter build. Searched in: {:?}", 
-                    parser_lib_name, lib_name, all_paths));
-            }
+            lib_path = found.ok_or_else(|| {
+                format!("Could not find built library after tree-sitter build")
+            })?;
         } else {
             // No grammar.js, compile manually with cc
             println!("No grammar.js found, compiling manually with cc...");

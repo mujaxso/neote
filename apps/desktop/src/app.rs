@@ -32,34 +32,37 @@ impl iced::Application for App {
             }
         }
         
-        // Initialize dynamic grammar system
+        // Initialize dynamic grammar system and auto-install missing grammars
         {
-            let mut syntax_manager = app.syntax_manager.lock().unwrap();
-            // Initialize the dynamic grammar loader
-            syntax_manager.initialize_dynamic_grammars();
-            
-            // Check for missing grammars and log warnings
             use syntax_core::dynamic_loader;
             use syntax_core::grammar_registry;
+            use syntax_core::grammar_builder;
             
             let registry = grammar_registry::GrammarRegistry::global();
             let mut missing = Vec::new();
             
+            // Check which grammars are missing
             for language_id in registry.language_ids() {
                 if !dynamic_loader::is_grammar_available(language_id) {
                     missing.push(language_id);
                 }
             }
             
+            // Auto-install missing grammars
             if !missing.is_empty() {
-                eprintln!("Warning: Missing grammar libraries for: {:?}", missing);
-                eprintln!("Syntax highlighting will be limited. To build missing grammars:");
-                for lang in &missing {
-                    eprintln!("  cargo run --bin build-grammar -- {}", lang);
+                eprintln!("Auto-installing missing grammars: {:?}", missing);
+                for language_id in &missing {
+                    eprintln!("Installing {} grammar...", language_id);
+                    match grammar_builder::build_and_install_grammar(language_id) {
+                        Ok(_) => eprintln!("Successfully installed {} grammar", language_id),
+                        Err(e) => eprintln!("Failed to install {} grammar: {}", language_id, e),
+                    }
                 }
-                eprintln!("Note: If cloning fails due to authentication, ensure git is properly configured.");
-                eprintln!("Public repositories should clone via HTTPS without authentication.");
             }
+            
+            // Initialize syntax manager after installing grammars
+            let mut syntax_manager = app.syntax_manager.lock().unwrap();
+            syntax_manager.initialize_dynamic_grammars();
         }
         
         // Load custom fonts for icon support

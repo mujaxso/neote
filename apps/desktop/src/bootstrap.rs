@@ -11,18 +11,18 @@ fn init_dynamic_grammars() {
     use syntax_core::dynamic_loader;
     use syntax_core::query_cache;
     use syntax_core::grammar_registry;
+    use syntax_core::grammar_builder;
     use syntax_core::runtime::Runtime;
     
-    // Check for available grammars
     println!("Initializing dynamic grammar system...");
     
-    // Initialize runtime and fix any nested structure
+    // Initialize runtime
     let runtime = Runtime::new();
     println!("Runtime directory: {:?}", runtime.root());
     
+    // Create runtime directory if it doesn't exist
     if !runtime.exists() {
-        println!("Warning: Runtime directory does not exist at {:?}", runtime.root());
-        println!("Creating directory structure...");
+        println!("Creating runtime directory...");
         let _ = std::fs::create_dir_all(runtime.root());
     }
     
@@ -36,27 +36,15 @@ fn init_dynamic_grammars() {
         }
     }
     
+    // Auto-install missing grammars
     if !missing.is_empty() {
-        println!("Warning: Missing grammar libraries for: {:?}", missing);
-        println!("To build missing grammars, run:");
-        for lang in &missing {
-            println!("  cargo run --bin build-grammar -- {}", lang);
-        }
-        println!("Or build all with: cargo run --bin download-grammars -- install-all");
-        println!("Or build common languages with: cargo run --bin download-grammars -- install-common");
-        println!("Note: If you encounter authentication issues when cloning repositories:");
-        println!("  1. Ensure you have git installed and configured");
-        println!("  2. For public repositories, HTTPS should work without authentication");
-        println!("  3. If prompted for credentials, try:");
-        println!("     - Setting GIT_TERMINAL_PROMPT=0 in your environment");
-        println!("     - Or using a GitHub personal access token");
-        
-        // Special note for markdown
-        if missing.contains(&"markdown") {
-            println!("\nSpecial note for markdown grammar:");
-            println!("The markdown grammar uses a special branch 'split_parser'.");
-            println!("If building fails, you may need to manually clone the repository:");
-            println!("  git clone -b split_parser https://github.com/tree-sitter-grammars/tree-sitter-markdown");
+        println!("Auto-installing missing grammars: {:?}", missing);
+        for language_id in &missing {
+            println!("Installing {} grammar...", language_id);
+            match grammar_builder::build_and_install_grammar(language_id) {
+                Ok(_) => println!("Successfully installed {} grammar", language_id),
+                Err(e) => eprintln!("Failed to install {} grammar: {}", language_id, e),
+            }
         }
     }
     
