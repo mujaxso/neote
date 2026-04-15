@@ -1,11 +1,10 @@
 
 ; Markdown highlighting for tree-sitter-markdown-inline
-; Based on common node types for markdown grammars
+; Using node types that actually exist in the grammar
 
 ; Headings
-(atx_heading_marker) @heading
+(atx_heading) @heading
 (setext_heading) @heading
-(heading_content) @heading
 
 ; Emphasis
 (emphasis) @emphasis
@@ -24,10 +23,11 @@
 (fenced_code_block) @code_fence
 
 ; Block quotes
-(block_quote_marker) @block_quote
+(block_quote) @block_quote
 
 ; Lists
-(list_marker) @list
+(list) @list
+(list_item) @list
 (task_list_marker) @operator
 
 ; Thematic break

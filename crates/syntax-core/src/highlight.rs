@@ -79,19 +79,10 @@ fn highlight_with_query(
         Err(e) => {
             // Log the error for debugging
             eprintln!("DEBUG: Tree-sitter query error for {}: {}", language.as_str(), e);
-            eprintln!("DEBUG: Query text that failed to compile:");
-            eprintln!("{}", query_str);
             // Return empty spans (plaintext) when query compilation fails
             return Ok(Vec::new());
         }
     };
-
-    // Debug: print capture names for markdown
-    if language.as_str() == "markdown" {
-        println!("DEBUG: Markdown capture names: {:?}", query.capture_names());
-        // Also print number of patterns in the query
-        println!("DEBUG: Markdown query has {} patterns", query.pattern_count());
-    }
 
     let mut cursor = QueryCursor::new();
     let root_node = tree.root_node();
@@ -220,6 +211,9 @@ pub fn map_capture_name(name: &str) -> Highlight {
         "text.environment" => Highlight::Property,
         "punctuation.special" => Highlight::Operator,
         "definition" => Highlight::Variable,
+        // Additional markdown captures from the query file
+        "atx_heading_marker" => Highlight::Type,
+        "block_quote_marker" => Highlight::Comment,
         _ => Highlight::Plain,
     }
 }
