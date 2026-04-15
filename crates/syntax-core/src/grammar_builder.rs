@@ -429,9 +429,9 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
     
     // Install query files
     // For languages with subdirectories, queries might be in the parent directory
-    let query_source_dir = if let Some(subdir) = &grammar_info.subdirectory {
+    let query_source_dir = if let Some(_subdir) = &grammar_info.subdirectory {
         // Try to find queries in the parent directory (repo root)
-        let parent_dir = repo_dir;
+        let parent_dir = repo_dir.clone();
         let queries_in_parent = parent_dir.join("queries");
         if queries_in_parent.exists() {
             queries_in_parent
