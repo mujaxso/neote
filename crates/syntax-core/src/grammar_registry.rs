@@ -246,6 +246,171 @@ impl GrammarRegistry {
             has_scanner: false,
             scanner_lang: None,
         });
+        
+        // C#
+        self.add_language(GrammarInfo {
+            language_id: "c_sharp".to_string(),
+            name: "C#".to_string(),
+            extensions: vec!["cs".to_string()],
+            filenames: vec![],
+            repo_url: "https://github.com/tree-sitter/tree-sitter-c-sharp".to_string(),
+            revision: "master".to_string(),
+            subdirectory: None,
+            source_files: vec!["src/parser.c".to_string()],
+            query_files: vec!["highlights.scm".to_string()],
+            has_scanner: false,
+            scanner_lang: None,
+        });
+        
+        // Ruby
+        self.add_language(GrammarInfo {
+            language_id: "ruby".to_string(),
+            name: "Ruby".to_string(),
+            extensions: vec!["rb".to_string()],
+            filenames: vec!["Gemfile".to_string(), "Rakefile".to_string()],
+            repo_url: "https://github.com/tree-sitter/tree-sitter-ruby".to_string(),
+            revision: "master".to_string(),
+            subdirectory: None,
+            source_files: vec!["src/parser.c".to_string()],
+            query_files: vec!["highlights.scm".to_string()],
+            has_scanner: false,
+            scanner_lang: None,
+        });
+        
+        // TypeScript
+        self.add_language(GrammarInfo {
+            language_id: "typescript".to_string(),
+            name: "TypeScript".to_string(),
+            extensions: vec!["ts".to_string()],
+            filenames: vec![],
+            repo_url: "https://github.com/tree-sitter/tree-sitter-typescript".to_string(),
+            revision: "master".to_string(),
+            subdirectory: Some("typescript/src".to_string()),
+            source_files: vec!["parser.c".to_string(), "scanner.c".to_string()],
+            query_files: vec!["highlights.scm".to_string()],
+            has_scanner: true,
+            scanner_lang: Some("c".to_string()),
+        });
+        
+        // TSX
+        self.add_language(GrammarInfo {
+            language_id: "tsx".to_string(),
+            name: "TSX".to_string(),
+            extensions: vec!["tsx".to_string()],
+            filenames: vec![],
+            repo_url: "https://github.com/tree-sitter/tree-sitter-typescript".to_string(),
+            revision: "master".to_string(),
+            subdirectory: Some("tsx/src".to_string()),
+            source_files: vec!["parser.c".to_string(), "scanner.c".to_string()],
+            query_files: vec!["highlights.scm".to_string()],
+            has_scanner: true,
+            scanner_lang: Some("c".to_string()),
+        });
+        
+        // Lua
+        self.add_language(GrammarInfo {
+            language_id: "lua".to_string(),
+            name: "Lua".to_string(),
+            extensions: vec!["lua".to_string()],
+            filenames: vec![],
+            repo_url: "https://github.com/tree-sitter-grammars/tree-sitter-lua".to_string(),
+            revision: "master".to_string(),
+            subdirectory: None,
+            source_files: vec!["src/parser.c".to_string()],
+            query_files: vec!["highlights.scm".to_string()],
+            has_scanner: false,
+            scanner_lang: None,
+        });
+        
+        // YAML
+        self.add_language(GrammarInfo {
+            language_id: "yaml".to_string(),
+            name: "YAML".to_string(),
+            extensions: vec!["yaml".to_string(), "yml".to_string()],
+            filenames: vec![],
+            repo_url: "https://github.com/tree-sitter-grammars/tree-sitter-yaml".to_string(),
+            revision: "master".to_string(),
+            subdirectory: None,
+            source_files: vec!["src/parser.c".to_string()],
+            query_files: vec!["highlights.scm".to_string()],
+            has_scanner: false,
+            scanner_lang: None,
+        });
+        
+        // Zig
+        self.add_language(GrammarInfo {
+            language_id: "zig".to_string(),
+            name: "Zig".to_string(),
+            extensions: vec!["zig".to_string()],
+            filenames: vec![],
+            repo_url: "https://github.com/tree-sitter-grammars/tree-sitter-zig".to_string(),
+            revision: "master".to_string(),
+            subdirectory: None,
+            source_files: vec!["src/parser.c".to_string()],
+            query_files: vec!["highlights.scm".to_string()],
+            has_scanner: false,
+            scanner_lang: None,
+        });
+        
+        // CMake
+        self.add_language(GrammarInfo {
+            language_id: "cmake".to_string(),
+            name: "CMake".to_string(),
+            extensions: vec!["cmake".to_string()],
+            filenames: vec!["CMakeLists.txt".to_string()],
+            repo_url: "https://github.com/uyha/tree-sitter-cmake".to_string(),
+            revision: "master".to_string(),
+            subdirectory: None,
+            source_files: vec!["src/parser.c".to_string()],
+            query_files: vec!["highlights.scm".to_string()],
+            has_scanner: false,
+            scanner_lang: None,
+        });
+        
+        // Dockerfile
+        self.add_language(GrammarInfo {
+            language_id: "dockerfile".to_string(),
+            name: "Dockerfile".to_string(),
+            extensions: vec![],
+            filenames: vec!["Dockerfile".to_string()],
+            repo_url: "https://github.com/camdencheek/tree-sitter-dockerfile".to_string(),
+            revision: "master".to_string(),
+            subdirectory: None,
+            source_files: vec!["src/parser.c".to_string()],
+            query_files: vec!["highlights.scm".to_string()],
+            has_scanner: false,
+            scanner_lang: None,
+        });
+        
+        // Elixir
+        self.add_language(GrammarInfo {
+            language_id: "elixir".to_string(),
+            name: "Elixir".to_string(),
+            extensions: vec!["ex".to_string(), "exs".to_string()],
+            filenames: vec![],
+            repo_url: "https://github.com/elixir-lang/tree-sitter-elixir".to_string(),
+            revision: "master".to_string(),
+            subdirectory: None,
+            source_files: vec!["src/parser.c".to_string()],
+            query_files: vec!["highlights.scm".to_string()],
+            has_scanner: false,
+            scanner_lang: None,
+        });
+        
+        // Nix
+        self.add_language(GrammarInfo {
+            language_id: "nix".to_string(),
+            name: "Nix".to_string(),
+            extensions: vec!["nix".to_string()],
+            filenames: vec![],
+            repo_url: "https://github.com/nix-community/tree-sitter-nix".to_string(),
+            revision: "master".to_string(),
+            subdirectory: None,
+            source_files: vec!["src/parser.c".to_string()],
+            query_files: vec!["highlights.scm".to_string()],
+            has_scanner: false,
+            scanner_lang: None,
+        });
     }
     
     fn add_language(&mut self, info: GrammarInfo) {

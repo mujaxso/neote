@@ -135,7 +135,13 @@ impl Runtime {
         } else {
             ".so"
         };
-        let lib_name = format!("{}tree-sitter-{}{}", prefix, language_id, extension);
+        // Some language IDs use underscores but the library uses hyphens
+        // For example: "c_sharp" -> "c-sharp" in library name
+        let lib_name = match language_id {
+            "c_sharp" => "c-sharp",
+            _ => language_id,
+        };
+        let lib_name = format!("{}tree-sitter-{}{}", prefix, lib_name, extension);
         self.grammar_dir().join(lib_name)
     }
 
