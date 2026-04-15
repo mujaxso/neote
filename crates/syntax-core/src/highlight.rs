@@ -79,6 +79,10 @@ fn highlight_with_query(
         Err(e) => {
             // Log the error for debugging
             eprintln!("DEBUG: Tree-sitter query error for {}: {}", language.as_str(), e);
+            // For markdown, also log the query string to help debug
+            if language.as_str() == "markdown" {
+                eprintln!("DEBUG: Markdown query string: {:?}", query_str);
+            }
             // Return empty spans (plaintext) when query compilation fails
             return Ok(Vec::new());
         }

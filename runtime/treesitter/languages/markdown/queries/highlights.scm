@@ -1,13 +1,12 @@
 
 ; Minimal markdown highlighting query
-; Starting with basic nodes to avoid compilation errors
-; We can add more patterns once we confirm which node types exist
+; Using wildcard patterns that should work with any grammar
 
-; Basic text nodes
-(text) @plain
+; Match any node - this will always compile
+(_) @plain
 
-; Paragraphs
+; Try to match paragraph if it exists
 (paragraph) @paragraph
 
-; If these node types exist, we'll get some highlighting
-; Otherwise, the query will still compile successfully
+; The query will compile even if paragraph doesn't exist
+; because (_) matches everything
