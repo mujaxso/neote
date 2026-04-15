@@ -110,6 +110,17 @@ pub const SUPPORTED_LANGUAGES: &[&str] = &[
     "cpp",
     "java",
     "bash",
+    "c_sharp",
+    "ruby",
+    "typescript",
+    "tsx",
+    "lua",
+    "yaml",
+    "zig",
+    "cmake",
+    "dockerfile",
+    "elixir",
+    "nix",
 ];
 "#;
     
