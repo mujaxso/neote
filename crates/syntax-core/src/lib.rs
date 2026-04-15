@@ -91,24 +91,46 @@ mod tests {
         // Test that Markdown-specific captures map to appropriate Highlight variants
         // Based on tree-sitter-markdown-inline grammar
         assert_eq!(map_capture_name("emphasis"), Highlight::Comment);
+        assert_eq!(map_capture_name("emphasis.marker"), Highlight::Operator);
         assert_eq!(map_capture_name("strong_emphasis"), Highlight::Keyword);
         assert_eq!(map_capture_name("code_span"), Highlight::Constant);
         assert_eq!(map_capture_name("inline_code"), Highlight::Constant);
+        assert_eq!(map_capture_name("inline_code.delimiter"), Highlight::Operator);
         assert_eq!(map_capture_name("link_text"), Highlight::Variable);
         assert_eq!(map_capture_name("link_destination"), Highlight::String);
         assert_eq!(map_capture_name("link_title"), Highlight::String);
+        assert_eq!(map_capture_name("link_label"), Highlight::Variable);
         assert_eq!(map_capture_name("shortcut_link"), Highlight::Variable);
         assert_eq!(map_capture_name("full_reference_link"), Highlight::Variable);
         assert_eq!(map_capture_name("collapsed_reference_link"), Highlight::Variable);
         assert_eq!(map_capture_name("inline_link"), Highlight::Variable);
+        assert_eq!(map_capture_name("link.bracket"), Highlight::Operator);
+        assert_eq!(map_capture_name("link.paren"), Highlight::Operator);
         assert_eq!(map_capture_name("image"), Highlight::Variable);
-        assert_eq!(map_capture_name("image_description"), Highlight::Variable);
+        assert_eq!(map_capture_name("image.description"), Highlight::Variable);
+        assert_eq!(map_capture_name("image.marker"), Highlight::Operator);
         assert_eq!(map_capture_name("html_tag"), Highlight::Attribute);
+        assert_eq!(map_capture_name("html.tag"), Highlight::Attribute);
+        assert_eq!(map_capture_name("html.tag.name"), Highlight::Type);
+        assert_eq!(map_capture_name("html.attribute"), Highlight::Property);
+        assert_eq!(map_capture_name("html.attribute.name"), Highlight::Property);
+        assert_eq!(map_capture_name("html.attribute.value"), Highlight::String);
+        assert_eq!(map_capture_name("html.comment"), Highlight::Comment);
         assert_eq!(map_capture_name("hard_line_break"), Highlight::Operator);
+        assert_eq!(map_capture_name("line_break"), Highlight::Operator);
+        assert_eq!(map_capture_name("line_break.soft"), Highlight::Operator);
         assert_eq!(map_capture_name("strikethrough"), Highlight::Comment);
+        assert_eq!(map_capture_name("strikethrough.marker"), Highlight::Operator);
         assert_eq!(map_capture_name("uri_autolink"), Highlight::String);
         assert_eq!(map_capture_name("email_autolink"), Highlight::String);
         assert_eq!(map_capture_name("backslash_escape"), Highlight::String);
+        assert_eq!(map_capture_name("escape"), Highlight::String);
+        assert_eq!(map_capture_name("latex"), Highlight::Constant);
+        assert_eq!(map_capture_name("latex.delimiter"), Highlight::Operator);
+        assert_eq!(map_capture_name("text"), Highlight::Plain);
+        assert_eq!(map_capture_name("number"), Highlight::Number);
+        assert_eq!(map_capture_name("whitespace"), Highlight::Plain);
+        assert_eq!(map_capture_name("punctuation"), Highlight::Operator);
         
         // Test fallback captures for compatibility
         assert_eq!(map_capture_name("heading"), Highlight::Type);

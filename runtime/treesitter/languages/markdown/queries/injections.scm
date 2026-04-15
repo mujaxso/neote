@@ -11,3 +11,7 @@
 
 ; Note: The inline grammar doesn't have fenced_code_block
 ; so we can't inject language for code blocks
+
+; Code span injection (plaintext)
+((code_span) @injection.content
+  (#set! injection.language "plaintext"))
