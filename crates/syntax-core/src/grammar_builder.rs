@@ -196,11 +196,20 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
         // Determine the directory to run tree-sitter build in
         // Check for grammar.js or grammar.json in repo root
         let build_dir = if repo_dir.join("grammar.js").exists() || repo_dir.join("grammar.json").exists() {
+            println!("DEBUG: Found grammar.js/grammar.json in repo root: {:?}", repo_dir);
             &repo_dir
         } else if source_dir.join("grammar.js").exists() || source_dir.join("grammar.json").exists() {
+            println!("DEBUG: Found grammar.js/grammar.json in source dir: {:?}", source_dir);
             &source_dir
         } else {
             // No grammar file found, but we can still try to build in source_dir
+            println!("DEBUG: No grammar.js or grammar.json found. Looking in {:?}", source_dir);
+            // List files for debugging
+            if let Ok(entries) = std::fs::read_dir(&repo_dir) {
+                for entry in entries.flatten() {
+                    println!("DEBUG: Repo entry: {:?}", entry.file_name());
+                }
+            }
             &source_dir
         };
         
@@ -268,18 +277,19 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
             let stderr = String::from_utf8_lossy(&build_output.stderr);
             let stdout = String::from_utf8_lossy(&build_output.stdout);
             eprintln!("tree-sitter build failed:\nstdout: {}\nstderr: {}", stdout, stderr);
-            // Fall back to manual compilation
+            
+            // For TypeScript/TSX, manual compilation won't work due to missing headers
+            // So we should return an error instead of falling back
+            if language_id == "typescript" || language_id == "tsx" {
+                return Err(format!(
+                    "Failed to build {} grammar with tree-sitter CLI. Error:\n{}\n{}",
+                    language_id, stdout, stderr
+                ));
+            }
+            
+            // For other languages, fall back to manual compilation
             println!("tree-sitter build failed, falling back to manual compilation...");
             let lib_path = manual_compile(&grammar_info, &source_dir, &repo_dir, language_id, &temp_dir)?;
-            // Continue with installation using the manually compiled library
-            // We'll set lib_path and continue below
-            // But we need to break out of this branch
-            // Let's handle this by setting lib_path and breaking to a common installation section
-            // However, the current structure makes this tricky
-            // Instead, we'll install the library directly in manual_compile and return
-            // But manual_compile returns a PathBuf, not ()
-            // Let's restructure: after manual_compile, we need to install the library
-            // So we'll call a helper function that handles both paths
             return install_library_and_queries(&grammar_info, &source_dir, &repo_dir, language_id, &temp_dir, lib_path);
         }
         
