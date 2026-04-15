@@ -4,8 +4,6 @@ use std::fs;
 use std::process::Command;
 
 use crate::runtime::Runtime;
-
-use crate::runtime::Runtime;
 use crate::grammar_registry;
 
 /// Try to locate tree-sitter include directory containing parser.h
@@ -107,8 +105,6 @@ fn find_tree_sitter_include_path() -> Result<String, String> {
 pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
     let grammar_info = grammar_registry::for_language(language_id)
         .ok_or_else(|| format!("No grammar info available for {}", language_id))?;
-    
-    let runtime = Runtime::new();
     
     // Create temporary directory
     let temp_dir = tempfile::tempdir()
