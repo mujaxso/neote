@@ -548,11 +548,14 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
             .map(|n: &str| n.contains("markdown-inline"))
             .unwrap_or(false);
         if has_inline_name {
-        // Rename markdown-inline.so to libtree-sitter-markdown.so
-        let renamed_path = lib_path.parent().unwrap().join(get_library_name(language_id));
-        fs::copy(&lib_path, &renamed_path)
-            .map_err(|e| format!("Failed to rename library: {}", e))?;
-        renamed_path
+            // Rename markdown-inline.so to libtree-sitter-markdown.so
+            let renamed_path = lib_path.parent().unwrap().join(get_library_name(language_id));
+            fs::copy(&lib_path, &renamed_path)
+                .map_err(|e| format!("Failed to rename library: {}", e))?;
+            renamed_path
+        } else {
+            lib_path
+        }
     } else {
         lib_path
     };
