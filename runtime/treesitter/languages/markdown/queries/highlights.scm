@@ -6,25 +6,5 @@
 (entity_reference) @string
 (numeric_character_reference) @string
 
-; Punctuation characters (as individual node types)
-[
-  "["
-  "]"
-  "<"
-  ">"
-  "!"
-  "\""
-  "#"
-  "$"
-  "%"
-  "&"
-  "'"
-  "*"
-  "+"
-  ","
-  "-"
-  "."
-] @operator
-
 ; Fallback for everything else
 (_) @plain
