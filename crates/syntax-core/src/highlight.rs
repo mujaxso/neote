@@ -217,6 +217,19 @@ pub fn map_capture_name(name: &str) -> Highlight {
         "inline" => Highlight::Plain,
         "block" => Highlight::Plain,
         "document" => Highlight::Plain,
+        // nvim-treesitter style captures
+        "text.literal" => Highlight::Constant,
+        "text.reference" => Highlight::Variable,
+        "text.title" => Highlight::Type,
+        "text.uri" => Highlight::String,
+        "text.emphasis" => Highlight::Comment,
+        "text.strong" => Highlight::Keyword,
+        "text.quote" => Highlight::Comment,
+        "text.math" => Highlight::Constant,
+        "text.environment" => Highlight::Property,
+        "punctuation.special" => Highlight::Operator,
+        "label" => Highlight::Variable,
+        "definition" => Highlight::Variable,
         _ => Highlight::Plain,
     }
 }

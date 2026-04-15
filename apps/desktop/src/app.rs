@@ -95,16 +95,15 @@ impl iced::Application for App {
                 let runtime = syntax_core::runtime::Runtime::new();
                 let query_dir = runtime.language_dir("markdown").join("queries");
                 let query_path = query_dir.join("highlights.scm");
-                if !query_path.exists() {
-                    println!("Markdown query file not found, reinstalling markdown grammar...");
-                    match grammar_builder::build_and_install_grammar("markdown") {
-                        Ok(_) => println!("Successfully reinstalled markdown grammar"),
-                        Err(e) => {
-                            eprintln!("Failed to reinstall markdown grammar: {}", e);
-                            // Create a basic query file as fallback
-                            let _ = std::fs::create_dir_all(&query_dir);
-                            let basic_query = r#"
-; Basic markdown highlighting
+                
+                // Always replace the markdown query file with our version
+                // because the downloaded one uses nvim-treesitter capture names
+                println!("Replacing markdown query file with correct capture names...");
+                let _ = std::fs::create_dir_all(&query_dir);
+                
+                // Create a query file with capture names that match our highlight mapping
+                let correct_query = r#"
+; Markdown highlighting for tree-sitter-markdown with correct capture names
 (atx_heading) @heading
 (setext_heading) @heading
 (emphasis) @emphasis
@@ -115,52 +114,89 @@ impl iced::Application for App {
 (block_quote) @block_quote
 (list) @list
 (thematic_break) @thematic_break
+(paragraph) @paragraph
+(fenced_code_block) @code_fence
+(code_span) @inline_code
+(image) @link
+(reference_link) @link
+(reference_definition) @link
+(footnote_reference) @link
+(footnote_definition) @link
+(task_list_marker) @operator
+(strikethrough) @emphasis
+(escape_sequence) @string
+(hard_line_break) @operator
+(soft_line_break) @paragraph
+(table) @table
+(table_header) @heading
+(table_row) @table
+(table_cell) @paragraph
+(html_block) @html
+(html_inline) @html
+
+; Additional captures that might be present
+(heading_content) @heading
+(list_marker) @operator
+(link_label) @link
+(link_title) @string
+(url) @string
+(email) @string
 "#;
-                            if let Err(e) = std::fs::write(&query_path, basic_query) {
-                                eprintln!("Failed to create markdown query file: {}", e);
-                            } else {
-                                println!("Created basic markdown query file as fallback");
-                            }
-                        }
-                    }
+                
+                if let Err(e) = std::fs::write(&query_path, correct_query) {
+                    eprintln!("Failed to write markdown query file: {}", e);
                 } else {
-                    // Check if the query file is not empty
-                    if let Ok(content) = std::fs::read_to_string(&query_path) {
-                        if content.trim().is_empty() {
-                            println!("Markdown query file is empty, creating basic query...");
-                            let basic_query = r#"
-; Basic markdown highlighting
-(atx_heading) @heading
-(setext_heading) @heading
-(emphasis) @emphasis
-(strong_emphasis) @strong
-(link) @link
-(inline_code_span) @inline_code
-(code_fence) @code_fence
-(block_quote) @block_quote
-(list) @list
-(thematic_break) @thematic_break
-"#;
-                            if let Err(e) = std::fs::write(&query_path, basic_query) {
-                                eprintln!("Failed to write basic query: {}", e);
-                            } else {
-                                println!("Wrote basic markdown query");
-                            }
-                        } else {
-                            println!("Markdown query file exists and has content ({} bytes)", content.len());
-                            // Debug: print first few lines
-                            let lines: Vec<&str> = content.lines().take(5).collect();
-                            println!("First few lines: {:?}", lines);
-                        }
-                    } else {
-                        println!("Could not read markdown query file");
-                    }
+                    println!("Created markdown query file with correct capture names");
                 }
             }
             
             // Initialize syntax manager after installing grammars
             let mut syntax_manager = app.syntax_manager.lock().unwrap();
             syntax_manager.initialize_dynamic_grammars();
+            
+            // Test markdown highlighting
+            {
+                use syntax_core::language::LanguageId;
+                use syntax_core::dynamic_loader;
+                use tree_sitter::Parser;
+                
+                // Check if markdown language can be loaded
+                if let Some(lang) = dynamic_loader::load_language("markdown") {
+                    println!("Markdown language loaded successfully");
+                    
+                    // Create a test parser
+                    let mut parser = Parser::new();
+                    if parser.set_language(&lang).is_ok() {
+                        println!("Markdown parser configured successfully");
+                        
+                        // Test parse a simple markdown
+                        let test_md = "# Heading\n\nThis is **bold** and *italic*.\n\n`code`";
+                        if let Some(tree) = parser.parse(test_md, None) {
+                            println!("Markdown test parse successful");
+                            
+                            // Try to highlight
+                            use syntax_core::highlight::highlight;
+                            match highlight(LanguageId::Markdown, test_md, &tree) {
+                                Ok(spans) => {
+                                    println!("Markdown highlighting produced {} spans", spans.len());
+                                    for span in spans.iter().take(5) {
+                                        println!("  Span [{}, {}]: {:?}", span.start, span.end, span.highlight);
+                                    }
+                                }
+                                Err(e) => {
+                                    eprintln!("Markdown highlighting error: {:?}", e);
+                                }
+                            }
+                        } else {
+                            eprintln!("Markdown test parse failed");
+                        }
+                    } else {
+                        eprintln!("Failed to set markdown language on parser");
+                    }
+                } else {
+                    eprintln!("Markdown language not loaded");
+                }
+            }
         }
         
         // Load custom fonts for icon support

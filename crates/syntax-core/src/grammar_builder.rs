@@ -638,7 +638,7 @@ pub fn is_grammar_installed(language_id: &str) -> bool {
 fn create_default_markdown_query(query_target_dir: &std::path::Path) -> Result<(), String> {
     let query_path = query_target_dir.join("highlights.scm");
     let default_query = r#"
-; Markdown highlighting for tree-sitter-markdown
+; Markdown highlighting for tree-sitter-markdown with correct capture names
 (atx_heading) @heading
 (setext_heading) @heading
 (emphasis) @emphasis
@@ -668,6 +668,14 @@ fn create_default_markdown_query(query_target_dir: &std::path::Path) -> Result<(
 (table_cell) @paragraph
 (html_block) @html
 (html_inline) @html
+
+; Additional captures that might be present
+(heading_content) @heading
+(list_marker) @operator
+(link_label) @link
+(link_title) @string
+(url) @string
+(email) @string
 "#;
     
     std::fs::write(&query_path, default_query)
