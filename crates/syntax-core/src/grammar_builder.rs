@@ -1,6 +1,7 @@
 //! Download and compile Tree-sitter grammars.
 
 use std::fs;
+use std::path::PathBuf;
 use std::process::Command;
 
 use crate::runtime::Runtime;
@@ -30,11 +31,11 @@ fn find_tree_sitter_include_path() -> Result<String, String> {
         if output.status.success() {
             let metadata: serde_json::Value = serde_json::from_slice(&output.stdout)
                 .map_err(|e| format!("Failed to parse cargo metadata: {}", e))?;
-            if let Some(packages) = metadata.get("packages").and_then(|p| p.as_array()) {
+            if let Some(packages) = metadata.get("packages").and_then(|p: &serde_json::Value| p.as_array()) {
                 for package in packages {
-                    if let Some(name) = package.get("name").and_then(|n| n.as_str()) {
+                    if let Some(name) = package.get("name").and_then(|n: &serde_json::Value| n.as_str()) {
                         if name == "tree-sitter" {
-                            if let Some(manifest_path) = package.get("manifest_path").and_then(|m| m.as_str()) {
+                            if let Some(manifest_path) = package.get("manifest_path").and_then(|m: &serde_json::Value| m.as_str()) {
                                 let manifest = std::path::Path::new(manifest_path);
                                 if let Some(root) = manifest.parent() {
                                     let include_path = root.join("lib").join("include");
@@ -69,7 +70,8 @@ fn find_tree_sitter_include_path() -> Result<String, String> {
                     let stdout = String::from_utf8_lossy(&output.stdout);
                     for line in stdout.lines() {
                         if line.contains("tree_sitter") {
-                            if let Some(parent) = std::path::Path::new(line).parent() {
+                            let path: &std::path::Path = std::path::Path::new(line);
+                            if let Some(parent) = path.parent() {
                                 if let Some(grandparent) = parent.parent() {
                                     return Ok(grandparent.to_string_lossy().to_string());
                                 }
@@ -541,8 +543,8 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
     
     // For markdown, if the built library has a different name, rename it
     let source_lib_path = if language_id == "markdown" && lib_path.file_name()
-        .and_then(|n| n.to_str())
-        .map(|n| n.contains("markdown-inline"))
+        .and_then(|n: &std::ffi::OsStr| n.to_str())
+        .map(|n: &str| n.contains("markdown-inline"))
         .unwrap_or(false) {
         // Rename markdown-inline.so to libtree-sitter-markdown.so
         let renamed_path = lib_path.parent().unwrap().join(get_library_name(language_id));
