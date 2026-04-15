@@ -81,6 +81,8 @@ impl GrammarRegistry {
         });
         
         // Markdown - moved to tree-sitter-grammars organization with split_parser branch
+        // The split_parser branch has source files in tree-sitter-markdown-inline/ and tree-sitter-markdown-block/
+        // We need to build both grammars, but for now we'll use the inline grammar
         self.add_language(GrammarInfo {
             language_id: "markdown".to_string(),
             name: "Markdown".to_string(),
@@ -88,7 +90,7 @@ impl GrammarRegistry {
             filenames: vec!["README.md".to_string()],
             repo_url: "https://github.com/tree-sitter-grammars/tree-sitter-markdown".to_string(),
             revision: "split_parser".to_string(),
-            subdirectory: None,
+            subdirectory: Some("tree-sitter-markdown-inline".to_string()),
             source_files: vec!["src/parser.c".to_string(), "src/scanner.c".to_string()],
             query_files: vec!["highlights.scm".to_string(), "injections.scm".to_string()],
             has_scanner: true,

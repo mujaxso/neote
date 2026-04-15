@@ -130,6 +130,24 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
         return Err(format!("Source directory does not exist: {:?}", source_dir));
     }
     
+    // Debug: list files in source directory for markdown
+    if language_id == "markdown" {
+        println!("DEBUG: Source directory for markdown: {:?}", source_dir);
+        if let Ok(entries) = std::fs::read_dir(&source_dir) {
+            for entry in entries.flatten() {
+                println!("DEBUG: Found in source_dir: {:?}", entry.path());
+            }
+        }
+        if let Some(parent) = source_dir.parent() {
+            println!("DEBUG: Parent directory: {:?}", parent);
+            if let Ok(entries) = std::fs::read_dir(parent) {
+                for entry in entries.flatten() {
+                    println!("DEBUG: Found in parent: {:?}", entry.path());
+                }
+            }
+        }
+    }
+    
     // Check if tree-sitter CLI is available and at a compatible version
     let has_tree_sitter_cli = Command::new("tree-sitter")
         .arg("--version")
@@ -174,13 +192,39 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
         
         // Check if we need to run tree-sitter generate
         // Only run if grammar.js exists and parser.c doesn't exist
-        let grammar_js_exists = source_dir.join("grammar.js").exists();
-        let parser_c_exists = source_dir.join("src/parser.c").exists();
+        // For markdown, check multiple locations
+        let (grammar_js_exists, parser_c_exists) = if language_id == "markdown" {
+            // Check in current directory
+            let grammar_js_current = source_dir.join("grammar.js").exists();
+            // Check in parent directory (repo root)
+            let grammar_js_parent = source_dir.parent().map(|p| p.join("grammar.js").exists()).unwrap_or(false);
+            let grammar_js_exists = grammar_js_current || grammar_js_parent;
+            
+            // Check for parser.c in src/ directory
+            let parser_c_current = source_dir.join("src/parser.c").exists();
+            // Also check in parent/src/ (unlikely but just in case)
+            let parser_c_parent = source_dir.parent().map(|p| p.join("src/parser.c").exists()).unwrap_or(false);
+            let parser_c_exists = parser_c_current || parser_c_parent;
+            
+            (grammar_js_exists, parser_c_exists)
+        } else {
+            let grammar_js_exists = source_dir.join("grammar.js").exists();
+            let parser_c_exists = source_dir.join("src/parser.c").exists();
+            (grammar_js_exists, parser_c_exists)
+        };
         
         if grammar_js_exists && !parser_c_exists {
+            // Determine the directory to run tree-sitter generate from
+            // For markdown, if grammar.js is in parent directory, use that
+            let generate_dir = if language_id == "markdown" && source_dir.parent().map(|p| p.join("grammar.js").exists()).unwrap_or(false) {
+                source_dir.parent().unwrap().to_path_buf()
+            } else {
+                source_dir.clone()
+            };
+            
             // Run tree-sitter generate and capture output
             let generate_output = Command::new("tree-sitter")
-                .current_dir(&source_dir)
+                .current_dir(&generate_dir)
                 .arg("generate")
                 .output()
                 .map_err(|e| format!("Failed to run tree-sitter generate: {}", e))?;
@@ -192,7 +236,7 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
                 
                 // Try with npx tree-sitter generate
                 let npx_output = Command::new("npx")
-                    .current_dir(&source_dir)
+                    .current_dir(&generate_dir)
                     .args(["tree-sitter", "generate"])
                     .output()
                     .map_err(|e| format!("Failed to run npx tree-sitter generate: {}", e))?;
@@ -209,7 +253,12 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
             }
         } else if !parser_c_exists {
             // No parser.c and no grammar.js - we can't generate
-            return Err(format!("Cannot build {}: parser.c doesn't exist and grammar.js not found", language_id));
+            // For markdown, provide more specific error
+            if language_id == "markdown" {
+                return Err(format!("Cannot build markdown: parser.c doesn't exist and grammar.js not found. Checked in: {} and parent directory", source_dir.display()));
+            } else {
+                return Err(format!("Cannot build {}: parser.c doesn't exist and grammar.js not found", language_id));
+            }
         } else {
             // parser.c already exists, skip generation
             println!("parser.c already exists, skipping tree-sitter generate");
