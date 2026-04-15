@@ -8,50 +8,44 @@ use crate::runtime::Runtime;
 use crate::grammar_registry::GrammarRegistry;
 
 /// Global cache for compiled queries
-static QUERY_CACHE: OnceLock<Mutex<HashMap<String, Result<Query, String>>>> = OnceLock::new();
+static QUERY_CACHE: OnceLock<Mutex<HashMap<String, Result<&'static Query, String>>>> = OnceLock::new();
 
 /// Get a compiled query for a language
-pub fn get_query(language_id: &str, query_type: &str) -> Option<Query> {
+pub fn get_query(language_id: &str, query_type: &str) -> Option<&'static Query> {
     let cache_key = format!("{}:{}", language_id, query_type);
     let cache = QUERY_CACHE.get_or_init(|| Mutex::new(HashMap::new()));
     
-    // Check cache first without removing
+    // Check cache first
     {
         let cache_guard = cache.lock().unwrap();
         if let Some(result) = cache_guard.get(&cache_key) {
-            match result {
-                Ok(query) => {
-                    // Since Query doesn't implement Clone, we need to reload it
-                    // But we can return None and let it be reloaded below
-                    // This is inefficient, but works for now
-                    // We'll handle this differently
-                }
-                Err(_) => return None,
-            }
+            return match result {
+                Ok(query) => Some(*query),
+                Err(_) => None,
+            };
         }
     }
     
-    // Not in cache or needs reloading, load from file
+    // Not in cache, load from file
     let result = load_query_from_file(language_id, query_type);
     
     match result {
         Ok(query) => {
+            // Box and leak the query to get a static reference
+            let query_ptr = Box::leak(Box::new(query));
+            
             // Store in cache
             let mut cache_guard = cache.lock().unwrap();
-            // We can't store the query directly because we need to return it
-            // Instead, we'll store a placeholder and return the query
-            // But we need to return the query, so we'll store it and return it
-            // However, we can't clone it to store and return
-            // Let's store the result and return the query
-            cache_guard.insert(cache_key, Ok(query));
+            cache_guard.insert(cache_key, Ok(query_ptr));
             
-            // Now we need to get it back from the cache
-            // This is tricky because we can't clone it
-            // Instead, we'll store it in the cache and return a new one next time
-            // For now, return None and handle it differently
+            Some(query_ptr)
+        }
+        Err(e) => {
+            // Store error in cache
+            let mut cache_guard = cache.lock().unwrap();
+            cache_guard.insert(cache_key, Err(e));
             None
         }
-        Err(_) => None,
     }
 }
 
@@ -92,7 +86,7 @@ pub struct QueryCache;
 
 impl QueryCache {
     /// Get a query
-    pub fn get(language_id: &str, query_type: &str) -> Option<Query> {
+    pub fn get(language_id: &str, query_type: &str) -> Option<&'static Query> {
         get_query(language_id, query_type)
     }
     
