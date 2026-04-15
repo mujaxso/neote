@@ -16,10 +16,11 @@
 (boolean) @boolean
 
 ; Dates and times (if supported by grammar)
-(date_time) @string.special
-(local_date) @string.special
-(local_time) @string.special
-(local_date_time) @string.special
+; Note: These node types may not exist in all grammar versions
+; (date_time) @string.special
+; (local_date) @string.special
+; (local_time) @string.special
+; (local_date_time) @string.special
 
 ; Tables
 (table) @type

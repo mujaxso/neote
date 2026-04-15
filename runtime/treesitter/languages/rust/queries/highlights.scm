@@ -111,13 +111,13 @@
 "extern" @keyword
 "fn" @keyword
 "for" @keyword
-"gen" @keyword
+; "gen" @keyword - not supported in this grammar version
 "if" @keyword
 "impl" @keyword
 "in" @keyword
 "let" @keyword
 "loop" @keyword
-"macro_rules!" @keyword
+; "macro_rules!" @keyword - not supported in this grammar version
 "match" @keyword
 "mod" @keyword
 "move" @keyword

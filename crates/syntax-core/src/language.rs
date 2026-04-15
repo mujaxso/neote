@@ -112,16 +112,15 @@ impl LanguageId {
                 }
             }
             LanguageId::Toml => {
-                crate::dynamic_loader::load_language("toml").or_else(|| {
-                    #[cfg(feature = "toml")]
-                    {
-                        Some(tree_sitter_toml::language())
-                    }
-                    #[cfg(not(feature = "toml"))]
-                    {
-                        None
-                    }
-                })
+                // Use built-in tree-sitter-toml (v0.5) which should match the query file
+                #[cfg(feature = "toml")]
+                {
+                    return Some(tree_sitter_toml::language());
+                }
+                #[cfg(not(feature = "toml"))]
+                {
+                    return crate::dynamic_loader::load_language("toml");
+                }
             }
             LanguageId::Markdown => {
                 crate::dynamic_loader::load_language("markdown").or_else(|| {
