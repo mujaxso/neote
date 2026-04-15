@@ -1,8 +1,9 @@
 //! Download and compile Tree-sitter grammars.
 
 use std::fs;
-use std::path::PathBuf;
 use std::process::Command;
+
+use crate::runtime::Runtime;
 
 use crate::runtime::Runtime;
 use crate::grammar_registry;
@@ -269,7 +270,17 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
             eprintln!("tree-sitter build failed:\nstdout: {}\nstderr: {}", stdout, stderr);
             // Fall back to manual compilation
             println!("tree-sitter build failed, falling back to manual compilation...");
-            return manual_compile(&grammar_info, &source_dir, &repo_dir, language_id, temp_dir);
+            let lib_path = manual_compile(&grammar_info, &source_dir, &repo_dir, language_id, &temp_dir)?;
+            // Continue with installation using the manually compiled library
+            // We'll set lib_path and continue below
+            // But we need to break out of this branch
+            // Let's handle this by setting lib_path and breaking to a common installation section
+            // However, the current structure makes this tricky
+            // Instead, we'll install the library directly in manual_compile and return
+            // But manual_compile returns a PathBuf, not ()
+            // Let's restructure: after manual_compile, we need to install the library
+            // So we'll call a helper function that handles both paths
+            return install_library_and_queries(&grammar_info, &source_dir, &repo_dir, language_id, &temp_dir, lib_path);
         }
         
         // Print build output for debugging
@@ -339,8 +350,24 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
     } else {
         // Manual compilation with cc
         println!("Using cc to build {}...", language_id);
-        return manual_compile(&grammar_info, &source_dir, &repo_dir, language_id, temp_dir);
+        let lib_path = manual_compile(&grammar_info, &source_dir, &repo_dir, language_id, &temp_dir)?;
+        return install_library_and_queries(&grammar_info, &source_dir, &repo_dir, language_id, &temp_dir, lib_path);
     }
+    
+    // Use the helper function to install library and queries
+    install_library_and_queries(&grammar_info, &source_dir, &repo_dir, language_id, &temp_dir, lib_path)
+}
+
+/// Install library and queries after compilation
+fn install_library_and_queries(
+    grammar_info: &crate::grammar_registry::GrammarInfo,
+    source_dir: &std::path::Path,
+    _repo_dir: &std::path::Path,
+    language_id: &str,
+    temp_dir: &tempfile::TempDir,
+    lib_path: std::path::PathBuf,
+) -> Result<(), String> {
+    let runtime = Runtime::new();
     
     // Install library to runtime directory
     let target_dir = runtime.grammar_dir();
@@ -377,7 +404,7 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
     // For languages with subdirectories, queries might be in the parent directory
     let query_source_dir = if let Some(_subdir) = &grammar_info.subdirectory {
         // Try to find queries in the parent directory (repo root)
-        let parent_dir = repo_dir.clone();
+        let parent_dir = temp_dir.path().join("repo");
         let queries_in_parent = parent_dir.join("queries");
         if queries_in_parent.exists() {
             queries_in_parent
@@ -403,7 +430,7 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
                 println!("Installed query file: {}", query_file);
             } else {
                 // Try to find the query file in the repo root's queries directory
-                let repo_queries_dir = repo_dir.join("queries");
+                let repo_queries_dir = temp_dir.path().join("repo").join("queries");
                 if repo_queries_dir.exists() {
                     let repo_source_path = repo_queries_dir.join(query_file);
                     if repo_source_path.exists() {
@@ -422,7 +449,7 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
     } else {
         println!("Warning: No query directory found for {} at {}", language_id, query_source_dir.display());
         // Try to find queries in the repo root
-        let repo_queries_dir = repo_dir.join("queries");
+        let repo_queries_dir = temp_dir.path().join("repo").join("queries");
         if repo_queries_dir.exists() {
             let query_target_dir = runtime.language_dir(language_id).join("queries");
             fs::create_dir_all(&query_target_dir)
@@ -448,7 +475,7 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
 fn manual_compile(
     grammar_info: &crate::grammar_registry::GrammarInfo,
     source_dir: &std::path::Path,
-    repo_dir: &std::path::Path,
+    _repo_dir: &std::path::Path,
     language_id: &str,
     temp_dir: &tempfile::TempDir,
 ) -> Result<std::path::PathBuf, String> {
