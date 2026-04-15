@@ -169,14 +169,13 @@ pub fn map_capture_name(name: &str) -> Highlight {
 pub fn get_query_for_language(language: LanguageId) -> Result<&'static str, SyntaxError> {
     match language {
         LanguageId::Rust => {
-            if let Some(_query) = crate::query_cache::get_query("rust", "highlights") {
+            // Try to load the query from cache
+            if crate::query_cache::get_query("rust", "highlights").is_some() {
                 // Store the query source in a static string
                 static mut RUST_QUERY: Option<&'static str> = None;
                 unsafe {
                     if RUST_QUERY.is_none() {
-                        // Get the query text from the query object
-                        // Note: tree-sitter Query doesn't have a source() method
-                        // We'll need to load it from file directly
+                        // Load query text from file
                         let runtime = crate::runtime::Runtime::new();
                         let query_path = runtime.language_dir("rust").join("queries/highlights.scm");
                         if let Ok(query_text) = std::fs::read_to_string(&query_path) {
@@ -198,7 +197,7 @@ pub fn get_query_for_language(language: LanguageId) -> Result<&'static str, Synt
             }
         }
         LanguageId::Toml => {
-            if let Some(_query) = crate::query_cache::get_query("toml", "highlights") {
+            if crate::query_cache::get_query("toml", "highlights").is_some() {
                 static mut TOML_QUERY: Option<&'static str> = None;
                 unsafe {
                     if TOML_QUERY.is_none() {
@@ -223,7 +222,7 @@ pub fn get_query_for_language(language: LanguageId) -> Result<&'static str, Synt
             }
         }
         LanguageId::Markdown => {
-            if let Some(_query) = crate::query_cache::get_query("markdown", "highlights") {
+            if crate::query_cache::get_query("markdown", "highlights").is_some() {
                 static mut MARKDOWN_QUERY: Option<&'static str> = None;
                 unsafe {
                     if MARKDOWN_QUERY.is_none() {

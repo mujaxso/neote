@@ -25,6 +25,7 @@ pub use manager::SyntaxManager;
 pub use grammar_registry::GrammarInfo;
 pub use grammar_builder::{build_and_install_grammar, is_grammar_installed, install_missing_grammars};
 pub use dynamic_loader::DynamicGrammarLoader;
+// Note: QueryCache::get returns Option<&'static Query>
 pub use query_cache::QueryCache;
 
 #[cfg(test)]

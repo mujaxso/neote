@@ -11,8 +11,6 @@ pub struct SyntaxManager {
     documents: HashMap<String, SyntaxDocument>,
     // Cache parsers per language to avoid recreating them
     parsers: HashMap<LanguageId, Parser>,
-    // Cache compiled queries per language
-    queries: HashMap<LanguageId, Result<Query, String>>,
 }
 
 struct SyntaxDocument {
@@ -26,7 +24,6 @@ impl SyntaxManager {
         Self {
             documents: HashMap::new(),
             parsers: HashMap::new(),
-            queries: HashMap::new(),
         }
     }
 
@@ -89,37 +86,8 @@ impl SyntaxManager {
             .ok_or(SyntaxError::DocumentNotFound)?;
         match &doc.tree {
             Some(tree) => {
-                // Try to use cached query first
-                if let Some(query_result) = self.queries.get(&doc.language) {
-                    match query_result {
-                        Ok(query) => {
-                            let mut cursor = QueryCursor::new();
-                            let root_node = tree.root_node();
-                            let mut spans = Vec::new();
-
-                            for match_ in cursor.matches(query, root_node, doc.text.as_bytes()) {
-                                for capture in match_.captures {
-                                    let node = capture.node;
-                                    let start = node.start_byte();
-                                    let end = node.end_byte();
-                                    let capture_name = &query.capture_names()[capture.index as usize];
-                                    let highlight = crate::highlight::map_capture_name(capture_name);
-                                    spans.push(HighlightSpan {
-                                        start,
-                                        end,
-                                        highlight,
-                                    });
-                                }
-                            }
-                            spans.sort_by_key(|span| span.start);
-                            return Ok(spans);
-                        }
-                        Err(_) => {
-                            // Query compilation failed, fall back to standard highlight
-                        }
-                    }
-                }
-                // Fall back to standard highlight function
+                // Use the global query cache
+                // For now, just use the standard highlight function which uses the query cache
                 highlight(doc.language, &doc.text, tree)
             }
             None => Ok(Vec::new()),
