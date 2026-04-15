@@ -80,7 +80,7 @@ impl GrammarRegistry {
             scanner_lang: None,
         });
         
-        // Markdown - updated to use the correct repository structure
+        // Markdown - using tree-sitter-markdown-inline directory
         self.add_language(GrammarInfo {
             language_id: "markdown".to_string(),
             name: "Markdown".to_string(),
@@ -88,8 +88,8 @@ impl GrammarRegistry {
             filenames: vec!["README.md".to_string()],
             repo_url: "https://github.com/tree-sitter-grammars/tree-sitter-markdown".to_string(),
             revision: "split_parser".to_string(),
-            subdirectory: Some("tree-sitter-markdown/src".to_string()),
-            source_files: vec!["parser.c".to_string(), "scanner.c".to_string()],
+            subdirectory: Some("tree-sitter-markdown-inline".to_string()),
+            source_files: vec!["src/parser.c".to_string(), "src/scanner.c".to_string()],
             query_files: vec!["highlights.scm".to_string(), "injections.scm".to_string()],
             has_scanner: true,
             scanner_lang: Some("c".to_string()),

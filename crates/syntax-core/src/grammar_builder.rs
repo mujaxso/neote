@@ -123,7 +123,7 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
         println!("Using corrected markdown repository URL and structure...");
         (
             "https://github.com/tree-sitter-grammars/tree-sitter-markdown".to_string(),
-            Some("tree-sitter-markdown/src".to_string())
+            Some("tree-sitter-markdown-inline".to_string())
         )
     } else {
         (grammar_info.repo_url.clone(), grammar_info.subdirectory.clone())
@@ -191,14 +191,8 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
         // Use tree-sitter CLI
         println!("Using tree-sitter CLI to build {}...", language_id);
         
-        // For TypeScript/TSX, we need to build in the subdirectory (typescript/ or tsx/), not the repo root
         // Determine the directory to run tree-sitter build in
-        let build_dir = if language_id == "typescript" || language_id == "tsx" {
-            // For TypeScript/TSX, use the parent of source_dir (which is repo_dir/typescript or repo_dir/tsx)
-            // because source_dir is repo_dir/typescript/src or repo_dir/tsx/src
-            let parent = source_dir.parent().unwrap_or(&repo_dir);
-            parent
-        } else if repo_dir.join("grammar.js").exists() || repo_dir.join("grammar.json").exists() {
+        let build_dir = if repo_dir.join("grammar.js").exists() || repo_dir.join("grammar.json").exists() {
             &repo_dir
         } else if source_dir.join("grammar.js").exists() || source_dir.join("grammar.json").exists() {
             &source_dir
@@ -278,18 +272,7 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
             let stdout = String::from_utf8_lossy(&build_output.stdout);
             eprintln!("tree-sitter build failed:\nstdout: {}\nstderr: {}", stdout, stderr);
             
-            // For TypeScript/TSX, manual compilation won't work due to missing headers
-            // So we should return an error instead of falling back
-            if language_id == "typescript" || language_id == "tsx" {
-                return Err(format!(
-                    "Failed to build {} grammar with tree-sitter CLI.\n\
-                     Make sure tree-sitter CLI is installed and can build the grammar.\n\
-                     Error:\n{}\n{}",
-                    language_id, stdout, stderr
-                ));
-            }
-            
-            // For other languages, fall back to manual compilation
+            // Fall back to manual compilation
             println!("tree-sitter build failed, falling back to manual compilation...");
             let lib_path = manual_compile(&grammar_info, &source_dir, &repo_dir, language_id, &temp_dir)?;
             return install_library_and_queries(&grammar_info, &source_dir, &repo_dir, language_id, &temp_dir, lib_path);
