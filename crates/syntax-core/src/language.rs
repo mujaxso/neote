@@ -99,8 +99,13 @@ impl LanguageId {
                 #[cfg(feature = "rust")]
                 {
                     eprintln!("DEBUG: Using built-in tree-sitter-rust v0.24");
-                    // tree_sitter_rust::LANGUAGE is a function pointer constant, call it
-                    return Some(tree_sitter_rust::LANGUAGE());
+                    // tree_sitter_rust::LANGUAGE is a function pointer constant
+                    // We need to call it as a function
+                    // Cast to function pointer and call it
+                    let lang_fn: unsafe extern "C" fn() -> tree_sitter::Language = tree_sitter_rust::LANGUAGE;
+                    unsafe {
+                        return Some(lang_fn());
+                    }
                 }
                 #[cfg(not(feature = "rust"))]
                 {
@@ -123,13 +128,10 @@ impl LanguageId {
                     return crate::dynamic_loader::load_language("toml");
                 }
             }
-            #[cfg(feature = "markdown")]
             LanguageId::Markdown => {
-                // Use dynamic loading for markdown
+                // Always try dynamic loading for markdown
                 crate::dynamic_loader::load_language("markdown")
             }
-            #[cfg(not(feature = "markdown"))]
-            LanguageId::Markdown => None,
             LanguageId::PlainText => None,
             LanguageId::Dynamic(id) => crate::dynamic_loader::load_language(id),
         }

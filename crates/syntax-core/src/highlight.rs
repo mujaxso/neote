@@ -48,10 +48,7 @@ pub fn highlight(
         LanguageId::Toml => highlight_with_query(language, source, tree),
         #[cfg(not(feature = "toml"))]
         LanguageId::Toml => Ok(Vec::new()),
-        #[cfg(feature = "markdown")]
         LanguageId::Markdown => highlight_with_query(language, source, tree),
-        #[cfg(not(feature = "markdown"))]
-        LanguageId::Markdown => Ok(Vec::new()),
         LanguageId::PlainText => Ok(Vec::new()),
         LanguageId::Dynamic(_) => highlight_with_query(language, source, tree),
     }
