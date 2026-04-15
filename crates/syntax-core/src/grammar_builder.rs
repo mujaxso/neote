@@ -25,62 +25,42 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
     fs::create_dir_all(&repo_dir)
         .map_err(|e| format!("Failed to create directory {}: {}", repo_dir.display(), e))?;
     
-    // Convert HTTPS GitHub URL to SSH URL to avoid authentication prompts
-    let repo_url = if grammar_info.repo_url.starts_with("https://github.com/") {
-        // Convert https://github.com/user/repo to git@github.com:user/repo.git
-        let url = grammar_info.repo_url.trim_start_matches("https://github.com/");
-        format!("git@github.com:{}.git", url.trim_end_matches(".git"))
+    println!("Cloning {}...", grammar_info.repo_url);
+    
+    // Set up git command with environment to avoid prompts
+    let mut cmd = Command::new("git");
+    cmd.args(["clone", "--depth", "1"]);
+    
+    // Set environment to avoid interactive prompts
+    cmd.env("GIT_TERMINAL_PROMPT", "0");
+    
+    cmd.args([&grammar_info.repo_url, repo_dir.to_str().unwrap()]);
+    
+    let clone_result = cmd.status();
+    
+    if !clone_result.as_ref().map(|s| s.success()).unwrap_or(false) {
+        // Try without GIT_TERMINAL_PROMPT for systems that don't support it
+        println!("First clone attempt failed, trying alternative approach...");
+        
+        // Remove existing directory if clone failed
+        let _ = std::fs::remove_dir_all(&repo_dir);
+        
+        let mut cmd2 = Command::new("git");
+        cmd2.args(["clone", "--depth", "1", "--config", "credential.helper=", &grammar_info.repo_url, repo_dir.to_str().unwrap()]);
+        
+        match cmd2.status() {
+            Ok(status) if status.success() => {
+                println!("Successfully cloned repository");
+            }
+            Ok(status) => {
+                return Err(format!("Failed to clone repository. Exit code: {:?}", status.code()));
+            }
+            Err(e) => {
+                return Err(format!("Failed to run git clone: {}. Try manually cloning the repository: {}", e, grammar_info.repo_url));
+            }
+        }
     } else {
-        grammar_info.repo_url.clone()
-    };
-    
-    println!("Cloning {}...", repo_url);
-    
-    // Set up git command with timeout
-    let mut cmd = Command::new("timeout");
-    cmd.args(["30", "git", "clone", "--depth", "1"]);
-    
-    // Use SSH URL which doesn't prompt for username/password for public repos
-    cmd.args([&repo_url, repo_dir.to_str().unwrap()]);
-    
-    match cmd.status() {
-        Ok(status) if status.success() => {
-            println!("Successfully cloned repository");
-        }
-        Ok(_) => {
-            // Try without timeout command (for systems without timeout)
-            let mut cmd2 = Command::new("git");
-            cmd2.args(["clone", "--depth", "1", "--config", "credential.helper=", &grammar_info.repo_url, repo_dir.to_str().unwrap()]);
-            
-            match cmd2.status() {
-                Ok(status2) if status2.success() => {
-                    println!("Successfully cloned repository");
-                }
-                Ok(_) => {
-                    return Err("Failed to clone repository (git clone failed)".to_string());
-                }
-                Err(e) => {
-                    return Err(format!("Failed to run git clone: {}", e));
-                }
-            }
-        }
-        Err(_e) => {
-            // timeout command not available, try git directly
-            let mut cmd2 = Command::new("git");
-            cmd2.args(["clone", "--depth", "1", "--config", "credential.helper=", &grammar_info.repo_url, repo_dir.to_str().unwrap()]);
-            
-            match cmd2.status() {
-                Ok(status2) if status2.success() => {
-                    println!("Successfully cloned repository");
-                }
-                Ok(_) => {
-                    return Err("Failed to clone repository (git clone failed)".to_string());
-                }
-                Err(e2) => {
-                    return Err(format!("Failed to run git clone: {}", e2));
-                }
-            }
-        }
+        println!("Successfully cloned repository");
     }
     
     // No zip extraction needed - we cloned directly into repo_dir

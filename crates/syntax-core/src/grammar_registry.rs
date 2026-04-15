@@ -87,7 +87,7 @@ impl GrammarRegistry {
             extensions: vec!["md".to_string(), "markdown".to_string()],
             filenames: vec!["README.md".to_string()],
             repo_url: "https://github.com/tree-sitter/tree-sitter-markdown".to_string(),
-            revision: "v0.3.0".to_string(),
+            revision: "v0.10.0".to_string(),  // Updated to a more recent version
             subdirectory: None,
             source_files: vec!["src/parser.c".to_string(), "src/scanner.c".to_string()],
             query_files: vec!["highlights.scm".to_string(), "injections.scm".to_string()],

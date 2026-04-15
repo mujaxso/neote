@@ -57,6 +57,8 @@ impl iced::Application for App {
                 for lang in &missing {
                     eprintln!("  cargo run --bin build-grammar -- {}", lang);
                 }
+                eprintln!("Note: If cloning fails due to authentication, ensure git is properly configured.");
+                eprintln!("Public repositories should clone via HTTPS without authentication.");
             }
         }
         
