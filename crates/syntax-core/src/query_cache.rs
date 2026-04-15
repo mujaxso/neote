@@ -15,30 +15,36 @@ pub fn get_query(language_id: &str, query_type: &str) -> Option<Query> {
     let cache_key = format!("{}:{}", language_id, query_type);
     let cache = QUERY_CACHE.get_or_init(|| Mutex::new(HashMap::new()));
     
-    // Check cache first
-    {
-        let cache_guard = cache.lock().unwrap();
-        if let Some(result) = cache_guard.get(&cache_key) {
-            return match result {
-                Ok(query) => Some(query.clone()),
-                Err(_) => None,
-            };
+    // Check cache first - we need to remove the entry to take ownership
+    let cached_result = {
+        let mut cache_guard = cache.lock().unwrap();
+        cache_guard.remove(&cache_key)
+    };
+    
+    if let Some(result) = cached_result {
+        match result {
+            Ok(query) => {
+                // We have the query, but we removed it from the cache
+                // We need to put it back
+                let mut cache_guard = cache.lock().unwrap();
+                cache_guard.insert(cache_key.clone(), Ok(query.clone()));
+                Some(query)
+            }
+            Err(_) => None,
         }
-    }
-    
-    // Not in cache, load from file
-    let result = load_query_from_file(language_id, query_type);
-    
-    // Store in cache
-    let mut cache_guard = cache.lock().unwrap();
-    // We need to handle the clone differently since Query doesn't implement Clone
-    // Store the result as-is
-    cache_guard.insert(cache_key, result);
-    
-    // Return a fresh copy from the stored result
-    match cache_guard.get(&cache_key) {
-        Some(Ok(query)) => Some(query.clone()),
-        _ => None,
+    } else {
+        // Not in cache, load from file
+        let result = load_query_from_file(language_id, query_type);
+        
+        match result {
+            Ok(query) => {
+                // Store in cache
+                let mut cache_guard = cache.lock().unwrap();
+                cache_guard.insert(cache_key, Ok(query.clone()));
+                Some(query)
+            }
+            Err(_) => None,
+        }
     }
 }
 
@@ -67,10 +73,10 @@ pub fn preload_queries() {
     
     for language_id in registry.language_ids() {
         // Try to load highlights query
-        get_query(language_id, "highlights");
+        let _ = get_query(language_id, "highlights");
         
         // Try to load injections query if it exists
-        get_query(language_id, "injections");
+        let _ = get_query(language_id, "injections");
     }
 }
 

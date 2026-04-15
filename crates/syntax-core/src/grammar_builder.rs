@@ -1,7 +1,6 @@
 //! Download and compile Tree-sitter grammars.
 
 use std::fs;
-use std::path::Path;
 use std::process::Command;
 
 use crate::runtime::Runtime;
@@ -59,7 +58,7 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
                 }
             }
         }
-        Err(e) => {
+        Err(_e) => {
             // timeout command not available, try git directly
             let mut cmd2 = Command::new("git");
             cmd2.args(["clone", "--depth", "1", "--config", "credential.helper=", &grammar_info.repo_url, repo_dir.to_str().unwrap()]);

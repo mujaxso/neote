@@ -169,7 +169,7 @@ pub fn map_capture_name(name: &str) -> Highlight {
 pub fn get_query_for_language(language: LanguageId) -> Result<&'static str, SyntaxError> {
     match language {
         LanguageId::Rust => {
-            if let Some(query) = crate::query_cache::get_query("rust", "highlights") {
+            if let Some(_query) = crate::query_cache::get_query("rust", "highlights") {
                 // Store the query source in a static string
                 static mut RUST_QUERY: Option<&'static str> = None;
                 unsafe {
@@ -198,7 +198,7 @@ pub fn get_query_for_language(language: LanguageId) -> Result<&'static str, Synt
             }
         }
         LanguageId::Toml => {
-            if let Some(query) = crate::query_cache::get_query("toml", "highlights") {
+            if let Some(_query) = crate::query_cache::get_query("toml", "highlights") {
                 static mut TOML_QUERY: Option<&'static str> = None;
                 unsafe {
                     if TOML_QUERY.is_none() {
@@ -223,7 +223,7 @@ pub fn get_query_for_language(language: LanguageId) -> Result<&'static str, Synt
             }
         }
         LanguageId::Markdown => {
-            if let Some(query) = crate::query_cache::get_query("markdown", "highlights") {
+            if let Some(_query) = crate::query_cache::get_query("markdown", "highlights") {
                 static mut MARKDOWN_QUERY: Option<&'static str> = None;
                 unsafe {
                     if MARKDOWN_QUERY.is_none() {
@@ -251,28 +251,46 @@ pub fn get_query_for_language(language: LanguageId) -> Result<&'static str, Synt
             "plaintext has no syntax queries".to_string(),
         )),
         LanguageId::Dynamic(id) => {
-            if let Some(_query) = crate::query_cache::get_query(id, "highlights") {
-                static mut DYNAMIC_QUERIES: std::collections::HashMap<String, &'static str> = std::collections::HashMap::new();
-                unsafe {
-                    if let Some(query_str) = DYNAMIC_QUERIES.get(id) {
-                        return Ok(query_str);
-                    }
-                    let runtime = crate::runtime::Runtime::new();
-                    let query_path = runtime.language_dir(id).join("queries/highlights.scm");
-                    if let Ok(query_text) = std::fs::read_to_string(&query_path) {
-                        let query_str = Box::leak(query_text.into_boxed_str());
-                        DYNAMIC_QUERIES.insert(id.to_string(), query_str);
-                        Ok(query_str)
-                    } else {
-                        Err(SyntaxError::LanguageNotSupported(
-                            format!("{} grammar not available", id),
-                        ))
-                    }
+            // Use OnceLock to lazily initialize the HashMap
+            use std::sync::OnceLock;
+            use std::collections::HashMap;
+            
+            static DYNAMIC_QUERIES: OnceLock<HashMap<String, &'static str>> = OnceLock::new();
+            
+            // Get or initialize the HashMap
+            let queries = DYNAMIC_QUERIES.get_or_init(|| HashMap::new());
+            
+            // Check if we already have the query cached
+            if let Some(query_str) = queries.get(id) {
+                return Ok(query_str);
+            }
+            
+            // Try to load the query from file
+            let runtime = crate::runtime::Runtime::new();
+            let query_path = runtime.language_dir(id).join("queries/highlights.scm");
+            
+            match std::fs::read_to_string(&query_path) {
+                Ok(query_text) => {
+                    // Leak the string to make it static
+                    let query_str = Box::leak(query_text.into_boxed_str());
+                    
+                    // Insert into the HashMap (we need to get a mutable reference)
+                    // Since OnceLock only gives us &, we need to handle this differently
+                    // We'll use a Mutex for interior mutability
+                    use std::sync::Mutex;
+                    static DYNAMIC_QUERIES_MUTEX: OnceLock<Mutex<HashMap<String, &'static str>>> = OnceLock::new();
+                    
+                    let mutex = DYNAMIC_QUERIES_MUTEX.get_or_init(|| Mutex::new(HashMap::new()));
+                    let mut queries_guard = mutex.lock().unwrap();
+                    queries_guard.insert(id.to_string(), query_str);
+                    
+                    Ok(query_str)
                 }
-            } else {
-                Err(SyntaxError::LanguageNotSupported(
-                    format!("{} grammar not available", id),
-                ))
+                Err(_) => {
+                    Err(SyntaxError::LanguageNotSupported(
+                        format!("{} grammar not available", id),
+                    ))
+                }
             }
         }
     }
