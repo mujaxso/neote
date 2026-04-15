@@ -56,32 +56,58 @@ fn load_language_impl(language_id: &str) -> Option<tree_sitter::Language> {
     unsafe {
         match Library::new(&library_path) {
             Ok(lib) => {
-                // Get the language function
-                let symbol_name = format!("tree_sitter_{}", language_id);
-                println!("DEBUG: Looking for symbol: {}", symbol_name);
+                // For markdown, try multiple symbol names in order
+                let symbol_names = if language_id == "markdown" {
+                    vec![
+                        "tree_sitter_markdown",  // Try non-inline first
+                        "tree_sitter_markdown_inline",
+                        format!("tree_sitter_{}", language_id).as_str(),
+                    ]
+                } else {
+                    vec![format!("tree_sitter_{}", language_id).as_str()]
+                };
                 
-                let language_fn: Result<Symbol<unsafe extern "C" fn() -> tree_sitter::Language>, _> = 
-                    lib.get(symbol_name.as_bytes());
+                let mut last_error = None;
                 
-                match language_fn {
-                    Ok(func) => {
-                        println!("DEBUG: Found symbol for {}", language_id);
-                        let language = func();
-                        // Leak the library to keep it loaded
-                        std::mem::forget(lib);
-                        // Print some info about the language
-                        println!("DEBUG: Language {} loaded successfully, node count: {}", language_id, language.node_kind_count());
-                        // Print node types for debugging
-                        if language_id == "markdown" {
-                            for i in 0..language.node_kind_count() {
-                                let kind = language.node_kind_for_id(i as u16);
-                                if let Some(kind) = kind {
-                                    println!("DEBUG: Node type {}: {}", i, kind);
+                for symbol_name in symbol_names {
+                    println!("DEBUG: Looking for symbol: {}", symbol_name);
+                    
+                    let language_fn: Result<Symbol<unsafe extern "C" fn() -> tree_sitter::Language>, _> = 
+                        lib.get(symbol_name.as_bytes());
+                    
+                    match language_fn {
+                        Ok(func) => {
+                            println!("DEBUG: Found symbol {} for {}", symbol_name, language_id);
+                            let language = func();
+                            // Leak the library to keep it loaded
+                            std::mem::forget(lib);
+                            // Print some info about the language
+                            println!("DEBUG: Language {} loaded successfully via {}, node count: {}", 
+                                     language_id, symbol_name, language.node_kind_count());
+                            // Print node types for debugging
+                            if language_id == "markdown" {
+                                for i in 0..language.node_kind_count() {
+                                    let kind = language.node_kind_for_id(i as u16);
+                                    if let Some(kind) = kind {
+                                        println!("DEBUG: Node type {}: {}", i, kind);
+                                    }
                                 }
                             }
+                            return Some(language);
                         }
-                        Some(language)
+                        Err(e) => {
+                            last_error = Some(e);
+                            println!("DEBUG: Failed to get symbol {}: {}", symbol_name, e);
+                            // Try next symbol
+                        }
                     }
+                }
+                
+                // If we get here, all symbols failed
+                if let Some(e) = last_error {
+                    eprintln!("DEBUG: All symbols failed for {}: {}", language_id, e);
+                }
+                None
                     Err(e) => {
                         eprintln!("DEBUG: Failed to get symbol {}: {}", symbol_name, e);
                         // Try alternative symbol names

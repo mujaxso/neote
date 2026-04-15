@@ -91,8 +91,8 @@ fn highlight_with_query(
             if language.as_str() == "markdown" {
                 eprintln!("DEBUG: Markdown query string: {:?}", query_str);
                 eprintln!("DEBUG: Markdown language node count: {}", ts_lang.node_kind_count());
-                // Print first few node types
-                for i in 0..std::cmp::min(20, ts_lang.node_kind_count()) {
+                // Print ALL node types for debugging
+                for i in 0..ts_lang.node_kind_count() {
                     let kind = ts_lang.node_kind_for_id(i as u16);
                     if let Some(kind) = kind {
                         eprintln!("DEBUG: Node type {}: {}", i, kind);
