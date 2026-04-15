@@ -241,6 +241,17 @@ pub fn map_capture_name(name: &str) -> Highlight {
         // Additional markdown captures from the query file
         "atx_heading_marker" => Highlight::Type,
         "block_quote_marker" => Highlight::Comment,
+        // New captures based on actual node types
+        "backslash_escape" => Highlight::String,
+        "uri_autolink" => Highlight::String,
+        "email_autolink" => Highlight::String,
+        "shortcut_link" => Highlight::Variable,
+        "full_reference_link" => Highlight::Variable,
+        "collapsed_reference_link" => Highlight::Variable,
+        "inline_link" => Highlight::Variable,
+        "image_description" => Highlight::Variable,
+        "hard_line_break" => Highlight::Operator,
+        "strikethrough" => Highlight::Comment,
         _ => Highlight::Plain,
     }
 }
