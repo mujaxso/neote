@@ -141,20 +141,41 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
         }
         
         // Find the built library - tree-sitter CLI may place it in several locations
+        // tree-sitter build typically creates a file named parser.so (or parser.dylib/parser.dll)
+        // in the source directory, not libtree-sitter-{language}.so
         let lib_name = get_library_name(language_id);
         
+        // First, look for the standard tree-sitter CLI output: parser.{so,dylib,dll}
+        let parser_lib_name = if cfg!(windows) {
+            "parser.dll"
+        } else if cfg!(target_os = "macos") {
+            "parser.dylib"
+        } else {
+            "parser.so"
+        };
+        
         // Possible locations where tree-sitter CLI might place the library
+        // tree-sitter build typically creates a file named parser.so (or parser.dylib/parser.dll)
+        // in various locations
         let possible_paths = vec![
-            source_dir.join(&lib_name),                     // In source directory
-            source_dir.join("target").join("release").join(&lib_name), // target/release/
-            source_dir.join("target").join(&lib_name),      // target/
-            source_dir.join("out").join(&lib_name),         // out/ (some grammars)
-            source_dir.join("build").join(&lib_name),       // build/ (some grammars)
+            source_dir.join(parser_lib_name),                     // parser.so in source directory
+            source_dir.join(&lib_name),                           // libtree-sitter-{language}.so in source directory
+            source_dir.join("target").join("release").join(parser_lib_name), // target/release/parser.so
+            source_dir.join("target").join("release").join(&lib_name), // target/release/libtree-sitter-{language}.so
+            source_dir.join("target").join(parser_lib_name),      // target/parser.so
+            source_dir.join("target").join(&lib_name),            // target/libtree-sitter-{language}.so
+            source_dir.join("out").join(parser_lib_name),         // out/parser.so (some grammars)
+            source_dir.join("out").join(&lib_name),               // out/libtree-sitter-{language}.so (some grammars)
+            source_dir.join("build").join(parser_lib_name),       // build/parser.so (some grammars)
+            source_dir.join("build").join(&lib_name),             // build/libtree-sitter-{language}.so (some grammars)
         ];
         
         // Also check for debug builds
-        let debug_path = source_dir.join("target").join("debug").join(&lib_name);
-        let all_paths: Vec<_> = possible_paths.into_iter().chain(std::iter::once(debug_path)).collect();
+        let debug_paths = vec![
+            source_dir.join("target").join("debug").join(parser_lib_name),
+            source_dir.join("target").join("debug").join(&lib_name),
+        ];
+        let all_paths: Vec<_> = possible_paths.into_iter().chain(debug_paths.into_iter()).collect();
         
         let mut found = None;
         for path in &all_paths {
@@ -169,7 +190,7 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
             lib_path = found_path;
         } else {
             // If not found, try to list files to debug
-            println!("Searching for library {} in {}...", lib_name, source_dir.display());
+            println!("Searching for library {} or {} in {}...", parser_lib_name, lib_name, source_dir.display());
             if let Ok(entries) = std::fs::read_dir(&source_dir) {
                 for entry in entries.flatten() {
                     println!("  Found: {}", entry.path().display());
@@ -187,7 +208,8 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
                 }
             }
             
-            return Err(format!("Could not find built library {} after tree-sitter build. Searched in: {:?}", lib_name, all_paths));
+            return Err(format!("Could not find built library {} or {} after tree-sitter build. Searched in: {:?}", 
+                parser_lib_name, lib_name, all_paths));
         }
     } else {
         // Manual compilation with cc
