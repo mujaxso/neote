@@ -33,20 +33,28 @@ impl SyntaxManager {
         text: &str,
         path: &Path,
     ) -> Result<(), SyntaxError> {
+        eprintln!("DEBUG: update_document for path: {}", path.display());
         let language = LanguageId::from_path(path);
+        eprintln!("DEBUG: Language determined: {:?}", language);
         
         // Get or create parser for this language
         let parser = self.parsers.entry(language).or_insert_with(|| {
+            eprintln!("DEBUG: Creating new parser for language");
             let mut parser = Parser::new();
             if let Some(ts_lang) = language.tree_sitter_language() {
+                eprintln!("DEBUG: Setting tree-sitter language");
                 let _ = parser.set_language(ts_lang);
+            } else {
+                eprintln!("DEBUG: No tree-sitter language available");
             }
             parser
         });
 
         let tree = if language.tree_sitter_language().is_some() {
+            eprintln!("DEBUG: Parsing document");
             parser.parse(text, None)
         } else {
+            eprintln!("DEBUG: No tree-sitter language, skipping parse");
             None
         };
 
@@ -56,6 +64,7 @@ impl SyntaxManager {
             tree,
         };
         self.documents.insert(doc_id.to_string(), doc);
+        eprintln!("DEBUG: Document updated successfully");
         Ok(())
     }
 

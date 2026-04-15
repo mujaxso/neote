@@ -34,6 +34,7 @@ pub fn load_language(language_id: &str) -> Option<tree_sitter::Language> {
 }
 
 fn load_language_impl(language_id: &str) -> Option<tree_sitter::Language> {
+    eprintln!("DEBUG: Loading language: {}", language_id);
     // Check if the language is in the registry
     let registry = GrammarRegistry::global();
     if !registry.contains_language(language_id) {
@@ -45,24 +46,28 @@ fn load_language_impl(language_id: &str) -> Option<tree_sitter::Language> {
     
     // Check if the grammar library exists
     let library_path = runtime.grammar_library_path(language_id);
+    eprintln!("DEBUG: Looking for grammar library at: {}", library_path.display());
     if !library_path.exists() {
         eprintln!("Grammar library not found at {}", library_path.display());
         eprintln!("Please rebuild grammars with: cargo run --bin build-grammar -- {}", language_id);
         return None;
     }
     
+    eprintln!("DEBUG: Grammar library found, loading...");
     // Load the library
     unsafe {
         match Library::new(&library_path) {
             Ok(lib) => {
                 // Get the language function
                 let symbol_name = format!("tree_sitter_{}", language_id);
+                eprintln!("DEBUG: Looking for symbol: {}", symbol_name);
                 let language_fn: Result<Symbol<unsafe extern "C" fn() -> tree_sitter::Language>, _> = 
                     lib.get(symbol_name.as_bytes());
                 
                 match language_fn {
                     Ok(func) => {
                         let language = func();
+                        eprintln!("DEBUG: Successfully loaded language: {}", language_id);
                         // Leak the library to keep it loaded
                         std::mem::forget(lib);
                         Some(language)
