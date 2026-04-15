@@ -99,8 +99,8 @@ impl LanguageId {
                 #[cfg(feature = "rust")]
                 {
                     eprintln!("DEBUG: Using built-in tree-sitter-rust v0.24");
-                    // tree_sitter_rust::LANGUAGE is a function pointer, call it
-                    return Some(tree_sitter_rust::language());
+                    // tree_sitter_rust::LANGUAGE is a function pointer constant, call it
+                    return Some(tree_sitter_rust::LANGUAGE());
                 }
                 #[cfg(not(feature = "rust"))]
                 {
