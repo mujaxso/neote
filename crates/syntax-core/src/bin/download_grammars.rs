@@ -1,7 +1,7 @@
 //! Command-line tool to download and install Tree-sitter grammars.
 
 use clap::{Parser, Subcommand};
-use syntax_core::grammar_registry::GrammarInfo;
+use syntax_core::grammar_registry;
 use syntax_core::grammar_builder::{build_and_install_grammar, install_missing_grammars, is_grammar_installed};
 
 #[derive(Parser)]
@@ -37,7 +37,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     match cli.command {
         Commands::List => {
             println!("Available grammars:");
-            for language in GrammarInfo::available_languages() {
+            for language in grammar_registry::available_languages() {
                 let installed = if is_grammar_installed(&language) {
                     "[installed]"
                 } else {
@@ -54,7 +54,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
         Commands::InstallAll => {
-            let languages_vec = GrammarInfo::available_languages();
+            let languages_vec = grammar_registry::available_languages();
             let languages: Vec<&str> = languages_vec.iter().map(|s| s.as_str()).collect();
             install_missing_grammars(&languages);
         }
