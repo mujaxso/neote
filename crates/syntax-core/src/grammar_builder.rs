@@ -191,11 +191,23 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
         // Use tree-sitter CLI
         println!("Using tree-sitter CLI to build {}...", language_id);
         
+        // For TypeScript/TSX, we need to build in the repo root, not the subdirectory
+        // Determine the directory to run tree-sitter build in
+        // Check for grammar.js or grammar.json in repo root
+        let build_dir = if repo_dir.join("grammar.js").exists() || repo_dir.join("grammar.json").exists() {
+            &repo_dir
+        } else if source_dir.join("grammar.js").exists() || source_dir.join("grammar.json").exists() {
+            &source_dir
+        } else {
+            // No grammar file found, but we can still try to build in source_dir
+            &source_dir
+        };
+        
         // Check if package.json exists and install dependencies if needed
-        if source_dir.join("package.json").exists() {
+        if build_dir.join("package.json").exists() {
             println!("Installing npm dependencies...");
             let install_output = Command::new("npm")
-                .current_dir(&source_dir)
+                .current_dir(build_dir)
                 .arg("install")
                 .output()
                 .map_err(|e| format!("Failed to run npm install: {}", e))?;
@@ -210,331 +222,124 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
             }
         }
         
-        // Check if we need to run tree-sitter generate
-        // Look for grammar.js in source_dir or parent directory (for subdirectory cases)
-        let grammar_js_exists = source_dir.join("grammar.js").exists() || 
-                               repo_dir.join("grammar.js").exists();
+        // Run tree-sitter generate if needed
+        // Check if parser.c exists in the source directory
         let parser_c_exists = source_dir.join("parser.c").exists() || 
-                             source_dir.join("src/parser.c").exists() ||
-                             repo_dir.join("parser.c").exists() ||
-                             repo_dir.join("src/parser.c").exists();
+                             source_dir.join("src/parser.c").exists();
         
-        if grammar_js_exists && !parser_c_exists {
-            // Run tree-sitter generate in the directory containing grammar.js
-            let generate_dir = if source_dir.join("grammar.js").exists() {
-                &source_dir
-            } else {
-                &repo_dir
-            };
+        if !parser_c_exists {
+            // Check if grammar.js or grammar.json exists
+            let grammar_js_exists = build_dir.join("grammar.js").exists();
+            let grammar_json_exists = build_dir.join("grammar.json").exists();
             
-            println!("Running tree-sitter generate in {}...", generate_dir.display());
-            let generate_output = Command::new("tree-sitter")
-                .current_dir(generate_dir)
-                .arg("generate")
-                .output()
-                .map_err(|e| format!("Failed to run tree-sitter generate: {}", e))?;
-            
-            if !generate_output.status.success() {
-                let stderr = String::from_utf8_lossy(&generate_output.stderr);
-                let stdout = String::from_utf8_lossy(&generate_output.stdout);
-                return Err(format!("tree-sitter generate failed:\nstdout: {}\nstderr: {}", stdout, stderr));
-            }
-            println!("tree-sitter generate succeeded");
-        } else if !parser_c_exists {
-            // Check if source files exist in the grammar_info.source_files list
-            let mut any_source_exists = false;
-            for source_file in &grammar_info.source_files {
-                if source_dir.join(source_file).exists() {
-                    any_source_exists = true;
-                    break;
+            if grammar_js_exists || grammar_json_exists {
+                println!("Running tree-sitter generate in {}...", build_dir.display());
+                let generate_output = Command::new("tree-sitter")
+                    .current_dir(build_dir)
+                    .arg("generate")
+                    .output()
+                    .map_err(|e| format!("Failed to run tree-sitter generate: {}", e))?;
+                
+                if !generate_output.status.success() {
+                    let stderr = String::from_utf8_lossy(&generate_output.stderr);
+                    let stdout = String::from_utf8_lossy(&generate_output.stdout);
+                    eprintln!("tree-sitter generate failed:\nstdout: {}\nstderr: {}", stdout, stderr);
+                    // Continue anyway, maybe parser.c already exists elsewhere
+                } else {
+                    println!("tree-sitter generate succeeded");
                 }
+            } else {
+                println!("No grammar.js or grammar.json found, skipping tree-sitter generate");
             }
-            if !any_source_exists {
-                return Err(format!("Cannot build {}: no source files found and grammar.js not found", language_id));
-            }
-            println!("Source files exist, skipping tree-sitter generate");
         } else {
             println!("parser.c already exists, skipping tree-sitter generate");
         }
         
-        // Check if we should use tree-sitter build or manual compilation
-        // If grammar.js exists in source_dir or repo_dir, use tree-sitter build
-        let grammar_js_path = if source_dir.join("grammar.js").exists() {
-            source_dir.join("grammar.js")
-        } else if repo_dir.join("grammar.js").exists() {
-            repo_dir.join("grammar.js")
+        // Always run tree-sitter build when CLI is available
+        println!("Running tree-sitter build for {} in {}...", language_id, build_dir.display());
+        let build_output = Command::new("tree-sitter")
+            .current_dir(build_dir)
+            .arg("build")
+            .output()
+            .map_err(|e| format!("Failed to run tree-sitter build: {}", e))?;
+        
+        if !build_output.status.success() {
+            let stderr = String::from_utf8_lossy(&build_output.stderr);
+            let stdout = String::from_utf8_lossy(&build_output.stdout);
+            eprintln!("tree-sitter build failed:\nstdout: {}\nstderr: {}", stdout, stderr);
+            // Fall back to manual compilation
+            println!("tree-sitter build failed, falling back to manual compilation...");
+            return manual_compile(&grammar_info, &source_dir, &repo_dir, language_id, temp_dir);
+        }
+        
+        // Print build output for debugging
+        let build_stdout = String::from_utf8_lossy(&build_output.stdout);
+        let build_stderr = String::from_utf8_lossy(&build_output.stderr);
+        if !build_stdout.trim().is_empty() {
+            println!("tree-sitter build stdout: {}", build_stdout);
+        }
+        if !build_stderr.trim().is_empty() {
+            println!("tree-sitter build stderr: {}", build_stderr);
+        }
+        
+        // Find the built library
+        let lib_name = get_library_name(language_id);
+        let parser_lib_name = if cfg!(windows) {
+            "parser.dll"
+        } else if cfg!(target_os = "macos") {
+            "parser.dylib"
         } else {
-            PathBuf::new()
+            "parser.so"
         };
         
-        if grammar_js_path.exists() {
-            // For markdown, always run tree-sitter build to ensure the library is built
-            let should_run_build = if language_id == "markdown" {
-                true
-            } else {
-                // For other languages, check if the library already exists
-                let lib_name = get_library_name(language_id);
-                let parser_lib_name = if cfg!(windows) {
-                    "parser.dll"
-                } else if cfg!(target_os = "macos") {
-                    "parser.dylib"
-                } else {
-                    "parser.so"
-                };
-                // Check in source_dir first, then in the directory containing grammar.js
-                let grammar_js_dir = grammar_js_path.parent().unwrap();
-                !source_dir.join(parser_lib_name).exists() && 
-                !source_dir.join(&lib_name).exists() &&
-                !grammar_js_dir.join(parser_lib_name).exists() &&
-                !grammar_js_dir.join(&lib_name).exists()
-            };
-            
-            if should_run_build {
-                println!("Running tree-sitter build for {}...", language_id);
-                // Run tree-sitter build in the directory containing grammar.js
-                let build_dir = grammar_js_path.parent().unwrap();
-                let build_output = Command::new("tree-sitter")
-                    .current_dir(build_dir)
-                    .arg("build")
-                    .output()
-                    .map_err(|e| format!("Failed to run tree-sitter build: {}", e))?;
-                
-                if !build_output.status.success() {
-                    let stderr = String::from_utf8_lossy(&build_output.stderr);
-                    let stdout = String::from_utf8_lossy(&build_output.stdout);
-                    return Err(format!("tree-sitter build failed:\nstdout: {}\nstderr: {}", stdout, stderr));
-                }
-                
-                // Print build output for debugging
-                let build_stdout = String::from_utf8_lossy(&build_output.stdout);
-                let build_stderr = String::from_utf8_lossy(&build_output.stderr);
-                if !build_stdout.trim().is_empty() {
-                    println!("tree-sitter build stdout: {}", build_stdout);
-                }
-                if !build_stderr.trim().is_empty() {
-                    println!("tree-sitter build stderr: {}", build_stderr);
-                }
-            } else {
-                println!("Library already exists, skipping tree-sitter build");
-            }
-            
-            // Find the built library
-            let lib_name = get_library_name(language_id);
-            let parser_lib_name = if cfg!(windows) {
-                "parser.dll"
+        // Check common locations
+        let possible_paths = vec![
+            source_dir.join(parser_lib_name),
+            source_dir.join(&lib_name),
+            source_dir.join("target").join("release").join(parser_lib_name),
+            source_dir.join("target").join("release").join(&lib_name),
+            build_dir.join(parser_lib_name),
+            build_dir.join(&lib_name),
+            build_dir.join("target").join("release").join(parser_lib_name),
+            build_dir.join("target").join("release").join(&lib_name),
+        ];
+        
+        // For markdown, also check markdown-inline.so
+        let markdown_paths = if language_id == "markdown" {
+            let markdown_lib_name = if cfg!(windows) {
+                "markdown-inline.dll"
             } else if cfg!(target_os = "macos") {
-                "parser.dylib"
+                "markdown-inline.dylib"
             } else {
-                "parser.so"
+                "markdown-inline.so"
             };
-            
-            // Check common locations
-            let grammar_js_dir = grammar_js_path.parent().unwrap();
-            let possible_paths = vec![
-                source_dir.join(parser_lib_name),
-                source_dir.join(&lib_name),
-                source_dir.join("target").join("release").join(parser_lib_name),
-                source_dir.join("target").join("release").join(&lib_name),
-                grammar_js_dir.join(parser_lib_name),
-                grammar_js_dir.join(&lib_name),
-                grammar_js_dir.join("target").join("release").join(parser_lib_name),
-                grammar_js_dir.join("target").join("release").join(&lib_name),
-            ];
-            
-            // For markdown, also check markdown-inline.so
-            let markdown_paths = if language_id == "markdown" {
-                let markdown_lib_name = if cfg!(windows) {
-                    "markdown-inline.dll"
-                } else if cfg!(target_os = "macos") {
-                    "markdown-inline.dylib"
-                } else {
-                    "markdown-inline.so"
-                };
-                vec![
-                    source_dir.join(markdown_lib_name),
-                    source_dir.join("target").join("release").join(markdown_lib_name),
-                ]
-            } else {
-                vec![]
-            };
-            
-            let all_paths: Vec<_> = possible_paths.into_iter().chain(markdown_paths.into_iter()).collect();
-            
-            let mut found = None;
-            for path in &all_paths {
-                if path.exists() {
-                    found = Some(path.clone());
-                    break;
-                }
-            }
-            
-            lib_path = found.ok_or_else(|| {
-                format!("Could not find built library after tree-sitter build")
-            })?;
+            vec![
+                source_dir.join(markdown_lib_name),
+                source_dir.join("target").join("release").join(markdown_lib_name),
+                build_dir.join(markdown_lib_name),
+                build_dir.join("target").join("release").join(markdown_lib_name),
+            ]
         } else {
-            // No grammar.js, compile manually with cc
-            println!("No grammar.js found, compiling manually with cc...");
-            
-            // Check if source files exist
-            let mut source_files_exist = true;
-            for source_file in &grammar_info.source_files {
-                if !source_dir.join(source_file).exists() {
-                    println!("Warning: Source file {} does not exist", source_file);
-                    source_files_exist = false;
-                }
-            }
-            
-            if !source_files_exist {
-                return Err(format!("Some source files are missing for {}", language_id));
-            }
-            
-            // Compile all source files
-            let mut object_files = Vec::new();
-            for source_file in &grammar_info.source_files {
-                let source_path = source_dir.join(source_file);
-                if !source_path.exists() {
-                    println!("Warning: Source file {} does not exist, skipping", source_file);
-                    continue; // Skip missing files (some grammars don't have scanner.c)
-                }
-                
-                let object_file = temp_dir.path().join(format!("{}.o", source_file.replace('/', "_")));
-                
-                println!("Compiling {}...", source_file);
-                // Try to find tree-sitter include path
-                let mut include_args = vec!["-c", "-fPIC", "-I./src"];
-                
-                // Store tree-sitter include path in a variable that lives long enough
-                let tree_sitter_include = find_tree_sitter_include_path().ok();
-                
-                // Add include path for tree-sitter headers if available
-                if let Some(tree_sitter_include) = &tree_sitter_include {
-                    include_args.push("-I");
-                    include_args.push(tree_sitter_include);
-                }
-                
-                // Add include path for the repo root (for common/ directory)
-                if let Some(repo_root) = source_dir.parent() {
-                    if repo_root.join("common").exists() {
-                        include_args.push("-I");
-                        include_args.push(repo_root.to_str().unwrap());
-                    }
-                }
-                
-                include_args.extend_from_slice(&["-o", object_file.to_str().unwrap()]);
-                
-                let output = Command::new("cc")
-                    .args(&include_args)
-                    .arg(&source_path)
-                    .current_dir(&source_dir)
-                    .output()
-                    .map_err(|e| format!("Failed to compile {}: {}", source_file, e))?;
-                
-                if !output.status.success() {
-                    let stderr = String::from_utf8_lossy(&output.stderr);
-                    return Err(format!("Failed to compile {}: {}", source_file, stderr));
-                }
-                
-                object_files.push(object_file);
-            }
-            
-            if object_files.is_empty() {
-                return Err("No source files compiled".to_string());
-            }
-            
-            // Link shared library
-            let lib_name = get_library_name(language_id);
-            lib_path = temp_dir.path().join(&lib_name);
-            
-            let mut cmd = Command::new("cc");
-            cmd.args(["-shared", "-fPIC", "-o"])
-                .arg(&lib_path);
-            
-            for obj in &object_files {
-                cmd.arg(obj);
-            }
-            
-            cmd.arg("-lstdc++");
-            
-            let status = cmd.status()
-                .map_err(|e| format!("Failed to link library: {}", e))?;
-            
-            if !status.success() {
-                return Err("Failed to link shared library".to_string());
+            vec![]
+        };
+        
+        let all_paths: Vec<_> = possible_paths.into_iter().chain(markdown_paths.into_iter()).collect();
+        
+        let mut found = None;
+        for path in &all_paths {
+            if path.exists() {
+                found = Some(path.clone());
+                break;
             }
         }
+        
+        lib_path = found.ok_or_else(|| {
+            format!("Could not find built library after tree-sitter build")
+        })?;
     } else {
         // Manual compilation with cc
         println!("Using cc to build {}...", language_id);
-        
-        // Generate parser.c if needed
-        if !source_dir.join("src/parser.c").exists() {
-            if source_dir.join("grammar.js").exists() {
-                // Try to use node with tree-sitter CLI package
-                let status = Command::new("npx")
-                    .current_dir(&source_dir)
-                    .args(["tree-sitter", "generate"])
-                    .status();
-                
-                if status.is_err() || !status.unwrap().success() {
-                    return Err("Failed to generate parser.c. Install tree-sitter CLI or node.js".to_string());
-                }
-            } else {
-                return Err("No grammar.js found and parser.c doesn't exist".to_string());
-            }
-        }
-        
-        // Compile all source files
-        let mut object_files = Vec::new();
-        for source_file in &grammar_info.source_files {
-            let source_path = source_dir.join(source_file);
-            if !source_path.exists() {
-                println!("Warning: Source file {} does not exist, skipping", source_file);
-                continue; // Skip missing files (some grammars don't have scanner.c)
-            }
-            
-            let object_file = temp_dir.path().join(format!("{}.o", source_file.replace('/', "_")));
-            
-            println!("Compiling {}...", source_file);
-            let output = Command::new("cc")
-                .args(["-c", "-fPIC", "-I./src", "-o"])
-                .arg(&object_file)
-                .arg(&source_path)
-                .current_dir(&source_dir)
-                .output()
-                .map_err(|e| format!("Failed to compile {}: {}", source_file, e))?;
-            
-            if !output.status.success() {
-                let stderr = String::from_utf8_lossy(&output.stderr);
-                return Err(format!("Failed to compile {}: {}", source_file, stderr));
-            }
-            
-            object_files.push(object_file);
-        }
-        
-        if object_files.is_empty() {
-            return Err("No source files compiled".to_string());
-        }
-        
-        // Link shared library
-        let lib_name = get_library_name(language_id);
-        lib_path = temp_dir.path().join(&lib_name);
-        
-        let mut cmd = Command::new("cc");
-        cmd.args(["-shared", "-fPIC", "-o"])
-            .arg(&lib_path);
-        
-        for obj in &object_files {
-            cmd.arg(obj);
-        }
-        
-        cmd.arg("-lstdc++");
-        
-        let status = cmd.status()
-            .map_err(|e| format!("Failed to link library: {}", e))?;
-        
-        if !status.success() {
-            return Err("Failed to link shared library".to_string());
-        }
+        return manual_compile(&grammar_info, &source_dir, &repo_dir, language_id, temp_dir);
     }
     
     // Install library to runtime directory
@@ -637,6 +442,106 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
     
     println!("Successfully installed {} grammar!", language_id);
     Ok(())
+}
+
+/// Manual compilation fallback when tree-sitter CLI fails or is unavailable
+fn manual_compile(
+    grammar_info: &crate::grammar_registry::GrammarInfo,
+    source_dir: &std::path::Path,
+    repo_dir: &std::path::Path,
+    language_id: &str,
+    temp_dir: &tempfile::TempDir,
+) -> Result<std::path::PathBuf, String> {
+    println!("Compiling {} manually with cc...", language_id);
+    
+    // Check if source files exist
+    let mut source_files_exist = true;
+    for source_file in &grammar_info.source_files {
+        if !source_dir.join(source_file).exists() {
+            println!("Warning: Source file {} does not exist", source_file);
+            source_files_exist = false;
+        }
+    }
+    
+    if !source_files_exist {
+        return Err(format!("Some source files are missing for {}", language_id));
+    }
+    
+    // Compile all source files
+    let mut object_files = Vec::new();
+    for source_file in &grammar_info.source_files {
+        let source_path = source_dir.join(source_file);
+        if !source_path.exists() {
+            println!("Warning: Source file {} does not exist, skipping", source_file);
+            continue; // Skip missing files (some grammars don't have scanner.c)
+        }
+        
+        let object_file = temp_dir.path().join(format!("{}.o", source_file.replace('/', "_")));
+        
+        println!("Compiling {}...", source_file);
+        // Try to find tree-sitter include path
+        let mut include_args = vec!["-c", "-fPIC", "-I./src"];
+        
+        // Store tree-sitter include path in a variable that lives long enough
+        let tree_sitter_include = find_tree_sitter_include_path().ok();
+        
+        // Add include path for tree-sitter headers if available
+        if let Some(tree_sitter_include) = &tree_sitter_include {
+            include_args.push("-I");
+            include_args.push(tree_sitter_include);
+        }
+        
+        // Add include path for the repo root (for common/ directory)
+        if let Some(repo_root) = source_dir.parent() {
+            if repo_root.join("common").exists() {
+                include_args.push("-I");
+                include_args.push(repo_root.to_str().unwrap());
+            }
+        }
+        
+        include_args.extend_from_slice(&["-o", object_file.to_str().unwrap()]);
+        
+        let output = std::process::Command::new("cc")
+            .args(&include_args)
+            .arg(&source_path)
+            .current_dir(&source_dir)
+            .output()
+            .map_err(|e| format!("Failed to compile {}: {}", source_file, e))?;
+        
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            return Err(format!("Failed to compile {}: {}", source_file, stderr));
+        }
+        
+        object_files.push(object_file);
+    }
+    
+    if object_files.is_empty() {
+        return Err("No source files compiled".to_string());
+    }
+    
+    // Link shared library
+    let lib_name = get_library_name(language_id);
+    let lib_path = temp_dir.path().join(&lib_name);
+    
+    let mut cmd = std::process::Command::new("cc");
+    cmd.args(["-shared", "-fPIC", "-o"])
+        .arg(&lib_path);
+    
+    for obj in &object_files {
+        cmd.arg(obj);
+    }
+    
+    cmd.arg("-lstdc++");
+    
+    let status = cmd.status()
+        .map_err(|e| format!("Failed to link library: {}", e))?;
+    
+    if !status.success() {
+        return Err("Failed to link shared library".to_string());
+    }
+    
+    Ok(lib_path)
 }
 
 /// Get the platform-specific library name for a language
