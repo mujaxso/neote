@@ -112,7 +112,7 @@ impl LanguageId {
                 }
             }
             LanguageId::Toml => {
-                // Use built-in tree-sitter-toml (v0.5) which should match the query file
+                // Use built-in tree-sitter-toml (v0.20) which should match the query file
                 #[cfg(feature = "toml")]
                 {
                     return Some(tree_sitter_toml::language());

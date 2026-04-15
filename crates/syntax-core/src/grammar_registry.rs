@@ -72,7 +72,7 @@ impl GrammarRegistry {
             extensions: vec!["toml".to_string()],
             filenames: vec!["Cargo.toml".to_string(), "rust-toolchain.toml".to_string()],
             repo_url: "https://github.com/tree-sitter/tree-sitter-toml".to_string(),
-            revision: "v0.5.0".to_string(),
+            revision: "v0.20.0".to_string(),
             subdirectory: None,
             source_files: vec!["src/parser.c".to_string()],
             query_files: vec!["highlights.scm".to_string()],

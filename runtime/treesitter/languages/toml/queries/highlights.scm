@@ -1,4 +1,4 @@
-; TOML highlight query (compatible with tree-sitter-toml 0.20)
+; TOML highlight query (compatible with tree-sitter-toml 0.20.0)
 ; This file is kept for reference; the actual query used is from the crate's HIGHLIGHT_QUERY constant
 
 ; Comments
@@ -16,11 +16,10 @@
 (boolean) @boolean
 
 ; Dates and times (if supported by grammar)
-; Note: These node types may not exist in all grammar versions
-; (date_time) @string.special
-; (local_date) @string.special
-; (local_time) @string.special
-; (local_date_time) @string.special
+(date_time) @string.special
+(local_date) @string.special
+(local_time) @string.special
+(local_date_time) @string.special
 
 ; Tables
 (table) @type
