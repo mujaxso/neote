@@ -96,3 +96,23 @@ pub fn is_grammar_available(language_id: &str) -> bool {
     let library_path = runtime.grammar_library_path(language_id);
     library_path.exists()
 }
+
+/// Dynamic grammar loader struct (for re-export)
+pub struct DynamicGrammarLoader;
+
+impl DynamicGrammarLoader {
+    /// Load a language
+    pub fn load(language_id: &str) -> Option<tree_sitter::Language> {
+        load_language(language_id)
+    }
+    
+    /// Check if a grammar is available
+    pub fn is_available(language_id: &str) -> bool {
+        is_grammar_available(language_id)
+    }
+    
+    /// Preload all grammars
+    pub fn preload_all() {
+        preload_available_grammars();
+    }
+}

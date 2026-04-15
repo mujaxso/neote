@@ -1,15 +1,15 @@
 //! Download and compile Tree-sitter grammars.
 
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process::Command;
 
 use crate::runtime::Runtime;
-use super::grammar_registry::GrammarInfo;
+use crate::grammar_registry;
 
 /// Build a Tree-sitter grammar and install it to the runtime directory
 pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
-    let grammar_info = GrammarInfo::for_language(language_id)
+    let grammar_info = grammar_registry::for_language(language_id)
         .ok_or_else(|| format!("No grammar info available for {}", language_id))?;
     
     let runtime = Runtime::new();
@@ -245,147 +245,6 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
     
     println!("Successfully installed {} grammar!", language_id);
     Ok(())
-}
-
-/// Download a file from a URL to a local path
-fn download_file(url: &str, path: &std::path::Path) -> Result<(), String> {
-    use std::io::{Read, Write};
-    
-    println!("Downloading {} to {}...", url, path.display());
-    
-    // First try using system commands (curl/wget) which might be more reliable
-    if let Ok(()) = fallback_download(url, path) {
-        println!("Download successful using system command");
-        return Ok(());
-    }
-    
-    println!("System command failed, trying ureq...");
-    
-    // Try using ureq as fallback
-    let mut request = ureq::get(url)
-        .timeout(std::time::Duration::from_secs(60));
-    
-    // Add User-Agent for GitHub API
-    if url.contains("api.github.com") {
-        request = request.set("User-Agent", "qyzer-studio/0.1.0");
-    }
-    
-    let response = request.call();
-    
-    match response {
-        Ok(resp) => {
-            let mut file = std::fs::File::create(path)
-                .map_err(|e| format!("Failed to create file {}: {}", path.display(), e))?;
-            
-            // Get content length for progress
-            let content_length = resp.header("Content-Length")
-                .and_then(|s| s.parse::<usize>().ok())
-                .unwrap_or(0);
-            
-            println!("Downloading {} bytes...", content_length);
-            
-            // Read response body into a Vec<u8> first
-            let mut bytes: Vec<u8> = Vec::new();
-            resp.into_reader().read_to_end(&mut bytes)
-                .map_err(|e| format!("Failed to read response: {}", e))?;
-            
-            println!("Read {} bytes", bytes.len());
-            
-            // Write bytes to file
-            std::io::Write::write_all(&mut file, &bytes)
-                .map_err(|e| format!("Failed to write to file: {}", e))?;
-            
-            println!("Download completed successfully");
-            Ok(())
-        }
-        Err(ureq::Error::Status(code, resp)) => {
-            let err = format!("HTTP error {}: {}", code, resp.status_text());
-            println!("{}", err);
-            Err(err)
-        }
-        Err(e) => {
-            let err = format!("ureq download failed: {}", e);
-            println!("{}", err);
-            Err(err)
-        }
-    }
-}
-
-/// Fallback download using system commands
-fn fallback_download(url: &str, path: &std::path::Path) -> Result<(), String> {
-    println!("Trying to download using system command...");
-    
-    if cfg!(windows) {
-        let output = Command::new("powershell")
-            .args(["-Command", &format!("Invoke-WebRequest -Uri '{}' -OutFile '{}'", url, path.display())])
-            .output()
-            .map_err(|e| format!("Failed to run powershell: {}", e))?;
-        
-        if output.status.success() {
-            Ok(())
-        } else {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            Err(format!("Powershell failed: {}", stderr))
-        }
-    } else {
-        // Try curl first
-        let mut curl_args = vec!["-L", "-f", "-o", path.to_str().unwrap(), url];
-        // Add headers for GitHub API
-        if url.contains("api.github.com") {
-            curl_args = vec!["-L", "-f", "-H", "User-Agent: qyzer-studio/0.1.0", "-o", path.to_str().unwrap(), url];
-        }
-        
-        let curl_result = Command::new("curl")
-            .args(&curl_args)
-            .output();
-        
-        match curl_result {
-            Ok(output) if output.status.success() => {
-                println!("curl download successful");
-                Ok(())
-            }
-            Ok(output) => {
-                let stderr = String::from_utf8_lossy(&output.stderr);
-                println!("curl failed: {}", stderr);
-                
-                // Try wget as fallback
-                let wget_result = Command::new("wget")
-                    .args(["-O", path.to_str().unwrap(), url])
-                    .output();
-                
-                match wget_result {
-                    Ok(output) if output.status.success() => {
-                        println!("wget download successful");
-                        Ok(())
-                    }
-                    Ok(output) => {
-                        let stderr = String::from_utf8_lossy(&output.stderr);
-                        Err(format!("wget failed: {}", stderr))
-                    }
-                    Err(e) => Err(format!("Failed to run wget: {}", e)),
-                }
-            }
-            Err(e) => {
-                println!("curl not available: {}", e);
-                // Try wget as fallback
-                let wget_result = Command::new("wget")
-                    .args(["-O", path.to_str().unwrap(), url])
-                    .output();
-                
-                match wget_result {
-                    Ok(output) if output.status.success() => {
-                        println!("wget download successful");
-                        Ok(())
-                    }
-                    Ok(output) => {
-                        let stderr = String::from_utf8_lossy(&output.stderr);
-                        Err(format!("wget failed: {}", stderr))
-                    }
-                    Err(e) => Err(format!("Failed to run wget: {}", e)),
-                }
-            }
-        }
-    }
 }
 
 /// Get the platform-specific library name for a language

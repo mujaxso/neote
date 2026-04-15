@@ -1,7 +1,7 @@
 //! Syntax manager for coordinating multiple documents and languages.
 
 use crate::error::SyntaxError;
-use crate::highlight::{highlight, HighlightSpan, get_query_for_language};
+use crate::highlight::{highlight, HighlightSpan};
 use crate::language::LanguageId;
 use std::collections::HashMap;
 use std::path::Path;

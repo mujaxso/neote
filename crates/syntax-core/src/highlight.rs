@@ -3,7 +3,6 @@
 use crate::error::SyntaxError;
 use crate::language::LanguageId;
 use tree_sitter::{Query, QueryCursor, Tree};
-use std::fs;
 
 /// A highlight span in the document
 #[derive(Debug, Clone)]
@@ -51,6 +50,7 @@ pub fn highlight(
         #[cfg(not(feature = "markdown"))]
         LanguageId::Markdown => Ok(Vec::new()),
         LanguageId::PlainText => Ok(Vec::new()),
+        LanguageId::Dynamic(_) => highlight_with_query(language, source, tree),
     }
 }
 
@@ -170,8 +170,27 @@ pub fn get_query_for_language(language: LanguageId) -> Result<&'static str, Synt
     match language {
         LanguageId::Rust => {
             if let Some(query) = crate::query_cache::get_query("rust", "highlights") {
-                let query_str = Box::leak(query.source().to_string().into_boxed_str());
-                Ok(query_str)
+                // Store the query source in a static string
+                static mut RUST_QUERY: Option<&'static str> = None;
+                unsafe {
+                    if RUST_QUERY.is_none() {
+                        // Get the query text from the query object
+                        // Note: tree-sitter Query doesn't have a source() method
+                        // We'll need to load it from file directly
+                        let runtime = crate::runtime::Runtime::new();
+                        let query_path = runtime.language_dir("rust").join("queries/highlights.scm");
+                        if let Ok(query_text) = std::fs::read_to_string(&query_path) {
+                            RUST_QUERY = Some(Box::leak(query_text.into_boxed_str()));
+                        }
+                    }
+                    if let Some(query_str) = RUST_QUERY {
+                        Ok(query_str)
+                    } else {
+                        Err(SyntaxError::LanguageNotSupported(
+                            "rust grammar not available".to_string(),
+                        ))
+                    }
+                }
             } else {
                 Err(SyntaxError::LanguageNotSupported(
                     "rust grammar not available".to_string(),
@@ -180,8 +199,23 @@ pub fn get_query_for_language(language: LanguageId) -> Result<&'static str, Synt
         }
         LanguageId::Toml => {
             if let Some(query) = crate::query_cache::get_query("toml", "highlights") {
-                let query_str = Box::leak(query.source().to_string().into_boxed_str());
-                Ok(query_str)
+                static mut TOML_QUERY: Option<&'static str> = None;
+                unsafe {
+                    if TOML_QUERY.is_none() {
+                        let runtime = crate::runtime::Runtime::new();
+                        let query_path = runtime.language_dir("toml").join("queries/highlights.scm");
+                        if let Ok(query_text) = std::fs::read_to_string(&query_path) {
+                            TOML_QUERY = Some(Box::leak(query_text.into_boxed_str()));
+                        }
+                    }
+                    if let Some(query_str) = TOML_QUERY {
+                        Ok(query_str)
+                    } else {
+                        Err(SyntaxError::LanguageNotSupported(
+                            "toml grammar not available".to_string(),
+                        ))
+                    }
+                }
             } else {
                 Err(SyntaxError::LanguageNotSupported(
                     "toml grammar not available".to_string(),
@@ -190,8 +224,23 @@ pub fn get_query_for_language(language: LanguageId) -> Result<&'static str, Synt
         }
         LanguageId::Markdown => {
             if let Some(query) = crate::query_cache::get_query("markdown", "highlights") {
-                let query_str = Box::leak(query.source().to_string().into_boxed_str());
-                Ok(query_str)
+                static mut MARKDOWN_QUERY: Option<&'static str> = None;
+                unsafe {
+                    if MARKDOWN_QUERY.is_none() {
+                        let runtime = crate::runtime::Runtime::new();
+                        let query_path = runtime.language_dir("markdown").join("queries/highlights.scm");
+                        if let Ok(query_text) = std::fs::read_to_string(&query_path) {
+                            MARKDOWN_QUERY = Some(Box::leak(query_text.into_boxed_str()));
+                        }
+                    }
+                    if let Some(query_str) = MARKDOWN_QUERY {
+                        Ok(query_str)
+                    } else {
+                        Err(SyntaxError::LanguageNotSupported(
+                            "markdown grammar not available".to_string(),
+                        ))
+                    }
+                }
             } else {
                 Err(SyntaxError::LanguageNotSupported(
                     "markdown grammar not available".to_string(),
@@ -202,9 +251,24 @@ pub fn get_query_for_language(language: LanguageId) -> Result<&'static str, Synt
             "plaintext has no syntax queries".to_string(),
         )),
         LanguageId::Dynamic(id) => {
-            if let Some(query) = crate::query_cache::get_query(id, "highlights") {
-                let query_str = Box::leak(query.source().to_string().into_boxed_str());
-                Ok(query_str)
+            if let Some(_query) = crate::query_cache::get_query(id, "highlights") {
+                static mut DYNAMIC_QUERIES: std::collections::HashMap<String, &'static str> = std::collections::HashMap::new();
+                unsafe {
+                    if let Some(query_str) = DYNAMIC_QUERIES.get(id) {
+                        return Ok(query_str);
+                    }
+                    let runtime = crate::runtime::Runtime::new();
+                    let query_path = runtime.language_dir(id).join("queries/highlights.scm");
+                    if let Ok(query_text) = std::fs::read_to_string(&query_path) {
+                        let query_str = Box::leak(query_text.into_boxed_str());
+                        DYNAMIC_QUERIES.insert(id.to_string(), query_str);
+                        Ok(query_str)
+                    } else {
+                        Err(SyntaxError::LanguageNotSupported(
+                            format!("{} grammar not available", id),
+                        ))
+                    }
+                }
             } else {
                 Err(SyntaxError::LanguageNotSupported(
                     format!("{} grammar not available", id),

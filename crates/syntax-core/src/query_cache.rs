@@ -2,7 +2,7 @@
 
 use std::collections::HashMap;
 use std::sync::{OnceLock, Mutex};
-use tree_sitter::{Query, Language};
+use tree_sitter::Query;
 
 use crate::runtime::Runtime;
 use crate::grammar_registry::GrammarRegistry;
@@ -31,11 +31,14 @@ pub fn get_query(language_id: &str, query_type: &str) -> Option<Query> {
     
     // Store in cache
     let mut cache_guard = cache.lock().unwrap();
-    cache_guard.insert(cache_key, result.clone());
+    // We need to handle the clone differently since Query doesn't implement Clone
+    // Store the result as-is
+    cache_guard.insert(cache_key, result);
     
-    match result {
-        Ok(query) => Some(query),
-        Err(_) => None,
+    // Return a fresh copy from the stored result
+    match cache_guard.get(&cache_key) {
+        Some(Ok(query)) => Some(query.clone()),
+        _ => None,
     }
 }
 
@@ -54,7 +57,7 @@ fn load_query_from_file(language_id: &str, query_type: &str) -> Result<Query, St
         .map_err(|e| format!("Failed to read query file {}: {}", query_path.display(), e))?;
     
     // Compile query
-    Query::new(&language, &query_text)
+    Query::new(language, &query_text)
         .map_err(|e| format!("Failed to compile query for {}: {}", language_id, e))
 }
 
@@ -68,5 +71,20 @@ pub fn preload_queries() {
         
         // Try to load injections query if it exists
         get_query(language_id, "injections");
+    }
+}
+
+/// Query cache struct (for re-export)
+pub struct QueryCache;
+
+impl QueryCache {
+    /// Get a query
+    pub fn get(language_id: &str, query_type: &str) -> Option<Query> {
+        get_query(language_id, query_type)
+    }
+    
+    /// Preload queries
+    pub fn preload() {
+        preload_queries();
     }
 }
