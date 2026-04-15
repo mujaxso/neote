@@ -1,4 +1,3 @@
-
 ; Markdown highlighting query
 ; Using patterns that should work with tree-sitter-markdown-inline
 
@@ -10,10 +9,8 @@
 ] @heading
 
 ; Emphasis
-[
-  (emphasis)
-  (strong_emphasis)
-] @emphasis
+(emphasis) @emphasis
+(strong_emphasis) @strong_emphasis
 
 ; Links
 (link) @link
