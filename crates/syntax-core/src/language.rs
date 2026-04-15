@@ -43,15 +43,18 @@ impl LanguageId {
             _ => {}
         }
         
+        // Check for built-in languages first
+        match ext {
+            "rs" => return LanguageId::Rust,
+            _ => {}
+        }
+        
         // Try to match against dynamic language registry
         if let Some(lang_id) = Self::from_extension_dynamic(ext) {
             return LanguageId::Dynamic(lang_id);
         }
         
-        match ext {
-            "rs" => LanguageId::Rust,
-            _ => LanguageId::PlainText,
-        }
+        LanguageId::PlainText
     }
 
     fn from_extension_dynamic(ext: &str) -> Option<&'static str> {
