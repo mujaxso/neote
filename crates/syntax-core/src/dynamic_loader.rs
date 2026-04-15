@@ -57,14 +57,14 @@ fn load_language_impl(language_id: &str) -> Option<tree_sitter::Language> {
         match Library::new(&library_path) {
             Ok(lib) => {
                 // For markdown, try multiple symbol names in order
-                let symbol_names = if language_id == "markdown" {
+                let symbol_names: Vec<String> = if language_id == "markdown" {
                     vec![
-                        "tree_sitter_markdown",  // Try non-inline first
-                        "tree_sitter_markdown_inline",
-                        format!("tree_sitter_{}", language_id).as_str(),
+                        "tree_sitter_markdown".to_string(),  // Try non-inline first
+                        "tree_sitter_markdown_inline".to_string(),
+                        format!("tree_sitter_{}", language_id),
                     ]
                 } else {
-                    vec![format!("tree_sitter_{}", language_id).as_str()]
+                    vec![format!("tree_sitter_{}", language_id)]
                 };
                 
                 let mut last_error = None;
@@ -96,7 +96,9 @@ fn load_language_impl(language_id: &str) -> Option<tree_sitter::Language> {
                             return Some(language);
                         }
                         Err(e) => {
-                            last_error = Some(e);
+                            // Store error message string instead of the error itself
+                            let error_msg = format!("{}", e);
+                            last_error = Some(error_msg);
                             println!("DEBUG: Failed to get symbol {}: {}", symbol_name, e);
                             // Try next symbol
                         }
