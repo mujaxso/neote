@@ -107,21 +107,17 @@ impl SyntaxManager {
     }
 
     pub fn highlight_spans(&self, doc_id: &str) -> Result<Vec<HighlightSpan>, SyntaxError> {
-        eprintln!("DEBUG: highlight_spans called for doc_id: {}", doc_id);
         let doc = self
             .documents
             .get(doc_id)
             .ok_or(SyntaxError::DocumentNotFound)?;
-        eprintln!("DEBUG: Document language: {:?}", doc.language);
         match &doc.tree {
             Some(tree) => {
-                eprintln!("DEBUG: Tree exists, calling highlight");
                 // Use the global query cache
                 // For now, just use the standard highlight function which uses the query cache
                 highlight(doc.language, &doc.text, tree)
             }
             None => {
-                eprintln!("DEBUG: No tree, returning empty spans");
                 Ok(Vec::new())
             }
         }
@@ -131,11 +127,6 @@ impl SyntaxManager {
     pub fn initialize_dynamic_grammars(&mut self) {
         use crate::dynamic_loader::preload_available_grammars;
         use crate::query_cache::preload_queries;
-        use crate::runtime::Runtime;
-        
-        // Log runtime path for debugging
-        let runtime = Runtime::new();
-        eprintln!("DEBUG: Runtime directory: {:?}", runtime.root());
         
         // Preload available grammars
         preload_available_grammars();

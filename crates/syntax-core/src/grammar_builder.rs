@@ -194,29 +194,13 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
             // For TypeScript/TSX, use the parent of source_dir (which is repo_dir/typescript or repo_dir/tsx)
             // because source_dir is repo_dir/typescript/src or repo_dir/tsx/src
             let parent = source_dir.parent().unwrap_or(&repo_dir);
-            println!("DEBUG: TypeScript/TSX detected, using subdirectory: {:?}", parent);
-            // List files in this directory for debugging
-            if let Ok(entries) = std::fs::read_dir(parent) {
-                for entry in entries.flatten() {
-                    println!("DEBUG: Build dir entry: {:?}", entry.file_name());
-                }
-            }
             parent
         } else if repo_dir.join("grammar.js").exists() || repo_dir.join("grammar.json").exists() {
-            println!("DEBUG: Found grammar.js/grammar.json in repo root: {:?}", repo_dir);
             &repo_dir
         } else if source_dir.join("grammar.js").exists() || source_dir.join("grammar.json").exists() {
-            println!("DEBUG: Found grammar.js/grammar.json in source dir: {:?}", source_dir);
             &source_dir
         } else {
             // No grammar file found, but we can still try to build in source_dir
-            println!("DEBUG: No grammar.js or grammar.json found. Looking in {:?}", source_dir);
-            // List files for debugging
-            if let Ok(entries) = std::fs::read_dir(&repo_dir) {
-                for entry in entries.flatten() {
-                    println!("DEBUG: Repo entry: {:?}", entry.file_name());
-                }
-            }
             &source_dir
         };
         
@@ -281,8 +265,6 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
         
         // Always use "build" command without --grammar flag
         cmd.arg("build");
-        
-        println!("DEBUG: Running command: {:?} in {:?}", cmd, build_dir);
         
         let build_output = cmd
             .output()

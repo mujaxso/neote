@@ -50,11 +50,9 @@ impl iced::Application for App {
             
             // Auto-install missing grammars
             if !missing.is_empty() {
-                eprintln!("Auto-installing missing grammars: {:?}", missing);
                 for language_id in &missing {
-                    eprintln!("Installing {} grammar...", language_id);
                     match grammar_builder::build_and_install_grammar(language_id) {
-                        Ok(_) => eprintln!("Successfully installed {} grammar", language_id),
+                        Ok(_) => (),
                         Err(e) => eprintln!("Failed to install {} grammar: {}", language_id, e),
                     }
                 }

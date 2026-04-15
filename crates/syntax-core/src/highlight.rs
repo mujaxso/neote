@@ -182,8 +182,6 @@ pub fn get_query_for_language(language: LanguageId) -> Result<&'static str, Synt
     let runtime = crate::runtime::Runtime::new();
     let query_path = runtime.language_dir(language_id).join("queries/highlights.scm");
     
-    eprintln!("DEBUG: Loading query for {} from {}", language_id, query_path.display());
-    
     if query_path.exists() {
         match std::fs::read_to_string(&query_path) {
             Ok(query_text) => {
@@ -192,14 +190,12 @@ pub fn get_query_for_language(language: LanguageId) -> Result<&'static str, Synt
                 Ok(leaked)
             }
             Err(e) => {
-                eprintln!("DEBUG: Failed to read query file for {}: {}", language_id, e);
                 Err(SyntaxError::LanguageNotSupported(
                     format!("failed to read query file: {}", e),
                 ))
             }
         }
     } else {
-        eprintln!("DEBUG: Query file doesn't exist for {}", language_id);
         Err(SyntaxError::LanguageNotSupported(
             format!("{} grammar not available", language_id),
         ))

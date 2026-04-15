@@ -14,15 +14,11 @@ fn init_dynamic_grammars() {
     use syntax_core::grammar_builder;
     use syntax_core::runtime::Runtime;
     
-    println!("Initializing dynamic grammar system...");
-    
     // Initialize runtime
     let runtime = Runtime::new();
-    println!("Runtime directory: {:?}", runtime.root());
     
     // Create runtime directory if it doesn't exist
     if !runtime.exists() {
-        println!("Creating runtime directory...");
         let _ = std::fs::create_dir_all(runtime.root());
     }
     
@@ -38,11 +34,9 @@ fn init_dynamic_grammars() {
     
     // Auto-install missing grammars
     if !missing.is_empty() {
-        println!("Auto-installing missing grammars: {:?}", missing);
         for language_id in &missing {
-            println!("Installing {} grammar...", language_id);
             match grammar_builder::build_and_install_grammar(language_id) {
-                Ok(_) => println!("Successfully installed {} grammar", language_id),
+                Ok(_) => (),
                 Err(e) => eprintln!("Failed to install {} grammar: {}", language_id, e),
             }
         }
@@ -53,6 +47,4 @@ fn init_dynamic_grammars() {
     
     // Preload queries
     query_cache::preload_queries();
-    
-    println!("Dynamic grammar system initialized");
 }
