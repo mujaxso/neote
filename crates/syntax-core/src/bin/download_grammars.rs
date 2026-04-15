@@ -59,7 +59,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             install_missing_grammars(&languages);
         }
         Commands::InstallCommon => {
-            let common = vec!["markdown", "rust", "toml", "javascript", "python", "json", "html", "css"];
+            let common = vec!["markdown", "rust", "toml", "javascript", "python", "json", "html", "css", "go", "java", "bash", "c", "cpp"];
             install_missing_grammars(&common);
         }
         Commands::Check { language } => {

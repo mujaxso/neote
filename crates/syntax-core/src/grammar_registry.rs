@@ -139,6 +139,111 @@ impl GrammarRegistry {
             has_scanner: false,
             scanner_lang: None,
         });
+        
+        // CSS
+        self.add_language(GrammarInfo {
+            language_id: "css".to_string(),
+            name: "CSS".to_string(),
+            extensions: vec!["css".to_string()],
+            filenames: vec![],
+            repo_url: "https://github.com/tree-sitter/tree-sitter-css".to_string(),
+            revision: "master".to_string(),
+            subdirectory: None,
+            source_files: vec!["src/parser.c".to_string()],
+            query_files: vec!["highlights.scm".to_string()],
+            has_scanner: false,
+            scanner_lang: None,
+        });
+        
+        // HTML
+        self.add_language(GrammarInfo {
+            language_id: "html".to_string(),
+            name: "HTML".to_string(),
+            extensions: vec!["html".to_string(), "htm".to_string()],
+            filenames: vec![],
+            repo_url: "https://github.com/tree-sitter/tree-sitter-html".to_string(),
+            revision: "master".to_string(),
+            subdirectory: None,
+            source_files: vec!["src/parser.c".to_string()],
+            query_files: vec!["highlights.scm".to_string()],
+            has_scanner: false,
+            scanner_lang: None,
+        });
+        
+        // Go
+        self.add_language(GrammarInfo {
+            language_id: "go".to_string(),
+            name: "Go".to_string(),
+            extensions: vec!["go".to_string()],
+            filenames: vec![],
+            repo_url: "https://github.com/tree-sitter/tree-sitter-go".to_string(),
+            revision: "master".to_string(),
+            subdirectory: None,
+            source_files: vec!["src/parser.c".to_string()],
+            query_files: vec!["highlights.scm".to_string()],
+            has_scanner: false,
+            scanner_lang: None,
+        });
+        
+        // Java
+        self.add_language(GrammarInfo {
+            language_id: "java".to_string(),
+            name: "Java".to_string(),
+            extensions: vec!["java".to_string()],
+            filenames: vec![],
+            repo_url: "https://github.com/tree-sitter/tree-sitter-java".to_string(),
+            revision: "master".to_string(),
+            subdirectory: None,
+            source_files: vec!["src/parser.c".to_string()],
+            query_files: vec!["highlights.scm".to_string()],
+            has_scanner: false,
+            scanner_lang: None,
+        });
+        
+        // Bash
+        self.add_language(GrammarInfo {
+            language_id: "bash".to_string(),
+            name: "Bash".to_string(),
+            extensions: vec!["sh".to_string(), "bash".to_string()],
+            filenames: vec![],
+            repo_url: "https://github.com/tree-sitter/tree-sitter-bash".to_string(),
+            revision: "master".to_string(),
+            subdirectory: None,
+            source_files: vec!["src/parser.c".to_string()],
+            query_files: vec!["highlights.scm".to_string()],
+            has_scanner: false,
+            scanner_lang: None,
+        });
+        
+        // C
+        self.add_language(GrammarInfo {
+            language_id: "c".to_string(),
+            name: "C".to_string(),
+            extensions: vec!["c".to_string(), "h".to_string()],
+            filenames: vec![],
+            repo_url: "https://github.com/tree-sitter/tree-sitter-c".to_string(),
+            revision: "master".to_string(),
+            subdirectory: None,
+            source_files: vec!["src/parser.c".to_string()],
+            query_files: vec!["highlights.scm".to_string()],
+            has_scanner: false,
+            scanner_lang: None,
+        });
+        
+        // C++
+        self.add_language(GrammarInfo {
+            language_id: "cpp".to_string(),
+            name: "C++".to_string(),
+            extensions: vec!["cpp".to_string(), "cc".to_string(), "cxx".to_string(), "hpp".to_string(), "hh".to_string(), "hxx".to_string()],
+            filenames: vec![],
+            repo_url: "https://github.com/tree-sitter/tree-sitter-cpp".to_string(),
+            revision: "master".to_string(),
+            subdirectory: None,
+            source_files: vec!["src/parser.c".to_string()],
+            query_files: vec!["highlights.scm".to_string()],
+            has_scanner: false,
+            scanner_lang: None,
+        });
     }
     
     fn add_language(&mut self, info: GrammarInfo) {

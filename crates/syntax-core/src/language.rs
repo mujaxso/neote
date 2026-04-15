@@ -50,11 +50,37 @@ impl LanguageId {
         }
         
         // Try to match against dynamic language registry
+        // First check by filename
+        if let Some(lang_id) = Self::from_filename_dynamic(&name) {
+            return LanguageId::Dynamic(lang_id);
+        }
+        
+        // Then check by extension
         if let Some(lang_id) = Self::from_extension_dynamic(ext) {
             return LanguageId::Dynamic(lang_id);
         }
         
         LanguageId::PlainText
+    }
+
+    fn from_filename_dynamic(name: &str) -> Option<&'static str> {
+        use crate::grammar_registry::GrammarRegistry;
+        
+        static FILENAME_MAP: OnceLock<HashMap<String, &'static str>> = OnceLock::new();
+        
+        let map = FILENAME_MAP.get_or_init(|| {
+            let mut map = HashMap::new();
+            let registry = GrammarRegistry::global();
+            
+            for (lang_id, info) in registry.languages() {
+                for filename in &info.filenames {
+                    map.insert(filename.to_lowercase(), *lang_id);
+                }
+            }
+            map
+        });
+        
+        map.get(&name.to_lowercase()).copied()
     }
 
     fn from_extension_dynamic(ext: &str) -> Option<&'static str> {

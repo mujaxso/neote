@@ -43,6 +43,7 @@ fn init_dynamic_grammars() {
             println!("  cargo run --bin build-grammar -- {}", lang);
         }
         println!("Or build all with: cargo run --bin download-grammars -- install-all");
+        println!("Or build common languages with: cargo run --bin download-grammars -- install-common");
         println!("Note: If you encounter authentication issues when cloning repositories:");
         println!("  1. Ensure you have git installed and configured");
         println!("  2. For public repositories, HTTPS should work without authentication");
