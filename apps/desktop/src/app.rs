@@ -81,6 +81,44 @@ impl iced::Application for App {
                 }
             }
             
+            // Force reinstall of markdown grammar if it's not working
+            if !dynamic_loader::is_grammar_available("markdown") {
+                println!("Markdown grammar is not available, reinstalling...");
+                match grammar_builder::build_and_install_grammar("markdown") {
+                    Ok(_) => println!("Successfully reinstalled markdown grammar"),
+                    Err(e) => eprintln!("Failed to reinstall markdown grammar: {}", e),
+                }
+            }
+            
+            // Create a basic markdown query file if it doesn't exist
+            {
+                let runtime = syntax_core::runtime::Runtime::new();
+                let query_dir = runtime.language_dir("markdown").join("queries");
+                let _ = std::fs::create_dir_all(&query_dir);
+                let query_path = query_dir.join("highlights.scm");
+                if !query_path.exists() {
+                    // Create a basic query file
+                    let basic_query = r#"
+; Basic markdown highlighting
+(atx_heading) @heading
+(setext_heading) @heading
+(emphasis) @emphasis
+(strong_emphasis) @strong
+(link) @link
+(inline_code_span) @inline_code
+(code_fence) @code_fence
+(block_quote) @block_quote
+(list) @list
+(thematic_break) @thematic_break
+"#;
+                    if let Err(e) = std::fs::write(&query_path, basic_query) {
+                        eprintln!("Failed to create markdown query file: {}", e);
+                    } else {
+                        println!("Created basic markdown query file");
+                    }
+                }
+            }
+            
             // Initialize syntax manager after installing grammars
             let mut syntax_manager = app.syntax_manager.lock().unwrap();
             syntax_manager.initialize_dynamic_grammars();

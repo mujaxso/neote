@@ -396,8 +396,18 @@ fn install_library_and_queries(
     println!("Installed library to: {}", target_lib_path.display());
     
     // Install query files
-    // For languages with subdirectories, queries might be in the parent directory
-    let query_source_dir = if let Some(_subdir) = &grammar_info.subdirectory {
+    // For markdown, queries are in the parent directory (tree-sitter-markdown/queries)
+    let query_source_dir = if language_id == "markdown" {
+        // Look for queries in the parent directory of source_dir
+        let parent_dir = source_dir.parent().unwrap_or(&repo_dir);
+        let queries_dir = parent_dir.join("queries");
+        if queries_dir.exists() {
+            queries_dir
+        } else {
+            // Fall back to source_dir/queries
+            source_dir.join("queries")
+        }
+    } else if let Some(_subdir) = &grammar_info.subdirectory {
         // Try to find queries in the parent directory (repo root)
         let parent_dir = temp_dir.path().join("repo");
         let queries_in_parent = parent_dir.join("queries");
