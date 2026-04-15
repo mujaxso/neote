@@ -108,45 +108,6 @@ fn load_language_impl(language_id: &str) -> Option<tree_sitter::Language> {
                     eprintln!("DEBUG: All symbols failed for {}: {}", language_id, e);
                 }
                 None
-                    Err(e) => {
-                        eprintln!("DEBUG: Failed to get symbol {}: {}", symbol_name, e);
-                        // Try alternative symbol names
-                        // For markdown, try tree_sitter_markdown_inline
-                        if language_id == "markdown" {
-                            println!("DEBUG: Trying alternative symbol for markdown...");
-                            let alt_symbol_name = "tree_sitter_markdown_inline";
-                            match lib.get::<unsafe extern "C" fn() -> tree_sitter::Language>(alt_symbol_name.as_bytes()) {
-                                Ok(func) => {
-                                    println!("DEBUG: Found alternative symbol {}", alt_symbol_name);
-                                    let language = func();
-                                    std::mem::forget(lib);
-                                    println!("DEBUG: Language {} loaded via alternative symbol, node count: {}", language_id, language.node_kind_count());
-                                    return Some(language);
-                                }
-                                Err(e) => {
-                                    eprintln!("DEBUG: Failed to get alternative symbol {}: {}", alt_symbol_name, e);
-                                }
-                            }
-                            
-                            // Try another alternative: tree_sitter_markdown
-                            println!("DEBUG: Trying another alternative symbol for markdown...");
-                            let alt_symbol_name2 = "tree_sitter_markdown";
-                            match lib.get::<unsafe extern "C" fn() -> tree_sitter::Language>(alt_symbol_name2.as_bytes()) {
-                                Ok(func) => {
-                                    println!("DEBUG: Found alternative symbol {}", alt_symbol_name2);
-                                    let language = func();
-                                    std::mem::forget(lib);
-                                    println!("DEBUG: Language {} loaded via alternative symbol, node count: {}", language_id, language.node_kind_count());
-                                    return Some(language);
-                                }
-                                Err(e) => {
-                                    eprintln!("DEBUG: Failed to get alternative symbol {}: {}", alt_symbol_name2, e);
-                                }
-                            }
-                        }
-                        None
-                    }
-                }
             }
             Err(e) => {
                 eprintln!("DEBUG: Failed to load library {}: {}", library_path.display(), e);
