@@ -42,21 +42,21 @@ fn handle_explorer_message(app: &mut App, explorer_msg: ExplorerMessage) -> Comm
             // Convert to string and trigger file loading
             let path_string = path.to_string_lossy().to_string();
             
-            println!("DEBUG: File selected: {}", path_string);
-            println!("DEBUG: Current tabs before: {}", app.tab_manager.tabs.len());
+            println!("DEBUG explorer: File selected: {}", path_string);
+            println!("DEBUG explorer: Current tabs before: {}", app.tab_manager.tabs.len());
             
             // Check if this file already has a tab
             if app.tab_manager.has_tab_for_path(&path_string) {
-                println!("DEBUG: Tab already exists for {}", path_string);
+                println!("DEBUG explorer: Tab already exists for {}", path_string);
                 // File already has a tab, activate it
                 if let Some(existing_tab) = app.tab_manager.find_tab_by_path(&path_string) {
                     let tab_id = existing_tab.id;
-                    println!("DEBUG: Activating existing tab {}", tab_id);
+                    println!("DEBUG explorer: Activating existing tab {}", tab_id);
                     app.tab_manager.activate_tab(tab_id);
                     app.active_file_path = app.tab_manager.get_active_file_path();
                     
                     // Always load the file when activating a tab
-                    println!("DEBUG: Loading existing tab file");
+                    println!("DEBUG explorer: Loading existing tab file");
                     return Command::perform(
                         async move { path_string },
                         |path| Message::FileSelectedByPath(path),

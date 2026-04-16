@@ -90,6 +90,15 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                         app.is_dirty = editor_state.document().is_dirty();
                         app.status_message = "Text updated".to_string();
 
+                        // Update tab dirty state
+                        if let Some(active_file_path) = &app.active_file_path {
+                            if let Some(active_tab) = app.tab_manager.get_active_tab() {
+                                if active_tab.file_path == *active_file_path {
+                                    app.tab_manager.set_tab_dirty(active_tab.id, app.is_dirty);
+                                }
+                            }
+                        }
+
                         // Update syntax document
                         if let Some(path) = &app.active_file_path {
                             let doc_id = path.clone();

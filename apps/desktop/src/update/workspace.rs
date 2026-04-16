@@ -264,6 +264,12 @@ fn handle_file_loaded(app: &mut App, result: Result<(String, String, Document), 
             app.active_file_path = Some(path.clone());
             app.file_loading_state = FileLoadingState::Idle;
             
+            // Ensure the tab for this file is active and not dirty
+            if let Some(tab) = app.tab_manager.find_tab_by_path(&path) {
+                app.tab_manager.activate_tab(tab.id);
+                app.tab_manager.set_tab_dirty(tab.id, false);
+            }
+            
             let file_size_bytes = content.len();
             
             // Determine file mode based on size
@@ -445,6 +451,10 @@ fn handle_file_saved(app: &mut App, result: Result<(), String>) -> Command<Messa
             if let Some(editor_state) = &mut app.editor_state {
                 editor_state.document_mut().mark_saved();
                 app.is_dirty = editor_state.document().is_dirty();
+            }
+            // Update tab dirty state
+            if let Some(active_tab) = app.tab_manager.get_active_tab() {
+                app.tab_manager.set_tab_dirty(active_tab.id, app.is_dirty);
             }
             app.status_message = "File saved successfully".to_string();
             app.error_message = None;
