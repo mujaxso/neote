@@ -26,15 +26,15 @@ pub fn ai_panel<'a>(prompt_input: &'a str) -> Element<'a, Message> {
         .width(Length::Fill),
         
         // Subtle divider
-        container(iced::widget::Space::with_height(1))
-            .style(iced::theme::Container::Custom(Box::new(|| {
+        container(iced::widget::Space::with_height(1.0))
+            .style(iced::theme::Container::Custom(Box::new(|_theme: &iced::Theme| {
                 container::Appearance {
                     background: Some(iced::Color::from_rgb8(60, 65, 85).into()),
                     ..Default::default()
                 }
             })))
             .width(Length::Fill)
-            .height(Length::Fixed(1)),
+            .height(Length::Fixed(1.0)),
         
         // Content area
         scrollable(
@@ -60,7 +60,7 @@ pub fn ai_panel<'a>(prompt_input: &'a str) -> Element<'a, Message> {
                     .spacing(10)
                     .padding(16)
                 )
-                .style(iced::theme::Container::Custom(Box::new(|| {
+                .style(iced::theme::Container::Custom(Box::new(|_theme: &iced::Theme| {
                     container::Appearance {
                         background: Some(iced::Color::from_rgb8(30, 33, 45).into()),
                         border: iced::Border {

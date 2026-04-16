@@ -83,7 +83,12 @@ pub fn status_bar(app: &App) -> Element<'_, Message> {
             container::Appearance {
                 background: Some(self.colors.status_bar_background.into()),
                 border: iced::Border {
-                    color: self.colors.border.with_alpha(0.2),
+                    color: iced::Color::from_rgba(
+                        self.colors.border.r,
+                        self.colors.border.g,
+                        self.colors.border.b,
+                        0.2
+                    ),
                     width: 1.0,
                     radius: 0.0.into(),
                 },
@@ -109,7 +114,7 @@ pub fn status_bar(app: &App) -> Element<'_, Message> {
         .height(Length::Fill)
     )
     .width(Length::Fill)
-    .height(Length::Fixed(28))
+    .height(Length::Fixed(28.0))
     .style(iced::theme::Container::Custom(Box::new(status_bar_style)))
     .into()
 }

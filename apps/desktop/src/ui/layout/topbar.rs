@@ -38,15 +38,15 @@ pub fn top_bar<'a>(workspace_path: &'a str, is_dirty: bool) -> Element<'a, Messa
             .padding([0, 16]),
             
             // Divider
-            container(iced::widget::Space::with_width(1))
+            container(iced::widget::Space::with_width(1.0))
                 .style(iced::theme::Container::Custom(Box::new(|_theme: &iced::Theme| {
                     container::Appearance {
                         background: Some(iced::Color::from_rgb8(60, 65, 85).into()),
                         ..Default::default()
                     }
                 })))
-                .height(Length::Fixed(20))
-                .width(Length::Fixed(1)),
+                .height(Length::Fixed(20.0))
+                .width(Length::Fixed(1.0)),
             
             // Workspace path area
             if workspace_path.is_empty() {
@@ -124,7 +124,7 @@ pub fn top_bar<'a>(workspace_path: &'a str, is_dirty: bool) -> Element<'a, Messa
     )
     .padding([8, 16])
     .width(Length::Fill)
-    .height(Length::Fixed(48))
+    .height(Length::Fixed(48.0))
     .style(iced::theme::Container::Custom(Box::new(|_theme: &iced::Theme| {
         container::Appearance {
             background: Some(iced::Color::from_rgb8(30, 33, 45).into()),

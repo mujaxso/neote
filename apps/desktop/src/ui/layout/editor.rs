@@ -30,56 +30,56 @@ pub fn editor_panel<'a>(
                     .style(iced::theme::Text::Color(style.colors.text_primary)),
                 horizontal_space(),
                 // Status indicators
-                row![
+                {
+                    let mut indicators = Vec::new();
+                    
                     // Large file warning
                     if let Some(document) = editor_document {
                         if document.is_very_large() {
-                            Some(
+                            indicators.push(
                                 text("⚠ Large file")
                                     .size(11)
                                     .style(iced::theme::Text::Color(style.colors.error))
-                            )
+                                    .into()
+                            );
                         } else if document.is_large() {
-                            Some(
+                            indicators.push(
                                 text("⚠ Large")
                                     .size(11)
                                     .style(iced::theme::Text::Color(style.colors.warning))
-                            )
-                        } else {
-                            None
+                                    .into()
+                            );
                         }
-                    } else {
-                        None
-                    },
+                    }
+                    
                     // Read-only indicator
                     if is_file_too_large_for_editor {
-                        Some(
+                        indicators.push(
                             text("Read-only")
                                 .size(11)
                                 .style(iced::theme::Text::Color(iced::Color::from_rgb8(200, 150, 50)))
-                        )
-                    } else {
-                        None
-                    },
+                                .into()
+                        );
+                    }
+                    
                     // Dirty status
                     if !is_file_too_large_for_editor {
-                        Some(
-                            if is_dirty {
-                                text("● Unsaved")
-                                    .size(11)
-                                    .style(iced::theme::Text::Color(style.colors.warning))
-                            } else {
-                                text("✓ Saved")
-                                    .size(11)
-                                    .style(iced::theme::Text::Color(style.colors.success))
-                            }
-                        )
-                    } else {
-                        None
-                    },
-                ]
-                .spacing(8)
-                .align_items(Alignment::Center),
+                        let status_text = if is_dirty {
+                            text("● Unsaved")
+                                .size(11)
+                                .style(iced::theme::Text::Color(style.colors.warning))
+                        } else {
+                            text("✓ Saved")
+                                .size(11)
+                                .style(iced::theme::Text::Color(style.colors.success))
+                        };
+                        indicators.push(status_text.into());
+                    }
+                    
+                    row(indicators)
+                        .spacing(8)
+                        .align_items(Alignment::Center)
+                },
             ]
             .align_items(Alignment::Center)
         )
