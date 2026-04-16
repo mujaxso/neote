@@ -23,20 +23,9 @@ pub fn editor_panel<'a>(
 ) -> Element<'a, Message> {
     let style = StyleHelpers::new(theme);
     
-    // Build tab bar - always show for debugging
-    let tab_bar: Element<Message> = {
-        // Debug: show tab count
-        let debug_text = format!("Tabs: {}", tab_manager.tabs.len());
-        let debug_row = row![
-            text(debug_text)
-                .size(12)
-                .style(iced::theme::Text::Color(style.colors.text_primary)),
-            horizontal_space(),
-        ];
-        
+    // Build tab bar
+    let tab_bar: Element<Message> = if !tab_manager.tabs.is_empty() {
         let mut tab_row: iced::widget::Row<'_, Message, iced::Theme, iced::Renderer> = row![].spacing(0);
-        
-        // No debug element - just tabs
         
         for tab in &tab_manager.tabs {
             let is_active = tab.is_active;
@@ -135,6 +124,13 @@ pub fn editor_panel<'a>(
             .height(Length::Fixed(32.0));
         
         tab_bar_container.into()
+    } else {
+        // Empty tab bar (no tabs open)
+        let empty_container: iced::widget::Container<'_, Message, iced::Theme, iced::Renderer> = 
+            container(text(""))
+                .width(Length::Fill)
+                .height(Length::Fixed(0.0));
+        empty_container.into()
     };
     
     // Status header (simplified since tabs show file info)
