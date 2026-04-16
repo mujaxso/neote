@@ -59,7 +59,7 @@ fn handle_explorer_message(app: &mut App, explorer_msg: ExplorerMessage) -> Comm
             }
             
             // Create a new tab for this file
-            let tab_id = app.tab_manager.open_or_activate_tab(path_string.clone());
+            let _tab_id = app.tab_manager.open_or_activate_tab(path_string.clone());
             app.active_file_path = Some(path_string.clone());
             
             // Trigger file loading via workspace module
