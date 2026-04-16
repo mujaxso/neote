@@ -57,13 +57,7 @@ pub fn editor_panel<'a>(
                         .style(iced::theme::Text::Color(style.colors.text_muted))
                 )
                 .on_press(Message::CloseTab(tab.id))
-                .style(iced::theme::Button::Custom(Box::new(move |_theme| {
-                    button::Appearance {
-                        background: Some(Color::TRANSPARENT.into()),
-                        border: iced::Border::default(),
-                        ..Default::default()
-                    }
-                })))
+                .style(iced::theme::Button::Text)
                 .padding(0);
                 tab_row_content = tab_row_content.push(close_button);
             }
@@ -71,13 +65,7 @@ pub fn editor_panel<'a>(
             // Wrap in a button for clicking to activate
             let tab_button = button(tab_row_content)
                 .on_press(Message::ActivateTab(tab.id))
-                .style(iced::theme::Button::Custom(Box::new(move |_theme| {
-                    button::Appearance {
-                        background: Some(Color::TRANSPARENT.into()),
-                        border: iced::Border::default(),
-                        ..Default::default()
-                    }
-                })))
+                .style(iced::theme::Button::Text)
                 .padding(0);
             
             let tab_element = container(tab_button)
@@ -113,12 +101,12 @@ pub fn editor_panel<'a>(
             scrollable(
                 tab_row
             )
-            .horizontal_scroll(
+            .direction(iced::widget::scrollable::Direction::Horizontal(
                 iced::widget::scrollable::Properties::new()
                     .width(5)
                     .margin(0)
                     .scroller_width(5)
-            )
+            ))
         )
         .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
             container::Appearance {

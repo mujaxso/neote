@@ -357,14 +357,14 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
         }
         Message::CloseTab(tab_id) => {
             // Check if the tab being closed is dirty
-            let was_dirty = app.tab_manager.tabs.iter()
+            let _was_dirty = app.tab_manager.tabs.iter()
                 .find(|t| t.id == tab_id)
                 .map(|t| t.is_dirty)
                 .unwrap_or(false);
             
             // For now, we'll close without asking for confirmation
             // In a more complete implementation, we would prompt to save
-            if let Some(file_path) = app.tab_manager.close_tab(tab_id) {
+            if let Some(_file_path) = app.tab_manager.close_tab(tab_id) {
                 // If this was the active tab, update active file path
                 app.active_file_path = app.tab_manager.get_active_file_path();
                 

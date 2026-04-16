@@ -73,9 +73,11 @@ impl TabManager {
         // Check if tab already exists for this file
         for tab in &self.tabs {
             if tab.file_path == file_path {
+                // Get the tab id before calling activate_tab which borrows self mutably
+                let tab_id = tab.id;
                 // Activate this tab
-                self.activate_tab(tab.id);
-                return tab.id;
+                self.activate_tab(tab_id);
+                return tab_id;
             }
         }
         
