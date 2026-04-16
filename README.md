@@ -2,8 +2,8 @@
 
 > ⚠️ **Heavily Under Development**: Zaroxi Studio is currently in active development. APIs, features, and architecture are subject to change. We welcome early adopters and contributors to help shape the project!
 
-[![CI](https://github.com/mujaxso/qyzer/actions/workflows/ci.yml/badge.svg)](https://github.com/mujaxso/qyzer/actions/workflows/ci.yml)
-[![Security Audit](https://github.com/mujaxso/qyzer/actions/workflows/security-audit.yml/badge.svg)](https://github.com/mujaxso/qyzer/actions/workflows/security-audit.yml)
+[![CI](https://github.com/mujaxso/zaroxi/actions/workflows/ci.yml/badge.svg)](https://github.com/mujaxso/zaroxi/actions/workflows/ci.yml)
+[![Security Audit](https://github.com/mujaxso/zaroxi/actions/workflows/security-audit.yml/badge.svg)](https://github.com/mujaxso/zaroxi/actions/workflows/security-audit.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Rust](https://img.shields.io/badge/rust-1.75%2B-orange.svg)](https://www.rust-lang.org)
 
@@ -46,7 +46,7 @@ Zaroxi Studio follows a modular architecture with clear separation between UI, b
 ## 📦 Project Structure
 
 ```
-qyzer/
+zaroxi/
 ├── apps/                    # Applications
 │   └── desktop/            # Main desktop application (Iced-based GUI)
 ├── crates/                 # Core libraries
@@ -87,8 +87,8 @@ qyzer/
 
 ```bash
 # Clone the repository
-git clone https://github.com/mujaxso/qyzer.git
-cd qyzer
+git clone https://github.com/mujaxso/zaroxi.git
+cd zaroxi
 
 # Build all crates
 cargo build --workspace
@@ -185,7 +185,7 @@ cargo build -p desktop --release
 Zaroxi Studio can be configured through:
 
 1. **Settings UI**: Accessible via the settings activity
-2. **Configuration Files**: JSON-based config files in `~/.config/qyzer-studio/`
+2. **Configuration Files**: JSON-based config files in `~/.config/zaroxi-studio/`
 3. **Command Line Arguments**: Various startup options
 
 ### Example Configuration
@@ -273,7 +273,7 @@ We'd like to thank:
 ## 📞 Contact and Links
 
 - **Website**: [https://zaroxi.dev](https://zaroxi.dev) (coming soon)
-- **GitHub**: [https://github.com/mujaxso/qyzer](https://github.com/mujaxso/qyzer)
+- **GitHub**: [https://github.com/mujaxso/zaroxi](https://github.com/mujaxso/zaroxi)
 - **Documentation**: [https://docs.zaroxi.dev](https://docs.zaroxi.dev) (coming soon)
 - **Twitter**: [@zaroxi_studio](https://twitter.com/zaroxi_studio) (coming soon)
 - **Email**: contact@zaroxi.dev
@@ -350,13 +350,13 @@ Zaroxi Studio is licensed under the MIT License. See [LICENSE](LICENSE) for deta
 
 ## 📞 Contact
 
-- **GitHub Issues**: [Bug reports and feature requests](https://github.com/mujaxso/qyzer/issues)
-- **Discussions**: [Community discussions](https://github.com/mujaxso/qyzer/discussions)
+- **GitHub Issues**: [Bug reports and feature requests](https://github.com/mujaxso/zaroxi/issues)
+- **Discussions**: [Community discussions](https://github.com/mujaxso/zaroxi/discussions)
 - **Email**: contact@zaroxi.dev
 
 ## 🌟 Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=mujaxso/qyzer&type=Date)](https://star-history.com/#mujaxso/qyzer&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=mujaxso/zaroxi&type=Date)](https://star-history.com/#mujaxso/zaroxi&Date)
 
 ---
 
