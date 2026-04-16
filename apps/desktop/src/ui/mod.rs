@@ -1,12 +1,7 @@
-pub mod assistant_panel;
 pub mod common;
 pub mod editor;
-pub mod editor_panel;
-pub mod explorer;
-pub mod explorer_panel;
 pub mod icons;
 pub mod layout;
 pub mod shell;
 pub mod style;
-pub mod top_bar;
 pub mod settings;
