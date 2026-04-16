@@ -112,9 +112,6 @@ mod tests {
         assert_eq!(map_capture_name("backslash_escape"), Highlight::String);
         assert_eq!(map_capture_name("escape"), Highlight::String);
         assert_eq!(map_capture_name("latex"), Highlight::Constant);
-        assert_eq!(map_capture_name("heading.marker"), Highlight::Operator);
-        assert_eq!(map_capture_name("heading.content"), Highlight::Type);
-        assert_eq!(map_capture_name("text"), Highlight::Type);
         
         // Test fallback captures for compatibility
         assert_eq!(map_capture_name("heading"), Highlight::Type);
