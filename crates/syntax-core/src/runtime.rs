@@ -36,7 +36,15 @@ impl Runtime {
     }
 
     fn locate_root() -> Option<PathBuf> {
-        // 1. QYZER_STUDIO_RUNTIME environment variable (for compatibility)
+        // 1. ZAROXI_STUDIO_RUNTIME environment variable (new)
+        if let Ok(env_path) = env::var("ZAROXI_STUDIO_RUNTIME") {
+            let p = PathBuf::from(env_path);
+            if p.is_dir() {
+                return Some(p);
+            }
+        }
+
+        // 2. QYZER_STUDIO_RUNTIME environment variable (for backward compatibility)
         if let Ok(env_path) = env::var("QYZER_STUDIO_RUNTIME") {
             let p = PathBuf::from(env_path);
             if p.is_dir() {
@@ -44,7 +52,7 @@ impl Runtime {
             }
         }
 
-        // 2. NEOTE_RUNTIME environment variable.
+        // 3. NEOTE_RUNTIME environment variable.
         if let Ok(env_path) = env::var("NEOTE_RUNTIME") {
             let p = PathBuf::from(env_path);
             if p.is_dir() {

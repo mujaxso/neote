@@ -27,7 +27,9 @@ fn build_grammars() {
     println!("cargo:warning=Building Tree-sitter grammars...");
     
     // Determine runtime directory
-    let runtime_dir = if let Ok(env_path) = env::var("QYZER_STUDIO_RUNTIME") {
+    let runtime_dir = if let Ok(env_path) = env::var("ZAROXI_STUDIO_RUNTIME") {
+        env_path
+    } else if let Ok(env_path) = env::var("QYZER_STUDIO_RUNTIME") {
         env_path
     } else if let Ok(env_path) = env::var("NEOTE_RUNTIME") {
         env_path

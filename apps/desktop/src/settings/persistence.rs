@@ -5,7 +5,7 @@
 use std::fs;
 use std::path::PathBuf;
 use crate::settings::editor::EditorTypographySettings;
-use crate::theme::QyzerTheme;
+use crate::theme::ZaroxiTheme;
 
 const SETTINGS_FILE_NAME: &str = "qyzer-studio_settings.json";
 
@@ -13,14 +13,14 @@ const SETTINGS_FILE_NAME: &str = "qyzer-studio_settings.json";
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct AppSettings {
     pub typography: EditorTypographySettings,
-    pub theme_preference: QyzerTheme,
+    pub theme_preference: ZaroxiTheme,
 }
 
 impl Default for AppSettings {
     fn default() -> Self {
         Self {
             typography: EditorTypographySettings::default(),
-            theme_preference: QyzerTheme::System,
+            theme_preference: ZaroxiTheme::System,
         }
     }
 }
@@ -38,7 +38,7 @@ fn settings_path() -> Result<PathBuf, String> {
 }
 
 /// Save app settings to disk.
-pub fn save_settings(typography: &EditorTypographySettings, theme_preference: QyzerTheme) -> Result<(), String> {
+pub fn save_settings(typography: &EditorTypographySettings, theme_preference: ZaroxiTheme) -> Result<(), String> {
     let path = settings_path()?;
     
     let settings = AppSettings {
@@ -57,11 +57,11 @@ pub fn save_settings(typography: &EditorTypographySettings, theme_preference: Qy
 
 /// Load app settings from disk.
 /// Returns default settings if file doesn't exist or can't be read.
-pub fn load_settings() -> Result<(EditorTypographySettings, QyzerTheme), String> {
+pub fn load_settings() -> Result<(EditorTypographySettings, ZaroxiTheme), String> {
     let path = settings_path()?;
     
     if !path.exists() {
-        return Ok((EditorTypographySettings::default(), QyzerTheme::System));
+        return Ok((EditorTypographySettings::default(), ZaroxiTheme::System));
     }
     
     let json = fs::read_to_string(&path)

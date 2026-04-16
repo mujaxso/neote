@@ -15,7 +15,7 @@ fn init_logging() {
     INIT.call_once(|| {
         // Simple logging to stderr for now
         // Check if we should enable debug logging
-        let debug_env = std::env::var("QYZER_STUDIO_DEBUG").is_ok();
+        let debug_env = std::env::var("ZAROXI_STUDIO_DEBUG").is_ok() || std::env::var("QYZER_STUDIO_DEBUG").is_ok();
         
         let mut builder = env_logger::Builder::from_default_env();
         
@@ -40,7 +40,7 @@ fn init_logging() {
         }
         
         // Log environment info for debugging file picker issues
-        log::info!("Initializing Qyzer Studio");
+        log::info!("Initializing Zaroxi Studio");
         log::debug!("Environment: WAYLAND_DISPLAY={:?}, XDG_SESSION_TYPE={:?}, XDG_CURRENT_DESKTOP={:?}, HYPRLAND_INSTANCE_SIGNATURE={:?}",
             std::env::var("WAYLAND_DISPLAY"),
             std::env::var("XDG_SESSION_TYPE"),

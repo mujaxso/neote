@@ -6,7 +6,7 @@ use editor_core::EditorState;
 use iced::widget::text_editor;
 use iced;
 
-use crate::theme::QyzerTheme;
+use crate::theme::ZaroxiTheme;
 use crate::explorer::state::ExplorerState;
 use crate::settings::editor::EditorTypographySettings;
 use syntax_core;
@@ -180,9 +180,9 @@ pub struct App {
     // Track if current file was loaded in read-only mode
     pub is_file_read_only: bool,
     // Theme preference
-    pub theme_preference: QyzerTheme,
+    pub theme_preference: ZaroxiTheme,
     // Current resolved theme (based on preference and system)
-    pub current_theme: QyzerTheme,
+    pub current_theme: ZaroxiTheme,
     // Window dimensions for responsive layout
     pub window_width: u32,
     pub window_height: u32,
@@ -207,7 +207,7 @@ pub struct App {
 
 impl App {
     pub fn new() -> (Self, iced::Command<crate::message::Message>) {
-        // Ensure QYZER_STUDIO_RUNTIME is set to find Tree‑sitter resources
+        // Ensure ZAROXI_STUDIO_RUNTIME is set to find Tree‑sitter resources
         if env::var(crate::brand::RUNTIME_ENV_VAR).is_err() {
             // Try to locate runtime relative to the executable
             if let Ok(exe_path) = env::current_exe() {
@@ -227,7 +227,7 @@ impl App {
             Ok(settings) => settings,
             Err(e) => {
                 eprintln!("Failed to load settings: {}", e);
-                (EditorTypographySettings::default(), QyzerTheme::System)
+                (EditorTypographySettings::default(), ZaroxiTheme::System)
             }
         };
 
@@ -248,7 +248,7 @@ impl App {
             file_loading_state: FileLoadingState::Idle,
             is_file_read_only: false,
             theme_preference,
-            current_theme: QyzerTheme::Dark, // Will be updated by update_current_theme
+            current_theme: ZaroxiTheme::Dark, // Will be updated by update_current_theme
             window_width: 1200,
             window_height: 800,
             layout_mode: LayoutMode::Wide,
@@ -302,13 +302,13 @@ impl App {
     /// Update the current theme based on preference and system detection
     pub fn update_current_theme(&mut self) {
         self.current_theme = match self.theme_preference {
-            QyzerTheme::System => {
+            ZaroxiTheme::System => {
                 // For now, default to Dark for System mode
                 // In a real implementation, we'd detect system preference
-                QyzerTheme::Dark
+                ZaroxiTheme::Dark
             }
-            QyzerTheme::Light => QyzerTheme::Light,
-            QyzerTheme::Dark => QyzerTheme::Dark,
+            ZaroxiTheme::Light => ZaroxiTheme::Light,
+            ZaroxiTheme::Dark => ZaroxiTheme::Dark,
         };
     }
 }

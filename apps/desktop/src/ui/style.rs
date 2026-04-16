@@ -1,10 +1,10 @@
 use iced::{Color, widget::{button, container, text_input}};
-use crate::theme::{current_colors, QyzerTheme, SemanticColors};
+use crate::theme::{current_colors, ZaroxiTheme, SemanticColors};
 use super::common;
 use syntax_core::Highlight;
 
 /// Get current theme colors from app state
-pub fn colors(theme: QyzerTheme) -> SemanticColors {
+pub fn colors(theme: ZaroxiTheme) -> SemanticColors {
     current_colors(theme)
 }
 
@@ -16,7 +16,7 @@ pub struct StyleHelpers {
 }
 
 impl StyleHelpers {
-    pub fn new(theme: QyzerTheme) -> Self {
+    pub fn new(theme: ZaroxiTheme) -> Self {
         Self {
             colors: colors(theme),
             tokens: crate::theme::DesignTokens::default(),

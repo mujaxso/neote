@@ -1,13 +1,13 @@
-# Qyzer Studio: AI-First IDE
+# Zaroxi Studio: AI-First IDE
 
-> ⚠️ **Heavily Under Development**: Qyzer Studio is currently in active development. APIs, features, and architecture are subject to change. We welcome early adopters and contributors to help shape the project!
+> ⚠️ **Heavily Under Development**: Zaroxi Studio is currently in active development. APIs, features, and architecture are subject to change. We welcome early adopters and contributors to help shape the project!
 
 [![CI](https://github.com/mujaxso/qyzer/actions/workflows/ci.yml/badge.svg)](https://github.com/mujaxso/qyzer/actions/workflows/ci.yml)
 [![Security Audit](https://github.com/mujaxso/qyzer/actions/workflows/security-audit.yml/badge.svg)](https://github.com/mujaxso/qyzer/actions/workflows/security-audit.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Rust](https://img.shields.io/badge/rust-1.75%2B-orange.svg)](https://www.rust-lang.org)
 
-Qyzer Studio is an open-source, AI-first integrated development environment built in Rust. It combines modern IDE features with AI-powered assistance to create a next-generation development experience.
+Zaroxi Studio is an open-source, AI-first integrated development environment built in Rust. It combines modern IDE features with AI-powered assistance to create a next-generation development experience.
 
 ## 🚀 Features
 
@@ -272,11 +272,11 @@ We'd like to thank:
 
 ## 📞 Contact and Links
 
-- **Website**: [https://qyzer.dev](https://qyzer.dev) (coming soon)
+- **Website**: [https://zaroxi.dev](https://zaroxi.dev) (coming soon)
 - **GitHub**: [https://github.com/mujaxso/qyzer](https://github.com/mujaxso/qyzer)
-- **Documentation**: [https://docs.qyzer.dev](https://docs.qyzer.dev) (coming soon)
-- **Twitter**: [@qyzer_studio](https://twitter.com/qyzer_studio) (coming soon)
-- **Email**: contact@qyzer.dev
+- **Documentation**: [https://docs.zaroxi.dev](https://docs.zaroxi.dev) (coming soon)
+- **Twitter**: [@zaroxi_studio](https://twitter.com/zaroxi_studio) (coming soon)
+- **Email**: contact@zaroxi.dev
 
 ---
 
@@ -352,7 +352,7 @@ Qyzer Studio is licensed under the MIT License. See [LICENSE](LICENSE) for detai
 
 - **GitHub Issues**: [Bug reports and feature requests](https://github.com/mujaxso/qyzer/issues)
 - **Discussions**: [Community discussions](https://github.com/mujaxso/qyzer/discussions)
-- **Email**: contact@qyzer.dev
+- **Email**: contact@zaroxi.dev
 
 ## 🌟 Star History
 

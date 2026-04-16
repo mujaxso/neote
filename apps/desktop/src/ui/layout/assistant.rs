@@ -53,7 +53,7 @@ pub fn ai_panel<'a>(prompt_input: &'a str) -> Element<'a, Message> {
                                 iced::Color::from_rgb8(100, 160, 255),
                                 Some(18)
                             ),
-                            text("Qyzer Studio AI").size(15)
+                            text("Zaroxi Studio AI").size(15)
                                 .style(iced::theme::Text::Color(iced::Color::from_rgb8(220, 220, 255))),
                         ]
                         .spacing(8)
@@ -130,7 +130,7 @@ pub fn ai_panel<'a>(prompt_input: &'a str) -> Element<'a, Message> {
                 {
                     // Create text input with explicit type annotation
                     let mut input: iced::widget::TextInput<'_, Message, iced::Theme, iced::Renderer> = 
-                        iced::widget::text_input("Ask Qyzer Studio AI...", prompt_input);
+                        iced::widget::text_input("Ask Zaroxi Studio AI...", prompt_input);
                     input = input.on_input(Message::PromptInputChanged);
                     input = input.padding([10, 12]);
                     input = input.width(Length::Fill);
@@ -255,7 +255,7 @@ fn ai_panel_with_theme<'a>(prompt_input: &'a str, scroll_style: AssistantScrolla
                                 iced::Color::from_rgb8(100, 160, 255),
                                 Some(18)
                             ),
-                            text("Qyzer Studio AI").size(15)
+                            text("Zaroxi Studio AI").size(15)
                                 .style(iced::theme::Text::Color(iced::Color::from_rgb8(220, 220, 255))),
                         ]
                         .spacing(8)
@@ -332,7 +332,7 @@ fn ai_panel_with_theme<'a>(prompt_input: &'a str, scroll_style: AssistantScrolla
                 {
                     // Create text input with explicit type annotation
                     let mut input: iced::widget::TextInput<'_, Message, iced::Theme, iced::Renderer> = 
-                        iced::widget::text_input("Ask Qyzer Studio AI...", prompt_input);
+                        iced::widget::text_input("Ask Zaroxi Studio AI...", prompt_input);
                     input = input.on_input(Message::PromptInputChanged);
                     input = input.padding([10, 12]);
                     input = input.width(Length::Fill);

@@ -44,7 +44,7 @@ impl Default for DesignTokens {
 }
 
 /// Helper to get current theme colors from app state
-pub fn current_colors(theme: QyzerTheme) -> SemanticColors {
+pub fn current_colors(theme: ZaroxiTheme) -> SemanticColors {
     theme.colors()
 }
 
@@ -106,31 +106,31 @@ pub struct SemanticColors {
     pub syntax_plain: Color,             // #E6EAF2 - primary text
 }
 
-/// Theme variants for Qyzer
+/// Theme variants for Zaroxi
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
-pub enum QyzerTheme {
+pub enum ZaroxiTheme {
     Dark,
     Light,
     System,
 }
 
-impl std::fmt::Display for QyzerTheme {
+impl std::fmt::Display for ZaroxiTheme {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            QyzerTheme::Dark => write!(f, "Dark"),
-            QyzerTheme::Light => write!(f, "Light"),
-            QyzerTheme::System => write!(f, "System"),
+            ZaroxiTheme::Dark => write!(f, "Dark"),
+            ZaroxiTheme::Light => write!(f, "Light"),
+            ZaroxiTheme::System => write!(f, "System"),
         }
     }
 }
 
-impl QyzerTheme {
+impl ZaroxiTheme {
     /// Get the semantic colors for this theme
     pub fn colors(&self) -> SemanticColors {
         match self {
-            QyzerTheme::Dark => SemanticColors::dark(),
-            QyzerTheme::Light => SemanticColors::light(),
-            QyzerTheme::System => {
+            ZaroxiTheme::Dark => SemanticColors::dark(),
+            ZaroxiTheme::Light => SemanticColors::light(),
+            ZaroxiTheme::System => {
                 // For now, default to dark theme
                 // In a real implementation, we'd detect system preference
                 SemanticColors::dark()
@@ -141,9 +141,9 @@ impl QyzerTheme {
     /// Convert to iced::Theme
     pub fn to_iced_theme(&self) -> Theme {
         match self {
-            QyzerTheme::Dark => Theme::Dark,
-            QyzerTheme::Light => Theme::Light,
-            QyzerTheme::System => {
+            ZaroxiTheme::Dark => Theme::Dark,
+            ZaroxiTheme::Light => Theme::Light,
+            ZaroxiTheme::System => {
                 // Default to dark for system
                 Theme::Dark
             }
@@ -152,15 +152,15 @@ impl QyzerTheme {
     
     /// Get all available theme variants
     pub fn all() -> Vec<Self> {
-        vec![QyzerTheme::System, QyzerTheme::Light, QyzerTheme::Dark]
+        vec![ZaroxiTheme::System, ZaroxiTheme::Light, ZaroxiTheme::Dark]
     }
     
     /// Get display name for the theme
     pub fn display_name(&self) -> &'static str {
         match self {
-            QyzerTheme::System => "System",
-            QyzerTheme::Light => "Light",
-            QyzerTheme::Dark => "Dark",
+            ZaroxiTheme::System => "System",
+            ZaroxiTheme::Light => "Light",
+            ZaroxiTheme::Dark => "Dark",
         }
     }
 }

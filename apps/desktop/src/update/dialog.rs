@@ -219,7 +219,7 @@ pub fn open_workspace_dialog() -> Command<Message> {
             log::info!("Opening workspace dialog (note: uses system theme)");
             
             // Use our improved file picker service
-            match file_picker::FilePicker::pick_folder_with_fallback("Select Workspace Directory - Qyzer Studio").await {
+            match file_picker::FilePicker::pick_folder_with_fallback("Select Workspace Directory - Zaroxi Studio").await {
                 Ok(path) => {
                     let path_str = path.to_string_lossy().to_string();
                     log::info!("Workspace selected: {}", path_str);
