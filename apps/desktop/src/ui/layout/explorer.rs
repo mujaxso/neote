@@ -47,60 +47,64 @@ pub fn explorer_panel_professional(app: &App) -> Element<'_, Message> {
     let content: Element<'_, Message> = if app.workspace_path.is_empty() {
         // No workspace open state - centered content
         container(
-            column![
-                text("No workspace open")
-                    .size(13)
-                    .style(iced::theme::Text::Color(content_style.colors.text_muted)),
-                button(
-                    row![
-                        Icon::Folder.render(&app.editor_typography, &content_style, Some(14)),
-                        text("Open Workspace")
-                            .size(13)
-                            .style(iced::theme::Text::Color(content_style.colors.text_secondary)),
-                    ]
-                    .spacing(8)
-                    .align_items(Alignment::Center)
-                )
-                .on_press(Message::OpenWorkspace)
-                .padding([8, 16])
-                .style(iced::theme::Button::Secondary),
-            ]
-            .spacing(16)
-            .align_items(Alignment::Center)
+            container(
+                column![
+                    text("No workspace open")
+                        .size(13)
+                        .style(iced::theme::Text::Color(content_style.colors.text_muted)),
+                    button(
+                        row![
+                            Icon::Folder.render(&app.editor_typography, &content_style, Some(14)),
+                            text("Open Workspace")
+                                .size(13)
+                                .style(iced::theme::Text::Color(content_style.colors.text_secondary)),
+                        ]
+                        .spacing(8)
+                        .align_items(Alignment::Center)
+                    )
+                    .on_press(Message::OpenWorkspace)
+                    .padding([8, 16])
+                    .style(iced::theme::Button::Secondary),
+                ]
+                .spacing(16)
+                .align_items(Alignment::Center)
+            )
+            .center_y()
+            .center_x()
         )
         .width(Length::Fill)
         .height(Length::Fill)
-        .center_y()
-        .center_x()
         .into()
     } else if app.explorer_state.file_tree.is_empty() {
         // Workspace open but no files - centered content
         container(
-            column![
-                text("No files found")
-                    .size(13)
-                    .style(iced::theme::Text::Color(content_style.colors.text_muted)),
-                button(
-                    row![
-                        Icon::Refresh.render(&app.editor_typography, &content_style, Some(14)),
-                        text("Refresh")
-                            .size(13)
-                            .style(iced::theme::Text::Color(content_style.colors.text_secondary)),
-                    ]
-                    .spacing(8)
-                    .align_items(Alignment::Center)
-                )
-                .on_press(Message::RefreshWorkspace)
-                .padding([8, 16])
-                .style(iced::theme::Button::Secondary),
-            ]
-            .spacing(16)
-            .align_items(Alignment::Center)
+            container(
+                column![
+                    text("No files found")
+                        .size(13)
+                        .style(iced::theme::Text::Color(content_style.colors.text_muted)),
+                    button(
+                        row![
+                            Icon::Refresh.render(&app.editor_typography, &content_style, Some(14)),
+                            text("Refresh")
+                                .size(13)
+                                .style(iced::theme::Text::Color(content_style.colors.text_secondary)),
+                        ]
+                        .spacing(8)
+                        .align_items(Alignment::Center)
+                    )
+                    .on_press(Message::RefreshWorkspace)
+                    .padding([8, 16])
+                    .style(iced::theme::Button::Secondary),
+                ]
+                .spacing(16)
+                .align_items(Alignment::Center)
+            )
+            .center_y()
+            .center_x()
         )
         .width(Length::Fill)
         .height(Length::Fill)
-        .center_y()
-        .center_x()
         .into()
     } else {
         // Render the file tree properly
@@ -198,7 +202,7 @@ impl iced::widget::scrollable::StyleSheet for ExplorerScrollableStyle {
     fn active(&self, _style: &Self::Style) -> iced::widget::scrollable::Appearance {
         iced::widget::scrollable::Appearance {
             container: container::Appearance::default(),
-            vertical_scrollbar: iced::widget::scrollable::Scrollbar {
+            scrollbar: iced::widget::scrollable::Scrollbar {
                 background: Some(Color::TRANSPARENT.into()),
                 border: iced::Border {
                     color: Color::TRANSPARENT,
@@ -219,39 +223,13 @@ impl iced::widget::scrollable::StyleSheet for ExplorerScrollableStyle {
                     },
                 },
             },
-            horizontal_scrollbar: iced::widget::scrollable::Scrollbar {
-                background: Some(Color::TRANSPARENT.into()),
-                border: iced::Border {
-                    color: Color::TRANSPARENT,
-                    width: 0.0,
-                    radius: 0.0.into(),
-                },
-                scroller: iced::widget::scrollable::Scroller {
-                    color: Color::from_rgba(
-                        self.colors.border.r,
-                        self.colors.border.g,
-                        self.colors.border.b,
-                        0.3,
-                    ),
-                    border: iced::Border {
-                        color: Color::TRANSPARENT,
-                        width: 0.0,
-                        radius: 3.0.into(),
-                    },
-                },
-            },
+            gap: None,
         }
     }
 
     fn hovered(&self, style: &Self::Style, _is_mouse_over_scrollbar: bool) -> iced::widget::scrollable::Appearance {
         let mut active = self.active(style);
-        active.vertical_scrollbar.scroller.color = Color::from_rgba(
-            self.colors.accent.r,
-            self.colors.accent.g,
-            self.colors.accent.b,
-            0.7,
-        );
-        active.horizontal_scrollbar.scroller.color = Color::from_rgba(
+        active.scrollbar.scroller.color = Color::from_rgba(
             self.colors.accent.r,
             self.colors.accent.g,
             self.colors.accent.b,
