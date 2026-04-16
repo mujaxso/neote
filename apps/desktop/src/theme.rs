@@ -266,22 +266,22 @@ impl SemanticColors {
             // Focus - Subtle
             focus_ring: Color::from_rgba(0.329, 0.584, 0.988, 0.3),    // Subtle focus ring
             
-            // Syntax highlighting colors - Professional light theme with vibrant, readable colors
-            // Inspired by modern IDEs like VS Code, IntelliJ, etc.
-            syntax_comment: Color::from_rgb(0.427, 0.510, 0.588),      // #6D8296 - Slate blue-gray (more visible)
-            syntax_string: Color::from_rgb(0.196, 0.588, 0.196),       // #329632 - Vibrant green
-            syntax_keyword: Color::from_rgb(0.784, 0.157, 0.588),      // #C82896 - Magenta-purple
-            syntax_function: Color::from_rgb(0.157, 0.471, 0.784),     // #2878C8 - Bright blue
-            syntax_type: Color::from_rgb(0.784, 0.392, 0.000),         // #C86400 - Orange-brown
-            syntax_variable: Color::from_rgb(0.157, 0.176, 0.208),     // #282D35 - Primary text
-            syntax_constant: Color::from_rgb(0.784, 0.235, 0.392),     // #C83C64 - Pink-red
-            syntax_number: Color::from_rgb(0.392, 0.549, 0.235),       // #648C3C - Olive green
-            syntax_operator: Color::from_rgb(0.549, 0.235, 0.549),     // #8C3C8C - Purple
-            syntax_punctuation: Color::from_rgb(0.549, 0.549, 0.549),  // #8C8C8C - Medium gray
-            syntax_attribute: Color::from_rgb(0.588, 0.235, 0.784),    // #963CC8 - Violet
-            syntax_macro: Color::from_rgb(0.157, 0.471, 0.784),        // #2878C8 - Same as function
-            syntax_builtin: Color::from_rgb(0.784, 0.392, 0.000),      // #C86400 - Same as type
-            syntax_plain: Color::from_rgb(0.157, 0.176, 0.208),        // #282D35 - Primary text
+            // Syntax highlighting colors - VS Code Light+ inspired professional palette
+            // High contrast, well-balanced, and proven in professional IDEs
+            syntax_comment: Color::from_rgb(0.467, 0.533, 0.600),      // #778899 - Slate gray for comments
+            syntax_string: Color::from_rgb(0.627, 0.000, 0.000),       // #A00000 - Deep red for strings
+            syntax_keyword: Color::from_rgb(0.627, 0.125, 0.941),      // #A020F0 - Purple for keywords
+            syntax_function: Color::from_rgb(0.000, 0.000, 0.941),     // #0000F0 - Blue for functions
+            syntax_type: Color::from_rgb(0.941, 0.392, 0.000),         // #F06400 - Bright orange for types
+            syntax_variable: Color::from_rgb(0.000, 0.000, 0.000),     // #000000 - Black for variables
+            syntax_constant: Color::from_rgb(0.627, 0.125, 0.941),     // #A020F0 - Purple for constants
+            syntax_number: Color::from_rgb(0.098, 0.627, 0.098),       // #19A019 - Green for numbers
+            syntax_operator: Color::from_rgb(0.000, 0.000, 0.000),     // #000000 - Black for operators
+            syntax_punctuation: Color::from_rgb(0.549, 0.549, 0.549),  // #8C8C8C - Medium gray for punctuation
+            syntax_attribute: Color::from_rgb(0.627, 0.125, 0.941),    // #A020F0 - Purple for attributes
+            syntax_macro: Color::from_rgb(0.941, 0.392, 0.000),        // #F06400 - Bright orange for macros
+            syntax_builtin: Color::from_rgb(0.000, 0.000, 0.941),      // #0000F0 - Blue for builtins
+            syntax_plain: Color::from_rgb(0.000, 0.000, 0.000),        // #000000 - Black for plain text
         }
     }
 }
