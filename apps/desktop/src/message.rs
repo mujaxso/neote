@@ -66,11 +66,11 @@ pub enum Message {
     // Save typography settings
     SaveTypographySettings,
     // Load typography settings
-    TypographySettingsLoaded(Result<(crate::settings::editor::EditorTypographySettings, crate::theme::QyzerTheme), String>),
+    TypographySettingsLoaded(Result<(crate::settings::editor::EditorTypographySettings, crate::theme::ZaroxiTheme), String>),
     // Workspace dialog was cancelled
     WorkspaceDialogCancelled,
     // Manual workspace path submission (fallback when native dialog fails)
     SubmitManualWorkspacePath(String),
     // Theme changed
-    ThemeChanged(crate::theme::QyzerTheme),
+    ThemeChanged(crate::theme::ZaroxiTheme),
 }

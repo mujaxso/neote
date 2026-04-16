@@ -13,7 +13,7 @@ use syntax_core::language::LanguageId;
 pub fn build_line_cache(
     text: &str,
     spans: &[syntax_core::HighlightSpan],
-    theme: crate::theme::QyzerTheme,
+    theme: crate::theme::ZaroxiTheme,
 ) -> Vec<Vec<(Range<usize>, iced::Color)>> {
     let style = StyleHelpers::new(theme);
 

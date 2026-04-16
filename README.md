@@ -265,7 +265,7 @@ This project uses several open-source libraries. See the `LICENSE-THIRD-PARTY` f
 We'd like to thank:
 
 - **The Rust Community** for creating an amazing ecosystem
-- **All Contributors** who help make Qyzer Studio better
+- **All Contributors** who help make Zaroxi Studio better
 - **OpenAI** and other AI providers for their APIs
 - **The Iced Framework Team** for their excellent GUI library
 - **Everyone who has provided feedback and testing**
@@ -345,7 +345,7 @@ Zaroxi Studio is licensed under the MIT License. See [LICENSE](LICENSE) for deta
 ## 🙏 Acknowledgments
 
 - The Rust community for excellent tooling and libraries
-- All contributors who help make Qyzer Studio better
+- All contributors who help make Zaroxi Studio better
 - Inspired by modern IDEs and AI-assisted development tools
 
 ## 📞 Contact

@@ -5,7 +5,7 @@ use iced::{
 use std::ops::Range;
 
 use crate::message::Message;
-use crate::theme::QyzerTheme;
+use crate::theme::ZaroxiTheme;
 use crate::ui::style::StyleHelpers;
 use crate::settings::editor::EditorTypographySettings;
 
@@ -17,7 +17,7 @@ pub fn editor_panel<'a>(
     is_file_too_large_for_editor: bool,
     file_loading_state: &'a crate::state::FileLoadingState,
     editor_typography: &'a EditorTypographySettings,
-    theme: QyzerTheme,
+    theme: ZaroxiTheme,
     line_cache: Option<Vec<Vec<(Range<usize>, Color)>>>,
 ) -> Element<'a, Message> {
     let style = StyleHelpers::new(theme);
@@ -271,7 +271,7 @@ pub fn editor_panel<'a>(
             } else {
                 container(
                     column![
-                        text("Qyzer Studio").size(32).style(iced::theme::Text::Color(style.colors.accent)),
+                        text("Zaroxi Studio").size(32).style(iced::theme::Text::Color(style.colors.accent)),
                         text("AI‑first Code Editor").size(16).style(iced::theme::Text::Color(style.colors.text_secondary)),
                         container(iced::widget::horizontal_rule(1)).width(150),
                         column![
