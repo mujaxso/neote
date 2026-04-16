@@ -345,16 +345,13 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
             Command::none()
         }
         Message::ActivateTab(tab_id) => {
-            println!("DEBUG: Activating tab {}", tab_id);
             if app.tab_manager.activate_tab(tab_id) {
                 // Update active file path
                 app.active_file_path = app.tab_manager.get_active_file_path();
-                println!("DEBUG: Active file path is now: {:?}", app.active_file_path);
                 
                 // Check if the active file is already loaded
                 if let Some(active_tab) = app.tab_manager.get_active_tab() {
                     let active_path = active_tab.file_path.clone();
-                    println!("DEBUG: Active tab path: {}", active_path);
                     
                     // Always load the file when switching tabs, even if it's the same
                     // This ensures the editor content is refreshed
@@ -363,8 +360,6 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                         |path| Message::FileSelectedByPath(path),
                     );
                 }
-            } else {
-                println!("DEBUG: Failed to activate tab {}", tab_id);
             }
             Command::none()
         }

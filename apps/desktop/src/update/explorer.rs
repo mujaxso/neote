@@ -42,21 +42,15 @@ fn handle_explorer_message(app: &mut App, explorer_msg: ExplorerMessage) -> Comm
             // Convert to string and trigger file loading
             let path_string = path.to_string_lossy().to_string();
             
-            println!("DEBUG explorer: File selected: {}", path_string);
-            println!("DEBUG explorer: Current tabs before: {}", app.tab_manager.tabs.len());
-            
             // Check if this file already has a tab
             if app.tab_manager.has_tab_for_path(&path_string) {
-                println!("DEBUG explorer: Tab already exists for {}", path_string);
                 // File already has a tab, activate it
                 if let Some(existing_tab) = app.tab_manager.find_tab_by_path(&path_string) {
                     let tab_id = existing_tab.id;
-                    println!("DEBUG explorer: Activating existing tab {}", tab_id);
                     app.tab_manager.activate_tab(tab_id);
                     app.active_file_path = app.tab_manager.get_active_file_path();
                     
                     // Always load the file when activating a tab
-                    println!("DEBUG explorer: Loading existing tab file");
                     return Command::perform(
                         async move { path_string },
                         |path| Message::FileSelectedByPath(path),
@@ -65,25 +59,8 @@ fn handle_explorer_message(app: &mut App, explorer_msg: ExplorerMessage) -> Comm
             }
             
             // Create a new tab for this file
-            println!("DEBUG explorer: Creating new tab for {}", path_string);
-            println!("DEBUG explorer: Before open_or_activate_tab, tabs count = {}", app.tab_manager.tabs.len());
             let tab_id = app.tab_manager.open_or_activate_tab(path_string.clone());
-            println!("DEBUG explorer: After open_or_activate_tab, returned tab_id = {}", tab_id);
             app.active_file_path = Some(path_string.clone());
-            
-            println!("DEBUG explorer: Current tabs after: {}", app.tab_manager.tabs.len());
-            println!("DEBUG explorer: Active tab ID: {:?}", app.tab_manager.active_tab_id);
-            for (i, tab) in app.tab_manager.tabs.iter().enumerate() {
-                println!("  Tab {}: {} (id: {}, active: {}, path: {})", 
-                         i, tab.display_name, tab.id, tab.is_active, tab.file_path);
-            }
-            
-            // Debug: Check if the tab is marked as active
-            if let Some(active_tab) = app.tab_manager.get_active_tab() {
-                println!("DEBUG explorer: Active tab is: {} (id: {})", active_tab.display_name, active_tab.id);
-            } else {
-                println!("DEBUG explorer: No active tab found!");
-            }
             
             // Trigger file loading via workspace module
             Command::perform(

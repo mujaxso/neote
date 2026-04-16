@@ -263,7 +263,6 @@ fn handle_file_loaded(app: &mut App, result: Result<(String, String, Document), 
             
             // Ensure there's a tab for this file
             if !app.tab_manager.has_tab_for_path(&path) {
-                println!("DEBUG workspace: Creating tab for {} in handle_file_loaded", path);
                 app.tab_manager.open_or_activate_tab(path.clone());
             } else {
                 // Activate the existing tab

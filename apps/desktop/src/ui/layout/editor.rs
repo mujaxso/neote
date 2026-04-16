@@ -25,16 +25,10 @@ pub fn editor_panel<'a>(
     
     // Build tab bar - always show with minimum height
     let tab_bar: Element<Message> = {
-        // Debug: Always show tab count
-        let debug_text = format!("Tabs: {}", tab_manager.tabs.len());
-        println!("DEBUG in UI editor_panel: {}", debug_text);
-        println!("DEBUG in UI editor_panel: tab_manager address = {:p}", tab_manager);
-        
         let mut tab_row: iced::widget::Row<'_, Message, iced::Theme, iced::Renderer> = row![].spacing(0);
         
         // Show placeholder when no tabs
         if tab_manager.tabs.is_empty() {
-            println!("DEBUG in UI editor_panel: tabs is empty, showing placeholder");
             let placeholder = container(
                 text("No files open")
                     .size(12)
@@ -45,11 +39,8 @@ pub fn editor_panel<'a>(
             .width(Length::Fill);
             tab_row = tab_row.push(placeholder);
         } else {
-            println!("DEBUG in UI editor_panel: rendering {} tabs", tab_manager.tabs.len());
             for tab in &tab_manager.tabs {
                 let is_active = tab.is_active;
-                
-                println!("DEBUG in UI: Rendering tab: {} (active: {}) path: {}", tab.display_name, is_active, tab.file_path);
                 
                 // Tab label with dirty indicator
                 let label = if tab.is_dirty {
@@ -364,23 +355,43 @@ pub fn editor_panel<'a>(
             } else {
                 container(
                     column![
-                        text("Zaroxi Studio").size(32).style(iced::theme::Text::Color(style.colors.accent)),
-                        text("AI‑first Code Editor").size(16).style(iced::theme::Text::Color(style.colors.text_secondary)),
-                        container(iced::widget::horizontal_rule(1)).width(150),
-                        column![
-                            button("Open a file from the explorer").style(iced::theme::Button::Secondary),
-                            button("Ask AI about the workspace").style(iced::theme::Button::Secondary),
-                        ]
-                        .spacing(8)
-                        .padding(16),
+                        text("Zaroxi Studio")
+                            .size(24)
+                            .style(iced::theme::Text::Color(style.colors.accent)),
+                        text("AI‑first Code Editor")
+                            .size(12)
+                            .style(iced::theme::Text::Color(style.colors.text_muted)),
+                        container(
+                            column![
+                                button("Open a file from the explorer")
+                                    .style(iced::theme::Button::Secondary)
+                                    .padding([6, 12]),
+                                button("Ask AI about the workspace")
+                                    .style(iced::theme::Button::Secondary)
+                                    .padding([6, 12]),
+                            ]
+                            .spacing(8)
+                        )
+                        .padding(12),
                     ]
                     .align_items(Alignment::Center)
-                    .spacing(16),
+                    .spacing(12),
                 )
                 .center_y()
                 .center_x()
                 .width(Length::Fill)
                 .height(Length::Fill)
+                .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
+                    container::Appearance {
+                        background: Some(style.colors.editor_background.into()),
+                        border: iced::Border {
+                            color: Color::TRANSPARENT,
+                            width: 0.0,
+                            radius: iced::border::Radius::from(0.0),
+                        },
+                        ..Default::default()
+                    }
+                })))
                 .into()
             }
         }
