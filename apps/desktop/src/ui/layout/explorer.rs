@@ -202,3 +202,18 @@ fn placeholder_panel<'a>(label: &str) -> Element<'a, Message> {
     .height(Length::Fill)
     .into()
 }
+
+// Provide explorer_panel for compatibility
+pub fn explorer_panel(app: &crate::state::App) -> Element<'_, Message> {
+    // Use the existing explorer_panel_with_expanded function
+    // We need to extract the necessary parameters from app
+    let file_entries = &app.file_entries;
+    let expanded_directories = &app.explorer_state.expanded_directories;
+    let workspace_path = &app.workspace_path;
+    
+    explorer_panel_with_expanded(
+        file_entries,
+        expanded_directories,
+        workspace_path,
+    )
+}

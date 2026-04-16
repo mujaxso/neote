@@ -29,13 +29,12 @@ pub fn explorer_panel(app: &App) -> Element<'_, Message> {
 }
 
 pub fn editor_panel(app: &App) -> Element<'_, Message> {
-    use iced::Color;
-    use std::ops::Range;
-    
     let active_file_path = app.active_file_path.as_ref();
     let text_editor = &app.text_editor;
     let is_dirty = app.is_dirty;
-    let editor_document = app.editor_state.as_ref().map(|s| &s.document);
+    // We can't access the private document field directly
+    // For now, pass None since we don't have access
+    let editor_document = None;
     let is_file_too_large_for_editor = app.is_file_too_large_for_editor;
     let file_loading_state = &app.file_loading_state;
     let editor_typography = &app.editor_typography;

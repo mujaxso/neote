@@ -131,3 +131,9 @@ pub fn ai_panel<'a>(prompt_input: &'a str) -> Element<'a, Message> {
     .height(Length::Fill)
     .into()
 }
+
+// Also provide assistant_panel function for compatibility
+pub fn assistant_panel(app: &crate::state::App) -> Element<'_, Message> {
+    // Use the same implementation as ai_panel but with app context
+    ai_panel(&app.prompt_input)
+}
