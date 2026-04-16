@@ -1,6 +1,6 @@
 use iced::{Color, Theme};
 
-/// Design system tokens for Qyzer Studio
+/// Design system tokens for Zaroxi Studio
 #[derive(Debug, Clone, Copy)]
 pub struct DesignTokens {
     // Spacing scale (in pixels)
