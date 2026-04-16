@@ -221,6 +221,8 @@ pub fn map_capture_name(name: &str) -> Highlight {
         "html_inline" => Highlight::Attribute,
         // Fallback for block-level elements if they somehow appear
         "heading" => Highlight::Type,
+        // These captures are kept for compatibility but not used in the current markdown query
+        // They remain as fallbacks
         "heading.1" => Highlight::Type,
         "heading.2" => Highlight::Type,
         "heading.3" => Highlight::Type,
