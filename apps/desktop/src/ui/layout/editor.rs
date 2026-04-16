@@ -133,13 +133,8 @@ pub fn editor_panel<'a>(
                 .scroller_width(5)
         ));
         
-        // Determine background color based on whether tabs are empty
-        let is_tabs_empty = tab_manager.tabs.is_empty();
-        let tab_bg_color = if is_tabs_empty {
-            style.colors.editor_background
-        } else {
-            style.colors.panel_background
-        };
+        // Always use editor_background for seamless integration with editor area
+        let tab_bg_color = style.colors.editor_background;
         
         let tab_bar_container: iced::widget::Container<'_, Message, iced::Theme, iced::Renderer> = container(scrollable_tabs)
             .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
