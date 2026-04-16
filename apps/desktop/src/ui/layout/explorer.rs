@@ -195,35 +195,63 @@ struct ExplorerScrollableStyle {
 impl iced::widget::scrollable::StyleSheet for ExplorerScrollableStyle {
     type Style = iced::Theme;
 
-    fn active(&self, _style: &Self::Style) -> iced::widget::scrollable::Scrollbar {
-        iced::widget::scrollable::Scrollbar {
-            background: Some(Color::TRANSPARENT.into()),
-            border: iced::Border {
-                color: Color::TRANSPARENT,
-                width: 0.0,
-                radius: 0.0.into(),
-            },
-            scroller: iced::widget::scrollable::Scroller {
-                color: Color::from_rgba(
-                    self.colors.border.r,
-                    self.colors.border.g,
-                    self.colors.border.b,
-                    0.3,
-                ),
+    fn active(&self, _style: &Self::Style) -> iced::widget::scrollable::Appearance {
+        iced::widget::scrollable::Appearance {
+            container: container::Appearance::default(),
+            vertical_scrollbar: iced::widget::scrollable::Scrollbar {
+                background: Some(Color::TRANSPARENT.into()),
                 border: iced::Border {
                     color: Color::TRANSPARENT,
                     width: 0.0,
-                    radius: 3.0.into(),
+                    radius: 0.0.into(),
+                },
+                scroller: iced::widget::scrollable::Scroller {
+                    color: Color::from_rgba(
+                        self.colors.border.r,
+                        self.colors.border.g,
+                        self.colors.border.b,
+                        0.3,
+                    ),
+                    border: iced::Border {
+                        color: Color::TRANSPARENT,
+                        width: 0.0,
+                        radius: 3.0.into(),
+                    },
                 },
             },
-            gap: None,
-            width: 8.0,
+            horizontal_scrollbar: iced::widget::scrollable::Scrollbar {
+                background: Some(Color::TRANSPARENT.into()),
+                border: iced::Border {
+                    color: Color::TRANSPARENT,
+                    width: 0.0,
+                    radius: 0.0.into(),
+                },
+                scroller: iced::widget::scrollable::Scroller {
+                    color: Color::from_rgba(
+                        self.colors.border.r,
+                        self.colors.border.g,
+                        self.colors.border.b,
+                        0.3,
+                    ),
+                    border: iced::Border {
+                        color: Color::TRANSPARENT,
+                        width: 0.0,
+                        radius: 3.0.into(),
+                    },
+                },
+            },
         }
     }
 
-    fn hovered(&self, style: &Self::Style, _is_mouse_over_scrollbar: bool) -> iced::widget::scrollable::Scrollbar {
+    fn hovered(&self, style: &Self::Style, _is_mouse_over_scrollbar: bool) -> iced::widget::scrollable::Appearance {
         let mut active = self.active(style);
-        active.scroller.color = Color::from_rgba(
+        active.vertical_scrollbar.scroller.color = Color::from_rgba(
+            self.colors.accent.r,
+            self.colors.accent.g,
+            self.colors.accent.b,
+            0.7,
+        );
+        active.horizontal_scrollbar.scroller.color = Color::from_rgba(
             self.colors.accent.r,
             self.colors.accent.g,
             self.colors.accent.b,
