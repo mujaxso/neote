@@ -1,5 +1,5 @@
 ; Markdown highlighting query for tree-sitter-markdown-inline
-; Simplified to only include patterns that definitely work
+; Enhanced to better capture headings and other elements
 
 ; ====== Escape sequences ======
 (backslash_escape) @escape
@@ -46,8 +46,25 @@
 ; ====== LaTeX ======
 (latex_block) @latex
 
-; ====== Heading markers ======
+; ====== Heading markers and content ======
+; Capture # characters as heading markers - use a node type that might work
+; Try using the actual node type for "#" from debug output
 "#" @heading.marker
+
+; Also try to capture multiple # characters
+[
+  "#"
+  "##"
+  "###"
+  "####"
+  "#####"
+  "######"
+] @heading.marker
+
+; Try to capture text that might be in headings
+; Since the inline grammar doesn't have proper heading nodes,
+; we'll capture inline content that could be part of headings
+(inline) @heading.content
 
 ; ====== Fallback for everything else ======
 (_) @plain

@@ -230,6 +230,8 @@ pub fn map_capture_name(name: &str) -> Highlight {
         "atx_heading" => Highlight::Type,
         "setext_heading" => Highlight::Type,
         "heading.marker" => Highlight::Operator,
+        "heading.content" => Highlight::Type,
+        "text" => Highlight::Type,
         "setext_heading_text" => Highlight::Type,
         "code_block" => Highlight::Property,
         "code_block.delimiter" => Highlight::Operator,
