@@ -1,9 +1,10 @@
 use iced::{
     widget::{column, container, row, vertical_rule, Space},
-    Element, Length,
+    Element, Length, Color,
 };
+use std::ops::Range;
 
-use crate::state::App;
+use crate::state::{App, FileLoadingState};
 use crate::message::Message;
 use crate::theme::QyzerTheme;
 use crate::ui::style::StyleHelpers;
