@@ -64,16 +64,18 @@ pub fn editor_panel<'a>(
                     
                     // Dirty status
                     if !is_file_too_large_for_editor {
-                        let status_text = if is_dirty {
+                        let status_text: Element<_> = if is_dirty {
                             text("● Unsaved")
                                 .size(11)
                                 .style(iced::theme::Text::Color(style.colors.warning))
+                                .into()
                         } else {
                             text("✓ Saved")
                                 .size(11)
                                 .style(iced::theme::Text::Color(style.colors.success))
+                                .into()
                         };
-                        indicators.push(status_text.into());
+                        indicators.push(status_text);
                     }
                     
                     row(indicators)

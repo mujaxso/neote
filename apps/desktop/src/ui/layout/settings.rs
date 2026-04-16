@@ -22,7 +22,7 @@ pub fn settings_panel<'a>() -> Element<'a, Message> {
                     column![
                         text("Editor").size(16),
                         text("Font size:").size(14),
-                        text_input("14", "14")
+                        iced::widget::text_input("14", "14")
                             .on_input(|size| Message::PromptInputChanged(format!("Font size: {}", size)))
                             .padding(8),
                         text("Theme:").size(14),
@@ -41,11 +41,11 @@ pub fn settings_panel<'a>() -> Element<'a, Message> {
                     column![
                         text("AI Settings").size(16),
                         text("Model:").size(14),
-                        text_input("gpt-4", "gpt-4")
+                        iced::widget::text_input("gpt-4", "gpt-4")
                             .on_input(|model| Message::PromptInputChanged(format!("AI model: {}", model)))
                             .padding(8),
                         text("API Key:").size(14),
-                        text_input("••••••••", "")
+                        iced::widget::text_input("••••••••", "")
                             .on_input(|_| Message::PromptInputChanged("API key updated".to_string()))
                             .padding(8),
                     ]

@@ -18,7 +18,7 @@ pub fn search_panel<'a>() -> Element<'a, Message> {
         iced::widget::horizontal_rule(1),
         container(
             column![
-                text_input("Search in workspace...", "")
+                iced::widget::text_input("Search in workspace...", "")
                     .on_input(|query| Message::PromptInputChanged(format!("search: {}", query)))
                     .padding(12)
                     .width(Length::Fill),

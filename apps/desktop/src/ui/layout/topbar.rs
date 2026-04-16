@@ -52,7 +52,7 @@ pub fn top_bar<'a>(workspace_path: &'a str, is_dirty: bool) -> Element<'a, Messa
             if workspace_path.is_empty() {
                 container(
                     row![
-                        text_input("Enter workspace path...", workspace_path)
+                        iced::widget::text_input("Enter workspace path...", workspace_path)
                             .on_input(Message::WorkspacePathChanged)
                             .on_submit(Message::SubmitManualWorkspacePath(workspace_path.to_string()))
                             .padding([8, 12])
