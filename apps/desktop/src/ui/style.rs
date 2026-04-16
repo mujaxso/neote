@@ -224,6 +224,62 @@ impl StyleHelpers {
     }
 }
 
+// Tab styles
+impl StyleHelpers {
+    /// Active tab style
+    pub fn active_tab(&self) -> container::Appearance {
+        container::Appearance {
+            background: Some(self.colors.editor_background.into()),
+            border: iced::Border {
+                color: self.colors.border,
+                width: 1.0,
+                radius: iced::border::Radius::from(0.0),
+            },
+            ..Default::default()
+        }
+    }
+    
+    /// Inactive tab style
+    pub fn inactive_tab(&self) -> container::Appearance {
+        container::Appearance {
+            background: Some(self.colors.panel_background.into()),
+            border: iced::Border {
+                color: self.colors.border,
+                width: 1.0,
+                radius: iced::border::Radius::from(0.0),
+            },
+            ..Default::default()
+        }
+    }
+    
+    /// Tab bar style
+    pub fn tab_bar(&self) -> container::Appearance {
+        container::Appearance {
+            background: Some(self.colors.panel_background.into()),
+            border: iced::Border {
+                color: self.colors.border,
+                width: 0.0,
+                radius: iced::border::Radius::from(0.0),
+            },
+            ..Default::default()
+        }
+    }
+    
+    /// Close button style for tabs
+    pub fn tab_close_button(&self) -> button::Appearance {
+        button::Appearance {
+            background: Some(Color::TRANSPARENT.into()),
+            border: iced::Border {
+                color: Color::TRANSPARENT,
+                width: 0.0,
+                radius: iced::border::Radius::from(0.0),
+            },
+            text_color: self.colors.text_muted,
+            ..Default::default()
+        }
+    }
+}
+
 // Text colors
 impl StyleHelpers {
     /// Primary text color

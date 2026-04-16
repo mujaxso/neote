@@ -55,6 +55,7 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
         editor_typography,
         theme,
         line_cache,
+        &app.tab_manager,
     )
 }
 

@@ -12,6 +12,189 @@ use crate::settings::editor::EditorTypographySettings;
 use syntax_core;
 
 #[derive(Debug, Clone)]
+pub struct EditorTab {
+    pub id: usize,
+    pub file_path: String,
+    pub display_name: String,
+    pub is_dirty: bool,
+    pub is_active: bool,
+    pub is_pinned: bool,
+}
+
+impl EditorTab {
+    pub fn new(id: usize, file_path: String) -> Self {
+        let file_name = std::path::Path::new(&file_path)
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or(&file_path)
+            .to_string();
+        
+        // For now, use just the file name
+        // In a more advanced implementation, we could add parent directory
+        // if there are duplicate file names in different directories
+        let display_name = file_name;
+        
+        Self {
+            id,
+            file_path,
+            display_name,
+            is_dirty: false,
+            is_active: false,
+            is_pinned: false,
+        }
+    }
+    
+    pub fn set_dirty(&mut self, dirty: bool) {
+        self.is_dirty = dirty;
+    }
+    
+    pub fn set_active(&mut self, active: bool) {
+        self.is_active = active;
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct TabManager {
+    pub tabs: Vec<EditorTab>,
+    pub next_tab_id: usize,
+    pub active_tab_id: Option<usize>,
+}
+
+impl TabManager {
+    pub fn new() -> Self {
+        Self {
+            tabs: Vec::new(),
+            next_tab_id: 0,
+            active_tab_id: None,
+        }
+    }
+    
+    pub fn open_or_activate_tab(&mut self, file_path: String) -> usize {
+        // Check if tab already exists for this file
+        for tab in &self.tabs {
+            if tab.file_path == file_path {
+                // Activate this tab
+                self.activate_tab(tab.id);
+                return tab.id;
+            }
+        }
+        
+        // Create new tab
+        let tab_id = self.next_tab_id;
+        self.next_tab_id += 1;
+        
+        let mut new_tab = EditorTab::new(tab_id, file_path);
+        new_tab.set_active(true);
+        
+        // Deactivate all other tabs
+        for tab in &mut self.tabs {
+            tab.set_active(false);
+        }
+        
+        self.tabs.push(new_tab);
+        self.active_tab_id = Some(tab_id);
+        
+        // Update display names to handle duplicates
+        self.update_tab_display_names();
+        
+        tab_id
+    }
+    
+    pub fn activate_tab(&mut self, tab_id: usize) -> bool {
+        if self.tabs.iter().any(|t| t.id == tab_id) {
+            // Deactivate all tabs
+            for tab in &mut self.tabs {
+                tab.set_active(tab.id == tab_id);
+            }
+            self.active_tab_id = Some(tab_id);
+            true
+        } else {
+            false
+        }
+    }
+    
+    pub fn close_tab(&mut self, tab_id: usize) -> Option<String> {
+        let position = self.tabs.iter().position(|t| t.id == tab_id)?;
+        let closed_tab = self.tabs.remove(position);
+        
+        // If we closed the active tab, activate another one
+        if self.active_tab_id == Some(tab_id) {
+            self.active_tab_id = if !self.tabs.is_empty() {
+                // Try to activate the tab to the right, or the last tab
+                let new_active_id = if position < self.tabs.len() {
+                    self.tabs[position].id
+                } else if !self.tabs.is_empty() {
+                    self.tabs[self.tabs.len() - 1].id
+                } else {
+                    return Some(closed_tab.file_path);
+                };
+                self.activate_tab(new_active_id);
+                Some(new_active_id)
+            } else {
+                None
+            };
+        }
+        
+        // Update display names in case duplicates are resolved
+        self.update_tab_display_names();
+        
+        Some(closed_tab.file_path)
+    }
+    
+    pub fn get_active_tab(&self) -> Option<&EditorTab> {
+        self.active_tab_id.and_then(|id| self.tabs.iter().find(|t| t.id == id))
+    }
+    
+    pub fn get_active_file_path(&self) -> Option<String> {
+        self.get_active_tab().map(|t| t.file_path.clone())
+    }
+    
+    pub fn set_tab_dirty(&mut self, tab_id: usize, dirty: bool) -> bool {
+        if let Some(tab) = self.tabs.iter_mut().find(|t| t.id == tab_id) {
+            tab.set_dirty(dirty);
+            true
+        } else {
+            false
+        }
+    }
+    
+    pub fn find_tab_by_path(&self, file_path: &str) -> Option<&EditorTab> {
+        self.tabs.iter().find(|t| t.file_path == file_path)
+    }
+    
+    pub fn has_tab_for_path(&self, file_path: &str) -> bool {
+        self.find_tab_by_path(file_path).is_some()
+    }
+    
+    fn update_tab_display_names(&mut self) {
+        // Count occurrences of each file name
+        use std::collections::HashMap;
+        let mut name_counts: HashMap<String, usize> = HashMap::new();
+        
+        for tab in &self.tabs {
+            let name = tab.display_name.clone();
+            *name_counts.entry(name).or_insert(0) += 1;
+        }
+        
+        // If any file name appears more than once, add parent directory
+        for tab in &mut self.tabs {
+            if let Some(&count) = name_counts.get(&tab.display_name) {
+                if count > 1 {
+                    // Add parent directory to disambiguate
+                    if let Some(parent) = std::path::Path::new(&tab.file_path).parent() {
+                        if let Some(parent_name) = parent.file_name() {
+                            if let Some(parent_str) = parent_name.to_str() {
+                                tab.display_name = format!("{}/{}", parent_str, tab.display_name);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct FileMetadata {
     pub path: String,
     pub size: u64,
@@ -203,6 +386,8 @@ pub struct App {
     pub syntax_highlighting_enabled: bool,
     // File cache to speed up reopening files (max 10 files to avoid memory issues)
     pub file_cache: std::collections::HashMap<String, (String, editor_core::Document)>,
+    // Tab management for editor
+    pub tab_manager: TabManager,
 }
 
 impl App {
@@ -260,6 +445,7 @@ impl App {
             syntax_cache_version: 0,
             syntax_highlighting_enabled: true,
             file_cache: std::collections::HashMap::new(),
+            tab_manager: TabManager::new(),
         };
         
         // Update current theme based on preference

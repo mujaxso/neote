@@ -335,6 +335,64 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
             app.editor_state = Some(editor_state);
             Command::none()
         }
+        Message::ActivateTab(tab_id) => {
+            if app.tab_manager.activate_tab(tab_id) {
+                // Update active file path
+                app.active_file_path = app.tab_manager.get_active_file_path();
+                
+                // Check if the active file is already loaded
+                if let Some(active_tab) = app.tab_manager.get_active_tab() {
+                    let active_path = active_tab.file_path.clone();
+                    
+                    // If the currently loaded file is different, load the new one
+                    if app.active_file_path.as_ref() != Some(&active_path) {
+                        return Command::perform(
+                            async move { active_path },
+                            |path| Message::FileSelectedByPath(path),
+                        );
+                    }
+                }
+            }
+            Command::none()
+        }
+        Message::CloseTab(tab_id) => {
+            // Check if the tab being closed is dirty
+            let was_dirty = app.tab_manager.tabs.iter()
+                .find(|t| t.id == tab_id)
+                .map(|t| t.is_dirty)
+                .unwrap_or(false);
+            
+            // For now, we'll close without asking for confirmation
+            // In a more complete implementation, we would prompt to save
+            if let Some(file_path) = app.tab_manager.close_tab(tab_id) {
+                // If this was the active tab, update active file path
+                app.active_file_path = app.tab_manager.get_active_file_path();
+                
+                // If there's no active tab, clear the editor
+                if app.tab_manager.active_tab_id.is_none() {
+                    app.active_file_path = None;
+                    app.editor_state = None;
+                    app.text_editor = iced::widget::text_editor::Content::new();
+                    app.syntax_highlight_cache.clear();
+                    app.syntax_highlight_spans.clear();
+                    app.syntax_highlight_span_count = 0;
+                    app.syntax_cache_version += 1;
+                    app.is_dirty = false;
+                    app.is_file_too_large_for_editor = false;
+                    app.is_file_read_only = false;
+                } else {
+                    // Load the new active tab's file
+                    if let Some(active_tab) = app.tab_manager.get_active_tab() {
+                        let path = active_tab.file_path.clone();
+                        return Command::perform(
+                            async move { path },
+                            |path| Message::FileSelectedByPath(path),
+                        );
+                    }
+                }
+            }
+            Command::none()
+        }
         Message::KeyPressed(key, _modifiers) => {
             // Handle arrow keys for cursor movement
             match key {

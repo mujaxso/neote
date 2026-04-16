@@ -41,7 +41,36 @@ fn handle_explorer_message(app: &mut App, explorer_msg: ExplorerMessage) -> Comm
             app.explorer_state.select_file(path.clone());
             // Convert to string and trigger file loading
             let path_string = path.to_string_lossy().to_string();
+            
+            // Check if this file already has a tab
+            if app.tab_manager.has_tab_for_path(&path_string) {
+                // File already has a tab, activate it
+                if let Some(existing_tab) = app.tab_manager.find_tab_by_path(&path_string) {
+                    let tab_id = existing_tab.id;
+                    app.tab_manager.activate_tab(tab_id);
+                    app.active_file_path = app.tab_manager.get_active_file_path();
+                    
+                    // If the file is already loaded in the editor, we don't need to reload it
+                    // Just ensure the editor shows the right content
+                    if let Some(current_path) = &app.active_file_path {
+                        if current_path == &path_string {
+                            // The file is already loaded and active
+                            return Command::none();
+                        }
+                    }
+                    
+                    // The file needs to be loaded
+                    return Command::perform(
+                        async move { path_string },
+                        |path| Message::FileSelectedByPath(path),
+                    );
+                }
+            }
+            
+            // Create a new tab for this file
+            let tab_id = app.tab_manager.open_or_activate_tab(path_string.clone());
             app.active_file_path = Some(path_string.clone());
+            
             // Trigger file loading via workspace module
             Command::perform(
                 async move { path_string },
