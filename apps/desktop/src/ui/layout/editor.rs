@@ -23,79 +23,93 @@ pub fn editor_panel<'a>(
 ) -> Element<'a, Message> {
     let style = StyleHelpers::new(theme);
     
-    // Build tab bar
-    let tab_bar: Element<Message> = if !tab_manager.tabs.is_empty() {
+    // Build tab bar - always show with minimum height
+    let tab_bar: Element<Message> = {
         let mut tab_row: iced::widget::Row<'_, Message, iced::Theme, iced::Renderer> = row![].spacing(0);
         
-        for tab in &tab_manager.tabs {
-            let is_active = tab.is_active;
-            
-            // Tab label with dirty indicator
-            let label = if tab.is_dirty {
-                format!("● {}", tab.display_name)
-            } else {
-                tab.display_name.clone()
-            };
-            
-            let tab_label: iced::widget::Text<'_, iced::Theme, iced::Renderer> = text(label)
-                .size(12)
-                .style(if is_active {
-                    iced::theme::Text::Color(style.colors.text_primary)
+        // Show placeholder when no tabs
+        if tab_manager.tabs.is_empty() {
+            let placeholder = container(
+                text("No files open")
+                    .size(12)
+                    .style(iced::theme::Text::Color(style.colors.text_muted))
+            )
+            .padding([8, 16])
+            .center_y()
+            .width(Length::Fill);
+            tab_row = tab_row.push(placeholder);
+        } else {
+            for tab in &tab_manager.tabs {
+                let is_active = tab.is_active;
+                
+                // Tab label with dirty indicator
+                let label = if tab.is_dirty {
+                    format!("● {}", tab.display_name)
                 } else {
-                    iced::theme::Text::Color(style.colors.text_secondary)
-                });
-            
-            // Create the tab content
-            let mut tab_row_content: iced::widget::Row<'_, Message, iced::Theme, iced::Renderer> = 
-                row![].spacing(6).align_items(Alignment::Center);
-            tab_row_content = tab_row_content.push(tab_label);
-            
-            // Add close button only for active tab
-            if is_active {
-                let close_button: iced::widget::Button<'_, Message, iced::Theme, iced::Renderer> = button(
-                    text("×")
-                        .size(14)
-                        .style(iced::theme::Text::Color(style.colors.text_muted))
-                )
-                .on_press(Message::CloseTab(tab.id))
-                .style(iced::theme::Button::Text)
-                .padding(0);
-                tab_row_content = tab_row_content.push(close_button);
-            }
-            
-            // Wrap in a button for clicking to activate
-            let tab_button: iced::widget::Button<'_, Message, iced::Theme, iced::Renderer> = button(tab_row_content)
-                .on_press(Message::ActivateTab(tab.id))
-                .style(iced::theme::Button::Text)
-                .padding(0);
-            
-            let tab_element: iced::widget::Container<'_, Message, iced::Theme, iced::Renderer> = container(tab_button)
-                .padding([6, 12])
-                .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
-                    if is_active {
-                        container::Appearance {
-                            background: Some(style.colors.editor_background.into()),
-                            border: iced::Border {
-                                color: style.colors.border,
-                                width: 1.0,
-                                radius: iced::border::Radius::from(0.0),
-                            },
-                            ..Default::default()
-                        }
+                    tab.display_name.clone()
+                };
+                
+                let tab_label: iced::widget::Text<'_, iced::Theme, iced::Renderer> = text(label)
+                    .size(12)
+                    .style(if is_active {
+                        iced::theme::Text::Color(style.colors.text_primary)
                     } else {
-                        container::Appearance {
-                            background: Some(style.colors.elevated_panel_background.into()),
-                            border: iced::Border {
-                                color: style.colors.border,
-                                width: 1.0,
-                                radius: iced::border::Radius::from(0.0),
-                            },
-                            ..Default::default()
+                        iced::theme::Text::Color(style.colors.text_secondary)
+                    });
+                
+                // Create the tab content
+                let mut tab_row_content: iced::widget::Row<'_, Message, iced::Theme, iced::Renderer> = 
+                    row![].spacing(6).align_items(Alignment::Center);
+                tab_row_content = tab_row_content.push(tab_label);
+                
+                // Add close button only for active tab
+                if is_active {
+                    let close_button: iced::widget::Button<'_, Message, iced::Theme, iced::Renderer> = button(
+                        text("×")
+                            .size(14)
+                            .style(iced::theme::Text::Color(style.colors.text_muted))
+                    )
+                    .on_press(Message::CloseTab(tab.id))
+                    .style(iced::theme::Button::Text)
+                    .padding(0);
+                    tab_row_content = tab_row_content.push(close_button);
+                }
+                
+                // Wrap in a button for clicking to activate
+                let tab_button: iced::widget::Button<'_, Message, iced::Theme, iced::Renderer> = button(tab_row_content)
+                    .on_press(Message::ActivateTab(tab.id))
+                    .style(iced::theme::Button::Text)
+                    .padding(0);
+                
+                let tab_element: iced::widget::Container<'_, Message, iced::Theme, iced::Renderer> = container(tab_button)
+                    .padding([8, 16])
+                    .width(Length::Shrink)
+                    .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
+                        if is_active {
+                            container::Appearance {
+                                background: Some(style.colors.editor_background.into()),
+                                border: iced::Border {
+                                    color: style.colors.accent,
+                                    width: 2.0,
+                                    radius: iced::border::Radius::from(0.0),
+                                },
+                                ..Default::default()
+                            }
+                        } else {
+                            container::Appearance {
+                                background: Some(style.colors.panel_background.into()),
+                                border: iced::Border {
+                                    color: style.colors.border,
+                                    width: 1.0,
+                                    radius: iced::border::Radius::from(0.0),
+                                },
+                                ..Default::default()
+                            }
                         }
-                    }
-                })));
-            
-            tab_row = tab_row.push(tab_element);
+                    })));
+                
+                tab_row = tab_row.push(tab_element);
+            }
         }
         
         let scrollable_tabs: iced::widget::Scrollable<'_, Message, iced::Theme, iced::Renderer> = scrollable(
@@ -111,26 +125,19 @@ pub fn editor_panel<'a>(
         let tab_bar_container: iced::widget::Container<'_, Message, iced::Theme, iced::Renderer> = container(scrollable_tabs)
             .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
                 container::Appearance {
-                    background: Some(style.colors.shell_background.into()),
+                    background: Some(style.colors.panel_background.into()),
                     border: iced::Border {
                         color: style.colors.border,
-                        width: 0.0,
+                        width: 2.0,
                         radius: iced::border::Radius::from(0.0),
                     },
                     ..Default::default()
                 }
             })))
             .width(Length::Fill)
-            .height(Length::Fixed(32.0));
+            .height(Length::Fixed(36.0)); // Fixed height for tab bar
         
         tab_bar_container.into()
-    } else {
-        // Empty tab bar (no tabs open)
-        let empty_container: iced::widget::Container<'_, Message, iced::Theme, iced::Renderer> = 
-            container(text(""))
-                .width(Length::Fill)
-                .height(Length::Fixed(0.0));
-        empty_container.into()
     };
     
     // Status header (simplified since tabs show file info)
