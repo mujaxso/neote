@@ -47,64 +47,60 @@ pub fn explorer_panel_professional(app: &App) -> Element<'_, Message> {
     let content: Element<'_, Message> = if app.workspace_path.is_empty() {
         // No workspace open state - centered content
         container(
-            container(
-                column![
-                    text("No workspace open")
-                        .size(13)
-                        .style(iced::theme::Text::Color(content_style.colors.text_muted)),
-                    button(
-                        row![
-                            Icon::Folder.render(&app.editor_typography, &content_style, Some(14)),
-                            text("Open Workspace")
-                                .size(13)
-                                .style(iced::theme::Text::Color(content_style.colors.text_secondary)),
-                        ]
-                        .spacing(8)
-                        .align_items(Alignment::Center)
-                    )
-                    .on_press(Message::OpenWorkspace)
-                    .padding([8, 16])
-                    .style(iced::theme::Button::Secondary),
-                ]
-                .spacing(16)
-                .align_items(Alignment::Center)
-            )
-            .center_y()
-            .center_x()
+            column![
+                text("No workspace open")
+                    .size(13)
+                    .style(iced::theme::Text::Color(content_style.colors.text_muted)),
+                button(
+                    row![
+                        Icon::Folder.render(&app.editor_typography, &content_style, Some(14)),
+                        text("Open Workspace")
+                            .size(13)
+                            .style(iced::theme::Text::Color(content_style.colors.text_secondary)),
+                    ]
+                    .spacing(8)
+                    .align_items(Alignment::Center)
+                )
+                .on_press(Message::OpenWorkspace)
+                .padding([8, 16])
+                .style(iced::theme::Button::Secondary),
+            ]
+            .spacing(16)
+            .align_items(Alignment::Center)
         )
         .width(Length::Fill)
         .height(Length::Fill)
+        .center_x()
+        .center_y()
         .into()
     } else if app.explorer_state.file_tree.is_empty() {
         // Workspace open but no files - centered content
         container(
-            container(
-                column![
-                    text("No files found")
-                        .size(13)
-                        .style(iced::theme::Text::Color(content_style.colors.text_muted)),
-                    button(
-                        row![
-                            Icon::Refresh.render(&app.editor_typography, &content_style, Some(14)),
-                            text("Refresh")
-                                .size(13)
-                                .style(iced::theme::Text::Color(content_style.colors.text_secondary)),
-                        ]
-                        .spacing(8)
-                        .align_items(Alignment::Center)
-                    )
-                    .on_press(Message::RefreshWorkspace)
-                    .padding([8, 16])
-                    .style(iced::theme::Button::Secondary),
-                ]
-                .spacing(16)
-                .align_items(Alignment::Center)
-            )
-            .center_y()
-            .center_x()
+            column![
+                text("No files found")
+                    .size(13)
+                    .style(iced::theme::Text::Color(content_style.colors.text_muted)),
+                button(
+                    row![
+                        Icon::Refresh.render(&app.editor_typography, &content_style, Some(14)),
+                        text("Refresh")
+                            .size(13)
+                            .style(iced::theme::Text::Color(content_style.colors.text_secondary)),
+                    ]
+                    .spacing(8)
+                    .align_items(Alignment::Center)
+                )
+                .on_press(Message::RefreshWorkspace)
+                .padding([8, 16])
+                .style(iced::theme::Button::Secondary),
+            ]
+            .spacing(16)
+            .align_items(Alignment::Center)
         )
         .width(Length::Fill)
         .height(Length::Fill)
+        .center_x()
+        .center_y()
         .into()
     } else {
         // Render the file tree properly
@@ -185,7 +181,9 @@ pub fn explorer_panel_professional(app: &App) -> Element<'_, Message> {
         header,
         // Clean, subtle divider
         divider,
-        content,
+        container(content)
+            .width(Length::Fill)
+            .height(Length::Fill),
     ]
     .height(Length::Fill)
     .into()
