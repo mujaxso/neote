@@ -36,7 +36,18 @@ pub fn editor_panel<'a>(
             )
             .padding([8, 16])
             .center_y()
-            .width(Length::Fill);
+            .width(Length::Fill)
+            .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
+                container::Appearance {
+                    background: Some(style.colors.panel_background.into()),
+                    border: iced::Border {
+                        color: Color::TRANSPARENT,
+                        width: 0.0,
+                        radius: iced::border::Radius::from(0.0),
+                    },
+                    ..Default::default()
+                }
+            })));
             tab_row = tab_row.push(placeholder);
         } else {
             for tab in &tab_manager.tabs {
@@ -135,7 +146,8 @@ pub fn editor_panel<'a>(
                 }
             })))
             .width(Length::Fill)
-            .height(Length::Fixed(36.0)); // Fixed height for tab bar
+            .height(Length::Fixed(36.0)) // Fixed height for tab bar
+            .padding(0);
         
         tab_bar_container.into()
     };
@@ -163,7 +175,7 @@ pub fn editor_panel<'a>(
         }
         
         if indicators.is_empty() {
-            // Show empty header with just horizontal space
+            // Show empty header with zero height and no border
             Element::from(container(horizontal_space()).height(Length::Fixed(0.0)))
         } else {
             let header_row: iced::widget::Row<'_, Message, iced::Theme, iced::Renderer> = row![
@@ -402,7 +414,23 @@ pub fn editor_panel<'a>(
         header,
         editor_content,
     ]
-    .height(Length::Fill);
+    .height(Length::Fill)
+    .padding(0)
+    .spacing(0);
     
-    column.into()
+    container(column)
+        .width(Length::Fill)
+        .height(Length::Fill)
+        .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
+            container::Appearance {
+                background: Some(style.colors.editor_background.into()),
+                border: iced::Border {
+                    color: Color::TRANSPARENT,
+                    width: 0.0,
+                    radius: iced::border::Radius::from(0.0),
+                },
+                ..Default::default()
+            }
+        })))
+        .into()
 }
