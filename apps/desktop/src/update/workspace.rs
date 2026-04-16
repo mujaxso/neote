@@ -155,6 +155,9 @@ fn handle_file_selected_by_path(app: &mut App, path: String) -> Command<Message>
                 app.editor_state = Some(editor_core::EditorState::from_document(buffer.document.clone()));
                 app.is_dirty = buffer.is_dirty;
                     
+                // Update text editor content
+                app.text_editor = iced::widget::text_editor::Content::with_text(&buffer.content);
+                    
                 // Update tab dirty state
                 if let Some(tab) = app.tab_manager.find_tab_by_path(&path) {
                     app.tab_manager.set_tab_dirty(tab.id, buffer.is_dirty);
