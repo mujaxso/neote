@@ -22,7 +22,7 @@ members = [
 edition = "2024"
 version = "0.1.0"
 license = "MIT"
-# name = "qyzer-studio"  # Commented out to avoid warning
+# name = "zaroxi-studio"  # Commented out to avoid warning
 
 [workspace.dependencies]
 anyhow = "1"
