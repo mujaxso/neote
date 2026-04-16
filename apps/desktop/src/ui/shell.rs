@@ -44,11 +44,11 @@ pub fn shell(app: &App) -> Element<'_, Message> {
                 let explorer_panel = container(explorer_panel(app))
                     .width(Length::Fixed(explorer_width))
                     .height(Length::Fill)
-                    .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
+                    .style(iced::theme::Container::Custom(Box::new(move || {
                         container::Appearance {
                             background: Some(style.colors.panel_background.into()),
                             border: iced::Border {
-                                color: style.colors.border,
+                                color: style.colors.border.with_alpha(0.3),
                                 width: 1.0,
                                 radius: 0.0.into(),
                             },
@@ -99,11 +99,11 @@ pub fn shell(app: &App) -> Element<'_, Message> {
                 let assistant_panel = container(assistant_panel(app))
                     .width(Length::Fixed(assistant_width))
                     .height(Length::Fill)
-                    .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
+                    .style(iced::theme::Container::Custom(Box::new(move || {
                         container::Appearance {
                             background: Some(style.colors.panel_background.into()),
                             border: iced::Border {
-                                color: style.colors.border,
+                                color: style.colors.border.with_alpha(0.3),
                                 width: 1.0,
                                 radius: 0.0.into(),
                             },

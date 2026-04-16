@@ -13,45 +13,63 @@ pub fn status_bar(app: &App) -> Element<'_, Message> {
             Icon::Error.render_with_color(
                 &app.editor_typography,
                 style.colors.error,
-                Some(10),
+                Some(11),
             ),
-            text(error).size(10).style(iced::theme::Text::Color(style.colors.error)),
+            text(error)
+                .size(11)
+                .font(iced::Font::with_name("JetBrains Mono"))
+                .style(iced::theme::Text::Color(style.colors.error)),
         ]
-        .spacing(4)
+        .spacing(6)
         .align_items(iced::Alignment::Center)
     } else {
         row![
             Icon::Success.render_with_color(
                 &app.editor_typography,
                 style.colors.success,
-                Some(10),
+                Some(11),
             ),
-            text(&app.status_message).size(10).style(iced::theme::Text::Color(style.colors.text_secondary)),
+            text(&app.status_message)
+                .size(11)
+                .font(iced::Font::with_name("JetBrains Mono"))
+                .style(iced::theme::Text::Color(style.colors.text_secondary)),
         ]
-        .spacing(4)
+        .spacing(6)
         .align_items(iced::Alignment::Center)
     };
     
     let center_status = if let Some(active_path) = &app.active_file_path {
         let file_name = active_path.split('/').last().unwrap_or(active_path);
         row![
-            Icon::File.render(&app.editor_typography, &style, Some(10)),
-            text(file_name).size(10).style(iced::theme::Text::Color(style.colors.text_secondary)),
+            Icon::File.render(&app.editor_typography, &style, Some(11)),
+            text(file_name)
+                .size(11)
+                .font(iced::Font::with_name("JetBrains Mono"))
+                .style(iced::theme::Text::Color(style.colors.text_secondary)),
         ]
-        .spacing(4)
+        .spacing(6)
         .align_items(iced::Alignment::Center)
     } else {
         row![
-            text("No file open").size(10).style(iced::theme::Text::Color(style.colors.text_muted)),
+            text("No file open")
+                .size(11)
+                .font(iced::Font::with_name("JetBrains Mono"))
+                .style(iced::theme::Text::Color(style.colors.text_muted)),
         ]
         .align_items(iced::Alignment::Center)
     };
     
     let right_status = row![
-        text(format!("{} files", app.file_entries.len())).size(10).style(iced::theme::Text::Color(style.colors.text_muted)),
-        text("Ln 1, Col 1").size(10).style(iced::theme::Text::Color(style.colors.text_muted)),
+        text(format!("{} files", app.file_entries.len()))
+            .size(11)
+            .font(iced::Font::with_name("JetBrains Mono"))
+            .style(iced::theme::Text::Color(style.colors.text_muted)),
+        text("Ln 1, Col 1")
+            .size(11)
+            .font(iced::Font::with_name("JetBrains Mono"))
+            .style(iced::theme::Text::Color(style.colors.text_muted)),
     ]
-    .spacing(6)
+    .spacing(12)
     .align_items(iced::Alignment::Center);
     
     struct StatusBarStyle {
@@ -65,8 +83,8 @@ pub fn status_bar(app: &App) -> Element<'_, Message> {
             container::Appearance {
                 background: Some(self.colors.status_bar_background.into()),
                 border: iced::Border {
-                    color: self.colors.border,
-                    width: 0.0,
+                    color: self.colors.border.with_alpha(0.2),
+                    width: 1.0,
                     radius: 0.0.into(),
                 },
                 ..Default::default()
@@ -80,18 +98,18 @@ pub fn status_bar(app: &App) -> Element<'_, Message> {
     
     container(
         row![
-            container(left_status).padding([0, 6]),
+            container(left_status).padding([0, 12]),
             iced::widget::horizontal_space(),
             container(center_status),
             iced::widget::horizontal_space(),
-            container(right_status).padding([0, 6]),
+            container(right_status).padding([0, 12]),
         ]
         .align_items(iced::Alignment::Center)
         .width(Length::Fill)
         .height(Length::Fill)
     )
     .width(Length::Fill)
-    .height(Length::Fill)
+    .height(Length::Fixed(28))
     .style(iced::theme::Container::Custom(Box::new(status_bar_style)))
     .into()
 }
