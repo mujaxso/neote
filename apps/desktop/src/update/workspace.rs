@@ -148,6 +148,9 @@ fn handle_file_selected_by_path(app: &mut App, path: String) -> Command<Message>
                 app.syntax_cache_version = buffer.syntax_cache_version;
                 app.syntax_highlight_span_count = buffer.syntax_highlight_span_count;
                     
+                // Increment cache version to force UI update
+                app.syntax_cache_version += 1;
+                        
                 // Set the editor state
                 app.editor_state = Some(editor_core::EditorState::from_document(buffer.document.clone()));
                 app.is_dirty = buffer.is_dirty;

@@ -553,4 +553,16 @@ impl App {
             }
         }
     }
+    
+    /// Get the line cache for the active file
+    pub fn active_line_cache(&self) -> Option<Vec<Vec<(std::ops::Range<usize>, iced::Color)>>> {
+        if let Some(active_path) = &self.active_file_path {
+            if let Some(buffer) = self.editor_buffers.get(active_path) {
+                if !buffer.syntax_highlight_cache.is_empty() {
+                    return Some(buffer.syntax_highlight_cache.clone());
+                }
+            }
+        }
+        None
+    }
 }
