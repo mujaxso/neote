@@ -24,7 +24,7 @@ pub fn editor_panel<'a>(
     let style = StyleHelpers::new(theme);
     
     // Build tab bar
-    let tab_bar = if !tab_manager.tabs.is_empty() {
+    let tab_bar: Element<Message> = if !tab_manager.tabs.is_empty() {
         let mut tab_row: iced::widget::Row<'_, Message, iced::Theme, iced::Renderer> = row![].spacing(0);
         
         for tab in &tab_manager.tabs {
