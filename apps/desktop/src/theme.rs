@@ -48,7 +48,7 @@ pub fn current_colors(theme: ZaroxiTheme) -> SemanticColors {
     theme.colors()
 }
 
-/// Semantic color roles for Qyzer Studio - Premium dark theme
+/// Semantic color roles for Zaroxi Studio - Premium dark theme
 #[derive(Debug, Clone, Copy)]
 pub struct SemanticColors {
     // Background surfaces - Premium dark palette

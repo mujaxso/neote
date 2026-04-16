@@ -328,7 +328,7 @@ cargo tarpaulin --workspace --ignore-tests
 
 ## 🔒 Security
 
-Security is a top priority for Qyzer Studio. Please review our [Security Documentation](docs/security.md) for details on:
+Security is a top priority for Zaroxi Studio. Please review our [Security Documentation](docs/security.md) for details on:
 
 - Threat model and security principles
 - Authentication and authorization
@@ -336,7 +336,7 @@ Security is a top priority for Qyzer Studio. Please review our [Security Documen
 - AI safety measures
 - Vulnerability reporting process
 
-To report a security vulnerability, please email security@qyzer.dev (encrypted communication preferred).
+To report a security vulnerability, please email security@zaroxi.dev (encrypted communication preferred).
 
 ## 📄 License
 
