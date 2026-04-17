@@ -60,6 +60,36 @@ pub fn status_bar(app: &App) -> Element<'_, Message> {
     };
     
     let right_status = row![
+        // Saved/unsaved status indicator
+        if app.is_dirty {
+            row![
+                Icon::CircleFilled.render_with_color(
+                    &app.editor_typography,
+                    style.colors.warning,
+                    Some(8),
+                ),
+                text("Unsaved")
+                    .size(11)
+                    .font(iced::Font::with_name("JetBrains Mono"))
+                    .style(iced::theme::Text::Color(style.colors.warning)),
+            ]
+            .spacing(4)
+            .align_items(iced::Alignment::Center)
+        } else {
+            row![
+                Icon::Success.render_with_color(
+                    &app.editor_typography,
+                    style.colors.success,
+                    Some(8),
+                ),
+                text("Saved")
+                    .size(11)
+                    .font(iced::Font::with_name("JetBrains Mono"))
+                    .style(iced::theme::Text::Color(style.colors.success)),
+            ]
+            .spacing(4)
+            .align_items(iced::Alignment::Center)
+        },
         text(format!("{} files", app.file_entries.len()))
             .size(11)
             .font(iced::Font::with_name("JetBrains Mono"))
