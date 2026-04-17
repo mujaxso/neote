@@ -4,15 +4,20 @@ use iced::{
 };
 
 use crate::message::Message;
+use crate::theme::ZaroxiTheme;
+use crate::ui::style::StyleHelpers;
 
-pub fn top_bar<'a>(workspace_path: &'a str) -> Element<'a, Message> {
+pub fn top_bar<'a>(workspace_path: &'a str, theme: ZaroxiTheme) -> Element<'a, Message> {
+    // Create style helpers to get theme colors
+    let style = StyleHelpers::new(theme);
+    
     container(
         row![
             // Branding - minimal and elegant
             container(
                 row![
-                    text("Z").size(18).style(iced::theme::Text::Color(iced::Color::from_rgb8(100, 160, 255))),
-                    text("aroxi Studio").size(14).style(iced::theme::Text::Color(iced::Color::from_rgb8(200, 210, 230))),
+                    text("Z").size(18).style(iced::theme::Text::Color(style.colors.accent)),
+                    text("aroxi Studio").size(14).style(iced::theme::Text::Color(style.colors.text_primary)),
                 ]
                 .spacing(2)
                 .align_items(Alignment::Center)
@@ -21,9 +26,9 @@ pub fn top_bar<'a>(workspace_path: &'a str) -> Element<'a, Message> {
             
             // Subtle divider
             container(iced::widget::Space::with_width(1.0))
-                .style(iced::theme::Container::Custom(Box::new(|_theme: &iced::Theme| {
+                .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
                     container::Appearance {
-                        background: Some(iced::Color::from_rgb8(60, 65, 85).into()),
+                        background: Some(style.colors.border.into()),
                         ..Default::default()
                     }
                 })))
@@ -35,14 +40,14 @@ pub fn top_bar<'a>(workspace_path: &'a str) -> Element<'a, Message> {
                 Element::from(container(
                     text(workspace_path)
                         .size(13)
-                        .style(iced::theme::Text::Color(iced::Color::from_rgb8(180, 190, 210)))
+                        .style(iced::theme::Text::Color(style.colors.text_secondary))
                 )
                 .padding([8, 12]))
             } else {
                 Element::from(container(
                     text("No workspace open")
                         .size(13)
-                        .style(iced::theme::Text::Color(iced::Color::from_rgb8(120, 130, 150)))
+                        .style(iced::theme::Text::Color(style.colors.text_muted))
                 )
                 .padding([8, 12]))
             },
@@ -57,16 +62,26 @@ pub fn top_bar<'a>(workspace_path: &'a str) -> Element<'a, Message> {
     .padding([8, 16])
     .width(Length::Fill)
     .height(Length::Fixed(40.0)) // More compact height
-    .style(iced::theme::Container::Custom(Box::new(|_theme: &iced::Theme| {
+    .style(iced::theme::Container::Custom(Box::new(TopBarContainerStyle { style })))
+    .into()
+}
+
+struct TopBarContainerStyle {
+    style: StyleHelpers,
+}
+
+impl iced::widget::container::StyleSheet for TopBarContainerStyle {
+    type Style = iced::Theme;
+
+    fn appearance(&self, _style: &Self::Style) -> iced::widget::container::Appearance {
         container::Appearance {
-            background: Some(iced::Color::from_rgb8(30, 33, 45).into()),
+            background: Some(self.style.colors.panel_background.into()),
             border: iced::Border {
-                color: iced::Color::from_rgb8(50, 55, 70),
+                color: self.style.colors.border,
                 width: 1.0,
                 radius: 0.0.into(),
             },
             ..Default::default()
         }
-    })))
-    .into()
+    }
 }

@@ -15,8 +15,9 @@ use iced::Element;
 
 pub fn top_bar(app: &App) -> Element<'_, Message> {
     let workspace_path = &app.workspace_path;
+    let theme = app.current_theme;
     
-    topbar::top_bar(workspace_path)
+    topbar::top_bar(workspace_path, theme)
 }
 
 pub fn activity_rail(app: &App) -> Element<'_, Message> {
