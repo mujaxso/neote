@@ -42,4 +42,13 @@ temp/
 # GitHub Actions custom actions
 .github/actions/
 
-runtime/treesitter/grammars/*
+# Runtime directory - contains downloaded and compiled Tree-sitter grammars
+# Keep the directory structure but ignore all contents
+runtime/treesitter/grammars/**
+runtime/treesitter/languages/**
+!runtime/treesitter/grammars/
+!runtime/treesitter/languages/
+# Also ignore any files directly in runtime/treesitter
+runtime/treesitter/*
+!runtime/treesitter/grammars
+!runtime/treesitter/languages
