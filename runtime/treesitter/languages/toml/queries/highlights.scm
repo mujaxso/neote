@@ -16,9 +16,12 @@
 
 ; Tables
 (table) @type
+(array_table) @type
+(inline_table) @type
 
 ; Keys
-(key) @property
+(bare_key) @property
+(quoted_key) @property
 (dotted_key) @property
 
 ; Punctuation
