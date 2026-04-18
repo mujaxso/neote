@@ -449,56 +449,58 @@ fn install_library_and_queries(
         source_dir.join("queries")
     };
     
-    if query_source_dir.exists() {
-        let query_target_dir = runtime.language_dir(language_id).join("queries");
-        fs::create_dir_all(&query_target_dir)
-            .map_err(|e| format!("Failed to create query directory: {}", e))?;
+    // Always create the query target directory
+    let query_target_dir = runtime.language_dir(language_id).join("queries");
+    fs::create_dir_all(&query_target_dir)
+        .map_err(|e| format!("Failed to create query directory: {}", e))?;
         
-        for query_file in &grammar_info.query_files {
-            let source_path = query_source_dir.join(query_file);
+    // Collect all potential query source directories to check
+    let mut potential_dirs = Vec::new();
+        
+    // Add the primary query source directory
+    if query_source_dir.exists() {
+        potential_dirs.push(query_source_dir.clone());
+    }
+        
+    // Add the repo root queries directory
+    let repo_queries_dir = temp_dir.path().join("repo").join("queries");
+    if repo_queries_dir.exists() {
+        potential_dirs.push(repo_queries_dir);
+    }
+        
+    // For languages with subdirectories, also check the parent directory's queries
+    if let Some(_subdir) = &grammar_info.subdirectory {
+        let parent_dir = temp_dir.path().join("repo");
+        let parent_queries = parent_dir.join("queries");
+        if parent_queries.exists() && !potential_dirs.contains(&parent_queries) {
+            potential_dirs.push(parent_queries);
+        }
+    }
+        
+    // Try to copy each query file from any potential directory
+    for query_file in &grammar_info.query_files {
+        let mut copied = false;
+            
+        for source_dir in &potential_dirs {
+            let source_path = source_dir.join(query_file);
             if source_path.exists() {
                 let target_path = query_target_dir.join(query_file);
-                fs::copy(&source_path, &target_path)
-                    .map_err(|e| format!("Failed to copy query file {}: {}", query_file, e))?;
-                println!("Installed query file: {}", query_file);
-            } else {
-                // Try to find the query file in the repo root's queries directory
-                let repo_queries_dir = temp_dir.path().join("repo").join("queries");
-                if repo_queries_dir.exists() {
-                    let repo_source_path = repo_queries_dir.join(query_file);
-                    if repo_source_path.exists() {
-                        let target_path = query_target_dir.join(query_file);
-                        fs::copy(&repo_source_path, &target_path)
-                            .map_err(|e| format!("Failed to copy query file {}: {}", query_file, e))?;
-                        println!("Installed query file from repo root: {}", query_file);
-                    } else {
-                        println!("Warning: Query file {} not found in {}", query_file, query_source_dir.display());
+                match fs::copy(&source_path, &target_path) {
+                    Ok(_) => {
+                        println!("Installed query file: {} from {}", query_file, source_dir.display());
+                        copied = true;
+                        break;
                     }
-                } else {
-                    println!("Warning: Query file {} not found in {}", query_file, query_source_dir.display());
+                    Err(e) => {
+                        println!("Warning: Failed to copy query file {}: {}", query_file, e);
+                    }
                 }
             }
         }
-    } else {
-        println!("Warning: No query directory found for {} at {}", language_id, query_source_dir.display());
-        // Try to find queries in the repo root
-        let repo_queries_dir = temp_dir.path().join("repo").join("queries");
-        if repo_queries_dir.exists() {
-            let query_target_dir = runtime.language_dir(language_id).join("queries");
-            fs::create_dir_all(&query_target_dir)
-                .map_err(|e| format!("Failed to create query directory: {}", e))?;
             
-            for query_file in &grammar_info.query_files {
-                let source_path = repo_queries_dir.join(query_file);
-                if source_path.exists() {
-                    let target_path = query_target_dir.join(query_file);
-                    fs::copy(&source_path, &target_path)
-                        .map_err(|e| format!("Failed to copy query file {}: {}", query_file, e))?;
-                    println!("Installed query file from repo root: {}", query_file);
-                }
-            }
-        } else {
-            println!("Warning: No query directory found for {} in any location", language_id);
+        if !copied {
+            println!("Note: Query file {} not found for {} (this may be normal if the grammar doesn't provide it)", 
+                     query_file, language_id);
         }
     }
     
