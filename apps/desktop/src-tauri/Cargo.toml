@@ -23,7 +23,7 @@ thiserror = { workspace = true }
 uuid = { workspace = true }
 
 # Workspace crates
-core-types = { path = "../../../core-types" }
+core-types = { path = "../../../crates/core-types" }
 editor-core = { path = "../../../language/editor-core" }
 workspace-model = { path = "../../../domain/workspace-model" }
 ai-context = { path = "../../../ai/ai-context" }
@@ -34,7 +34,7 @@ settings = { path = "../../../infrastructure/settings" }
 permissions = { path = "../../../infrastructure/permissions" }
 file-ops = { path = "../../../operations/file-ops" }
 syntax-core = { path = "../../../language/syntax-core" }
-theme = { path = "../../../theme" }
+theme = { path = "../../../crates/theme" }
 
 [features]
 default = []

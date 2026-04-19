@@ -5,13 +5,13 @@ members = [
   "apps/desktop/src-tauri",
   
   # Shared crates - organized by domain
-  "core-types",
+  "crates/core-types",
   "domain",
   "ai",
   "infrastructure",
   "language",
   "operations",
-  "theme",
+  "crates/theme",
   
   # Services
   "services/workspace-daemon",
