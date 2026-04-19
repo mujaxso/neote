@@ -194,7 +194,7 @@ if permissions.check(Permission::FileWrite, &resource).await? {
 ## Getting Help & Reporting Issues
 
 ### Security Contacts
-- **Security issues**: security@zaroxi.dev (encrypted communication preferred)
+- **Security issues**: security@zaroxi.com (encrypted communication preferred)
 - **Documentation**: Security documentation in `/docs/security.md`
 - **Community**: Security discussions in designated channels
 

@@ -67,8 +67,7 @@ Zaroxi Studio follows a modern desktop application architecture built with Tauri
 ```
 zaroxi/
 ├── apps/                    # Applications
-│   ├── desktop/            # Main desktop application (Iced-based GUI)
-│   └── preview/            # Tauri-based preview shell for mobile/desktop/website simulation
+│   └── desktop/            # Main desktop application (Tauri + React)
 ├── crates/                 # Core libraries
 │   ├── core-types/         # Shared data structures and types
 │   ├── editor-core/        # Text editing primitives, rope data structure, cursor management
@@ -281,7 +280,7 @@ The desktop app will start at http://localhost:1420 with hot reload enabled.
 
 ### Applications
 
-- **`desktop`**: Main desktop application built with Iced GUI framework, user interface and interaction
+- **`desktop`**: Main desktop application built with Tauri + React, featuring workspace explorer, code editor, and AI assistant panels
 
 ## 🎯 Key Features in Detail
 
