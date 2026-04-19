@@ -14,13 +14,19 @@ mod services;
 mod windows;
 
 use app_state::AppState;
-use tauri::{Manager, RunEvent};
+use tauri::RunEvent;
 
 /// Main entry point for Tauri application
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .setup(bootstrap::setup::init_app)
+        .setup(|app| {
+            // Create menu for the main window
+            let handle = app.handle();
+            let menu = menu::create_app_menu(handle)?;
+            app.set_menu(menu)?;
+            Ok(())
+        })
         .manage(AppState::default())
         .invoke_handler(tauri::generate_handler![
             commands::workspace::open_workspace,
@@ -37,7 +43,6 @@ pub fn run() {
             commands::settings::load_settings,
             commands::settings::save_settings,
         ])
-        .menu(menu::create_app_menu())
         .on_window_event(|window, event| {
             windows::handle_window_event(&window, event);
         })

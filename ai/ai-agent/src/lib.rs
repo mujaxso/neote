@@ -25,14 +25,14 @@ pub struct AiAgentConfig {
 
 /// AI Agent for executing tasks
 pub struct AiAgent {
-    config: AiAgentConfig,
+    _config: AiAgentConfig,
 }
 
 impl AiAgent {
     /// Create a new AI agent with the given configuration
     pub fn new(provider: String, model: String) -> Self {
         Self {
-            config: AiAgentConfig {
+            _config: AiAgentConfig {
                 provider,
                 model,
                 api_key: None,
@@ -43,7 +43,7 @@ impl AiAgent {
     
     /// Create a new AI agent with full configuration
     pub fn with_config(config: AiAgentConfig) -> Self {
-        Self { config }
+        Self { _config: config }
     }
     
     /// Execute an AI task

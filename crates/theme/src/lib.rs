@@ -5,9 +5,4 @@ mod colors;
 mod theme;
 
 pub use colors::*;
-pub use theme::*;
-
-// Re-export commonly used types
-pub use theme::ZaroxiTheme;
-pub use theme::SemanticColors;
-pub use theme::DesignTokens;
+pub use theme::{ZaroxiTheme, SemanticColors, DesignTokens};

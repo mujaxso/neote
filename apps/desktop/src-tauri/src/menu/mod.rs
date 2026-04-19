@@ -1,10 +1,8 @@
-use tauri::menu::{Menu, Submenu, PredefinedMenuItem, CustomMenuItem};
+use tauri::menu::{Menu, Submenu, PredefinedMenuItem, MenuItem};
 
 pub fn create_app_menu<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> tauri::Result<Menu<R>> {
-    let open_item = CustomMenuItem::new("open_workspace".to_string(), "Open Workspace")
-        .accelerator("CmdOrCtrl+O");
-    let quit_item = CustomMenuItem::new("quit".to_string(), "Quit")
-        .accelerator("CmdOrCtrl+Q");
+    let open_item = MenuItem::with_id(app, "open_workspace", "Open Workspace", true, None::<&str>)?;
+    let quit_item = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
     
     let file_menu = Submenu::with_items(
         app,
@@ -37,9 +35,7 @@ pub fn create_app_menu<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> tauri::R
         ],
     )?;
     
-    let menu = Menu::new(app)?
-        .add_submenu(file_menu)?
-        .add_submenu(edit_menu)?;
+    let menu = Menu::with_items(app, &[&file_menu, &edit_menu])?;
     
     Ok(menu)
 }

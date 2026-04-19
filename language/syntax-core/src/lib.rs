@@ -1,17 +1,17 @@
 //! Syntax highlighting for Zaroxi
 
-use tree_sitter::{Parser, Language};
+use tree_sitter::Parser;
 
 /// Syntax highlighter
 pub struct Highlighter {
-    parser: Parser,
+    _parser: Parser,
 }
 
 impl Highlighter {
     /// Create a new highlighter
     pub fn new() -> Self {
-        let mut parser = Parser::new();
+        let parser = Parser::new();
         // TODO: Initialize with a language
-        Self { parser }
+        Self { _parser: parser }
     }
 }
