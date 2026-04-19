@@ -1,6 +1,6 @@
 # Remote Procedure Call (RPC) Framework
 
-Qyzer Studio uses a custom RPC framework for communication between different components of the system, particularly between the desktop application and background services (workspace-daemon, ai-daemon).
+Zaroxi Studio uses a custom RPC framework for communication between different components of the system, particularly between the desktop application and background services (workspace-daemon, ai-daemon).
 
 ## Overview
 
@@ -71,7 +71,7 @@ Where:
 use rpc::server::Server;
 use rpc::messages::{Request, Response};
 
-let mut server = Server::new("/tmp/neote.sock").await?;
+let mut server = Server::new("/tmp/zaroxi.sock").await?;
 
 server.register_handler("workspace.openFile", |params| async move {
     let path: String = serde_json::from_value(params)?;
@@ -87,7 +87,7 @@ server.run().await?;
 ```rust
 use rpc::client::Client;
 
-let client = Client::connect("/tmp/neote.sock").await?;
+let client = Client::connect("/tmp/zaroxi.sock").await?;
 
 // Simple request/response
 let response: serde_json::Value = client
@@ -222,4 +222,4 @@ The desktop app connects to both daemons and provides:
 4. **Metrics collection**: Performance monitoring and telemetry
 5. **Protocol buffers**: Alternative serialization format for performance
 
-The RPC framework is designed to be robust, performant, and extensible, serving as the communication backbone for Qyzer Studio's distributed architecture.
+The RPC framework is designed to be robust, performant, and extensible, serving as the communication backbone for Zaroxi Studio's distributed architecture.
