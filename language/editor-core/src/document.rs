@@ -1,7 +1,6 @@
 //! Document handling for the editor
 
 use ropey::Rope;
-use serde::{Deserialize, Serialize};
 
 /// A document in the editor
 #[derive(Debug)]
