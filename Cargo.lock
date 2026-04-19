@@ -21,10 +21,12 @@ dependencies = [
 name = "ai-agent"
 version = "0.1.0"
 dependencies = [
+ "ai-context",
  "anyhow",
  "serde",
  "serde_json",
  "tokio",
+ "tracing",
 ]
 
 [[package]]
@@ -39,6 +41,8 @@ dependencies = [
 name = "ai-daemon"
 version = "0.1.0"
 dependencies = [
+ "ai-agent",
+ "ai-context",
  "anyhow",
  "serde",
  "serde_json",
@@ -1961,16 +1965,6 @@ name = "log"
 version = "0.4.29"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5e5032e24019045c762d3c0f28f5b6b8bbf38563a65908389bf7978758920897"
-
-[[package]]
-name = "lsp-client"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "serde",
- "serde_json",
- "tokio",
-]
 
 [[package]]
 name = "mac"
@@ -3996,7 +3990,6 @@ dependencies = [
  "bytes",
  "libc",
  "mio",
- "parking_lot",
  "pin-project-lite",
  "signal-hook-registry",
  "socket2",
@@ -4371,10 +4364,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "02d1a66277ed75f640d608235660df48c8e3c19f3b4edb6a263315626cc3c01d"
 dependencies = [
  "base64 0.22.1",
+ "flate2",
  "log",
  "once_cell",
  "rustls",
  "rustls-pki-types",
+ "serde",
+ "serde_json",
  "url",
  "webpki-roots 0.26.11",
 ]
