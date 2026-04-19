@@ -66,32 +66,40 @@ Zaroxi Studio follows a modern desktop application architecture built with Tauri
 
 ```
 zaroxi/
-├── apps/                    # Applications
-│   └── desktop/            # Main desktop application (Tauri + React)
-├── crates/                 # Core libraries
-│   ├── core-types/         # Shared data structures and types
-│   ├── editor-core/        # Text editing primitives, rope data structure, cursor management
-│   ├── syntax-core/        # Tree-sitter integration, syntax highlighting, language support
-│   ├── workspace-model/    # Workspace state management, file tree, buffer management
-│   ├── lsp-client/         # Language Server Protocol client for intelligent code analysis
-│   ├── ai-context/         # AI context collection and management from workspace
-│   ├── ai-agent/           # AI task orchestration and execution
-│   ├── patch-engine/       # Diff generation and application for AI suggestions
-│   ├── preview-engine/     # Device-aware simulation and preview of AI-generated experiences
-│   ├── rpc/                # Remote Procedure Call framework for inter-process communication
-│   ├── settings/           # Configuration management and persistence
-│   ├── permissions/        # Access control and security permissions system
-│   └── file-ops/           # File system operations and metadata handling
-├── services/               # Background services
-│   ├── workspace-daemon/   # Workspace management service
-│   └── ai-daemon/          # AI operations and model management service
-├── docs/                   # Documentation
-│   ├── architecture.md     # High-level system design
-│   ├── crates.md          # Detailed crate documentation
-│   ├── roadmap.md         # Development roadmap and future plans
-│   ├── rpc.md             # RPC framework documentation
-│   └── security.md        # Security architecture and practices
-└── Cargo.toml             # Workspace configuration
+├── ai/                     # AI infrastructure and tooling
+│   ├── ai-agent/          # AI task planning, execution, and tool orchestration
+│   └── ai-context/        # AI context collection and management
+├── apps/                  # Desktop and user-facing applications
+│   └── desktop/          # Main desktop application (Tauri + React)
+├── crates/               # Core shared libraries
+│   ├── core-types/       # Shared data structures and protocol definitions
+│   └── theme/            # Theming system with semantic colors and design tokens
+├── domain/               # Domain models and business logic
+│   ├── ai-context/       # AI context collection, ranking, packing, and prompt construction
+│   ├── editor-core/      # Text editing primitives with rope data structure
+│   └── workspace-model/  # Workspace domain models
+├── infrastructure/       # Cross-cutting infrastructure concerns
+│   ├── permissions/      # Access control and security permissions
+│   ├── rpc/             # Remote Procedure Call framework
+│   └── settings/        # Configuration management and persistence
+├── language/            # Language and editor infrastructure
+│   ├── lsp-client/      # Language Server Protocol client
+│   └── syntax-core/     # Syntax highlighting and language parsing
+├── operations/          # File and system operations
+│   ├── file-ops/        # File system operations and metadata handling
+│   └── patch-engine/    # Diff generation and patch application
+├── services/            # Background services and daemons
+│   ├── ai-daemon/       # AI operations and model management service
+│   └── workspace-daemon/# Workspace management and file watching service
+├── docs/                # Documentation
+│   ├── architecture.md  # High-level system design
+│   ├── crates.md       # Detailed crate documentation
+│   ├── roadmap.md      # Development roadmap and future plans
+│   └── security.md     # Security architecture and practices
+├── Cargo.toml          # Workspace configuration
+├── Cargo.lock          # Dependency lock file
+├── README.md           # Project overview and getting started guide
+└── .github/            # GitHub Actions workflows and templates
 ```
 
 ## 🛠️ Getting Started
@@ -257,30 +265,51 @@ The desktop app will start at http://localhost:1420 with hot reload enabled.
 
 ## 📁 Project Structure Deep Dive
 
-### Core Crates
+### Directory Overview
 
-- **`core-types`**: Shared data structures and types used across the entire workspace
-- **`editor-core`**: Text editing primitives, rope data structure, cursor management, document handling
-- **`syntax-core`**: Tree-sitter integration, syntax highlighting, language parsing and analysis
-- **`workspace-model`**: Workspace state management, file tree, buffer management, project organization
-- **`lsp-client`**: Language Server Protocol client for intelligent code analysis and language features
-- **`ai-context`**: AI context collection and management from workspace, prompt engineering
-- **`ai-agent`**: AI task orchestration and execution, model integration, response processing
-- **`patch-engine`**: Diff generation and application for AI suggestions, code transformation
-- **`preview-engine`**: Device‑aware simulation and preview of AI‑generated experiences
-- **`rpc`**: Remote Procedure Call framework for inter-process communication between components
-- **`settings`**: Configuration management and persistence, user preferences storage
-- **`permissions`**: Access control and security permissions system, authorization logic
-- **`file-ops`**: File system operations and metadata handling, file watching, I/O utilities
+**`ai/`** – AI infrastructure and tooling
+- **`ai-agent/`** – AI task planning, execution, and tool orchestration with patch generation
+- **`ai-context/`** – AI context collection, task definitions, and prompt management
 
-### Services
+**`apps/`** – Desktop and user-facing applications  
+- **`desktop/`** – Main desktop application built with Tauri + React, featuring workspace explorer, code editor, and AI assistant panels
 
-- **`workspace-daemon`**: Background service for workspace management, file indexing, and resource monitoring
-- **`ai-daemon`**: Background service for AI operations and model management, inference optimization
+**`crates/`** – Core shared libraries
+- **`core-types/`** – Shared data structures for commands, events, IDs, and workspace protocol
+- **`theme/`** – Complete theming system with semantic colors, design tokens, and dark/light mode support
 
-### Applications
+**`domain/`** – Domain models and business logic
+- **`ai-context/`** – AI context collection, ranking, packing, and prompt construction
+- **`editor-core/`** – Text editing primitives with rope data structure, cursor management, commands, and events
+- **`workspace-model/`** – Workspace domain models with UUID identification and root path management
 
-- **`desktop`**: Main desktop application built with Tauri + React, featuring workspace explorer, code editor, and AI assistant panels
+**`infrastructure/`** – Cross-cutting infrastructure concerns
+- **`permissions/`** – Access control and security permissions system
+- **`rpc/`** – Remote Procedure Call framework for inter-process communication
+- **`settings/`** – Configuration management and persistence
+
+**`language/`** – Language and editor infrastructure
+- **`lsp-client/`** – Language Server Protocol client for intelligent code analysis
+- **`syntax-core/`** – Syntax highlighting and language parsing with Tree-sitter integration
+
+**`operations/`** – File and system operations
+- **`file-ops/`** – File system operations, metadata handling, and directory listing
+- **`patch-engine/`** – Diff generation and patch application for AI suggestions
+
+**`services/`** – Background services and daemons
+- **`ai-daemon/`** – Background service for AI operations, provider routing, and quota management
+- **`workspace-daemon/`** – Background service for workspace management, file watching, and Git integration
+
+**`docs/`** – Comprehensive documentation
+- **`architecture.md`** – High-level system design and component relationships
+- **`crates.md`** – Detailed crate documentation with responsibilities and dependencies
+- **`roadmap.md`** – Development roadmap and future plans
+- **`security.md`** – Security architecture and best practices
+
+**Root Files**
+- **`Cargo.toml`** – Workspace configuration and dependency management
+- **`README.md`** – Project overview, getting started guide, and feature documentation
+- **`.github/`** – GitHub Actions workflows for CI/CD, security audits, and automation
 
 ## 🎯 Key Features in Detail
 

@@ -4,23 +4,34 @@ members = [
   # Applications
   "apps/desktop/src-tauri",
   
-  # Shared crates - organized by domain
+  # Core crates
   "crates/core-types",
-  "domain/workspace-model",
-  "ai/ai-context",
-  "ai/ai-agent",
-  "infrastructure/rpc",
-  "infrastructure/settings",
-  "infrastructure/permissions",
-  "language/editor-core",
-  "language/syntax-core",
-  "operations/patch-engine",
-  "operations/file-ops",
   "crates/theme",
   
+  # Domain crates
+  "domain/ai-context",
+  "domain/editor-core",
+  "domain/workspace-model",
+  
+  # AI crates
+  "ai/ai-agent",
+  
+  # Infrastructure crates
+  "infrastructure/permissions",
+  "infrastructure/rpc",
+  "infrastructure/settings",
+  
+  # Language crates
+  "language/lsp-client",
+  "language/syntax-core",
+  
+  # Operations crates
+  "operations/file-ops",
+  "operations/patch-engine",
+  
   # Services
-  "services/workspace-daemon",
   "services/ai-daemon",
+  "services/workspace-daemon",
 ]
 
 [workspace.package]

@@ -28,11 +28,35 @@ Zaroxi Studio is organized as a Cargo workspace with multiple crates, each with 
 
 ## Domain Crates
 
+### `ai-context` (in `domain/`)
+**Purpose**: Gathering, organizing, and preparing context for AI operations.
+**Key Modules**:
+- `collector`: Collects relevant information from various sources.
+- `ranking`: Scores and prioritizes collected context based on relevance.
+- `packing`: Organizes and compresses context to fit model constraints.
+- `prompt`: Constructs structured prompts from context and task descriptions.
+**Dependencies**: `serde`, `serde_json`
+
+### `editor-core` (in `domain/`)
+**Purpose**: Core text editing functionality for the IDE.
+**Key Modules**:
+- `document`: Document management with rope data structure.
+- `cursor`: Cursor positioning and movement.
+- `selection`: Text selection ranges and operations.
+- `commands`: Editor command definitions (Insert, Delete, MoveCursor, etc.).
+- `events`: Editor event definitions (DocumentChanged, CursorMoved, etc.).
+- `viewport`: Viewport management for visible text regions.
+**Dependencies**: `ropey` (for rope data structure)
+
 ### `workspace-model` (in `domain/`)
 **Purpose**: Modeling and managing workspace domain state.
 **Key Modules**:
 - `workspace`: Workspace domain model with UUID identification and root path management.
-**Dependencies**: `uuid`
+- `file_tree`: Hierarchical file and directory representation.
+- `open_editors`: Tracking of currently open files and their state.
+- `project_graph`: Dependency relationships between projects and modules.
+- `snapshots`: Workspace state snapshots for undo/redo and persistence.
+**Dependencies**: `serde`, `uuid`
 
 ## Language & Editor Crates
 
@@ -48,13 +72,6 @@ Zaroxi Studio is organized as a Cargo workspace with multiple crates, each with 
 **Dependencies**: `ropey` (for rope data structure)
 
 ## AI & Intelligence Crates
-
-### `ai-context` (in `ai/`)
-**Purpose**: Gathering, organizing, and preparing context for AI operations.
-**Key Modules**:
-- AI task definitions and context management.
-- Task status tracking (Pending, InProgress, Completed, Failed).
-**Dependencies**: `serde`, `serde_json`
 
 ### `ai-agent` (in `ai/`)
 **Purpose**: Orchestrating AI-driven tasks and operations.
