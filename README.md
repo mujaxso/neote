@@ -149,42 +149,84 @@ cd apps/desktop
 npm run dev  # Frontend only on http://localhost:1420
 ```
 
-### Quick Start
+## 🚀 Quick Start for Desktop App
 
-If you're getting "package.json not found" errors, make sure you're in the correct directory:
+### Easiest Method (Recommended)
+From the **zaroxi repository root**:
 
 ```bash
-# From the repository root
-pwd  # Should show: /home/yourname/Work/zaroxi
+# 1. Make scripts executable (first time only)
+./apps/desktop/fix-permissions.sh
 
-# Navigate to desktop app
+# 2. Start the desktop app
+./apps/desktop/run.sh
+```
+
+This will automatically:
+- Find the correct directories
+- Install npm dependencies if needed
+- Build Rust dependencies if needed
+- Start the development server
+
+### Alternative Methods
+
+**Method A: Using scripts**
+```bash
+# From zaroxi repository root
+./apps/desktop/setup.sh    # Install dependencies
+./apps/desktop/run.sh      # Start development
+./apps/desktop/build.sh    # Build for production
+```
+
+**Method B: Manual steps**
+```bash
+# 1. Navigate to desktop app
 cd apps/desktop
 
-# Install dependencies
+# 2. Install dependencies (first time)
 npm install
 
-# Build Rust dependencies
+# 3. Build Rust workspace (from root)
 cd ../..
 cargo build --workspace
 
-# Return to desktop app and start development
+# 4. Start development
 cd apps/desktop
 npm run tauri dev
 ```
 
-### Troubleshooting Desktop App
+### 📝 Script Reference
+All scripts work from **anywhere** in the zaroxi repository:
+- `./apps/desktop/run.sh` - Start development
+- `./apps/desktop/start.sh` - Alternative start
+- `./apps/desktop/setup.sh` - Install dependencies
+- `./apps/desktop/build.sh` - Build for production
+- `./apps/desktop/fix-permissions.sh` - Fix script permissions
 
-If the desktop app doesn't start:
+### 🔧 Troubleshooting
 
-1. **Check directory**: Make sure you're in `apps/desktop`
-2. **Check Node.js**: Version should be 18+
-3. **Check Rust**: Run `cargo build --workspace` from the root
-4. **Check setup**: Run `node check-setup.js` in `apps/desktop`
+**"No such file or directory" errors:**
+```bash
+# Make sure you're in zaroxi root
+pwd  # Should show: /home/yourname/Work/zaroxi
 
-Common error messages and solutions:
-- **"ENOENT: no such file or directory, open 'package.json'**: Wrong directory
-- **"Cannot find module '@tauri-apps/api'"**: Run `npm install`
-- **"failed to run custom build command for desktop"**: Run `cargo build --workspace` from root
+# Fix permissions
+./apps/desktop/fix-permissions.sh
+```
+
+**Common issues:**
+1. **Scripts not found**: Run from zaroxi repository root
+2. **npm install fails**: Node.js 18+ required
+3. **cargo build fails**: Install Rust via rustup.rs
+4. **Permission denied**: Run `./apps/desktop/fix-permissions.sh`
+
+**Quick check:**
+```bash
+cd apps/desktop
+node check-setup.js
+```
+
+The desktop app will start at http://localhost:1420 with hot reload enabled.
 
 ## 📁 Project Structure Deep Dive
 
