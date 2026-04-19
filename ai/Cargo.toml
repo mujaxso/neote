@@ -1,20 +1,2 @@
-[workspace]
-resolver = "3"
-members = [
-    "ai-context",
-    "ai-agent",
-]
-
-[workspace.package]
-edition = "2024"
-version = "0.1.0"
-license = "MIT"
-
-[workspace.dependencies]
-anyhow = "1"
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
-tokio = { version = "1", features = ["rt-multi-thread", "macros", "process", "sync", "io-util", "time"] }
-tracing = "0.1"
-uuid = { version = "1", features = ["v4", "serde"] }
-thiserror = "2"
+# Virtual manifest - ai is not a workspace, just a directory
+# The actual crates are in ai/ai-context/ and ai/ai-agent/

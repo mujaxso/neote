@@ -6,11 +6,16 @@ members = [
   
   # Shared crates - organized by domain
   "crates/core-types",
-  "domain",
-  "ai",
-  "infrastructure",
-  "language",
-  "operations",
+  "domain/workspace-model",
+  "ai/ai-context",
+  "ai/ai-agent",
+  "infrastructure/rpc",
+  "infrastructure/settings",
+  "infrastructure/permissions",
+  "language/editor-core",
+  "language/syntax-core",
+  "operations/patch-engine",
+  "operations/file-ops",
   "crates/theme",
   
   # Services
