@@ -154,7 +154,7 @@ This document outlines the development roadmap for Zaroxi Studio, an AI-first ID
 
 ## Contributing to the Roadmap
 
-The Qyzer Studio roadmap is a living document that evolves based on:
+The Zaroxi Studio roadmap is a living document that evolves based on:
 
 1. **Community feedback**: User needs and pain points
 2. **Technology trends**: Advances in AI and development tools

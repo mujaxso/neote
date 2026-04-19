@@ -129,4 +129,4 @@ This roadmap ensures focused development on core IDE functionality while progres
 - **Collaboration**: Real-time collaborative editing
 - **Mobile**: Potential mobile companion applications
 
-This architecture is designed to evolve as Neote grows, maintaining flexibility while providing a solid foundation for an AI-first development experience.
+This architecture is designed to evolve as Zaroxi Studio grows, maintaining flexibility while providing a solid foundation for an AI-first development experience.

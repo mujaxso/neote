@@ -359,7 +359,7 @@ Zaroxi Studio is built with performance in mind:
 ### Getting Help
 - **GitHub Discussions**: Community discussions and Q&A
 - **Issue Tracker**: Report bugs and request features
-- **Documentation**: Comprehensive docs in the `docs/` directory
+- **Documentation**: Comprehensive documentation available at [https://docs.zaroxi.com](https://docs.zaroxi.com) and in the `docs/` directory
 
 ### Contributing
 We welcome contributions of all kinds! See our [Contributing Guidelines](CONTRIBUTING.md) for details.
@@ -404,11 +404,11 @@ We'd like to thank:
 
 ## 📞 Contact and Links
 
-- **Website**: [https://zaroxi.dev](https://zaroxi.dev) (coming soon)
+- **Website**: [https://www.zaroxi.com](https://www.zaroxi.com)
 - **GitHub**: [https://github.com/mujaxso/zaroxi](https://github.com/mujaxso/zaroxi)
-- **Documentation**: [https://docs.zaroxi.dev](https://docs.zaroxi.dev) (coming soon)
-- **Twitter**: [@zaroxi_studio](https://twitter.com/zaroxi_studio) (coming soon)
-- **Email**: contact@zaroxi.dev
+- **Documentation**: [https://docs.zaroxi.com](https://docs.zaroxi.com)
+- **Twitter**: [@zaroxi_studio](https://twitter.com/zaroxi_studio)
+- **Email**: contact@zaroxi.com
 
 ---
 
@@ -468,7 +468,7 @@ Security is a top priority for Zaroxi Studio. Please review our [Security Docume
 - AI safety measures
 - Vulnerability reporting process
 
-To report a security vulnerability, please email security@zaroxi.dev (encrypted communication preferred).
+To report a security vulnerability, please email security@zaroxi.com (encrypted communication preferred).
 
 ## 📄 License
 
@@ -484,7 +484,7 @@ Zaroxi Studio is licensed under the MIT License. See [LICENSE](LICENSE) for deta
 
 - **GitHub Issues**: [Bug reports and feature requests](https://github.com/mujaxso/zaroxi/issues)
 - **Discussions**: [Community discussions](https://github.com/mujaxso/zaroxi/discussions)
-- **Email**: contact@zaroxi.dev
+- **Email**: contact@zaroxi.com
 
 ## 🌟 Star History
 

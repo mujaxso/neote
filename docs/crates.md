@@ -180,4 +180,4 @@ cargo fmt --all -- --check
 cargo clippy --workspace --all-targets -- -D warnings
 ```
 
-This crate architecture provides a solid foundation for Neote's development while maintaining flexibility for future growth and specialization.
+This crate architecture provides a solid foundation for Zaroxi Studio's development while maintaining flexibility for future growth and specialization.
