@@ -158,13 +158,14 @@ node check-setup.js
 
 ## Quick Start (Easiest Way)
 
-From **anywhere** in the zaroxi repository:
+From the **zaroxi repository root**:
 
 ```bash
-# Make scripts executable (first time only)
-./apps/desktop/fix-permissions.sh
+# First, make scripts executable (run this once)
+chmod +x apps/desktop/*.sh
+chmod +x apps/desktop/check-setup.js
 
-# Run the desktop app
+# Then run the desktop app
 ./apps/desktop/run.sh
 ```
 
@@ -173,6 +174,8 @@ The scripts will automatically:
 2. Install npm dependencies if needed
 3. Build Rust dependencies if needed
 4. Start the development server
+
+**Note**: If you get "permission denied" errors, you need to make the scripts executable first.
 
 ## Alternative Methods
 

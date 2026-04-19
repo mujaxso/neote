@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "tauri": "tauri",
     "type-check": "tsc --noEmit",
-    "setup": "echo 'Make sure you are in apps/desktop directory! Running npm install...' && npm install"
+    "setup": "echo 'Make sure you are in apps/desktop directory! Running npm install...' && npm install",
+    "postinstall": "echo 'Dependencies installed. Run ./run.sh to start the app.'"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.0.0",

@@ -1,89 +1,59 @@
 {
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "productName": "Zaroxi",
+  "version": "0.1.0",
+  "identifier": "dev.zaroxi.desktop",
   "build": {
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:1420",
     "beforeDevCommand": "npm run dev",
-    "beforeBuildCommand": "npm run build",
-    "devPath": "http://localhost:1420",
-    "distDir": "../dist",
-    "withGlobalTauri": false
+    "beforeBuildCommand": "npm run build"
   },
-  "package": {
-    "productName": "Zaroxi",
-    "version": "0.1.0"
-  },
-  "tauri": {
-    "allowlist": {
-      "all": false,
-      "shell": {
-        "all": false,
-        "open": true
-      },
-      "process": {
-        "all": false,
-        "exit": true,
-        "restart": true
-      },
-      "notification": {
-        "all": true
-      },
-      "globalShortcut": {
-        "all": true
-      },
-      "clipboard": {
-        "all": true
-      }
-    },
-    "bundle": {
-      "active": true,
-      "category": "DeveloperTool",
-      "copyright": "Copyright © 2026 Zaroxi Team",
-      "deb": {
-        "depends": []
-      },
-      "externalBin": [],
-      "icon": [
-        "icons/32x32.png",
-        "icons/128x128.png",
-        "icons/128x128@2x.png",
-        "icons/icon.icns",
-        "icons/icon.ico"
-      ],
-      "identifier": "dev.zaroxi.desktop",
-      "longDescription": "An AI-first IDE for modern development",
-      "macOS": {
-        "entitlements": null,
-        "exceptionDomain": "",
-        "frameworks": [],
-        "providerShortName": null,
-        "signingIdentity": null
-      },
-      "resources": [],
-      "shortDescription": "AI-first IDE",
-      "targets": "all",
-      "windows": {
-        "certificateThumbprint": null,
-        "digestAlgorithm": "sha256",
-        "timestampUrl": ""
-      }
-    },
-    "security": {
-      "csp": null
-    },
-    "updater": {
-      "active": false
-    },
+  "app": {
     "windows": [
       {
-        "fullscreen": false,
-        "resizable": true,
         "title": "Zaroxi",
         "width": 1400,
         "height": 900,
         "minWidth": 800,
         "minHeight": 600,
         "center": true,
-        "fileDropEnabled": true,
-        "label": "main"
+        "resizable": true,
+        "fullscreen": false,
+        "fileDropEnabled": true
       }
-    ]
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": false,
+    "targets": "all",
+    "copyright": "Copyright © 2026 Zaroxi Team",
+    "category": "DeveloperTool",
+    "shortDescription": "AI-first IDE",
+    "longDescription": "An AI-first IDE for modern development",
+    "deb": {
+      "depends": []
+    },
+    "macOS": {
+      "frameworks": [],
+      "minimumSystemVersion": "",
+      "exceptionDomain": "",
+      "signingIdentity": null,
+      "providerShortName": null,
+      "entitlements": null
+    },
+    "windows": {
+      "certificateThumbprint": null,
+      "digestAlgorithm": "sha256",
+      "timestampUrl": ""
+    }
+  },
+  "plugins": {
+    "updater": {
+      "active": false
+    }
   }
 }

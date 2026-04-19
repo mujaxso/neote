@@ -1,7 +1,7 @@
 [workspace]
 resolver = "3"
 members = [
-  "apps/desktop",
+  "apps/desktop/src-tauri",
   "crates/core-types",
   "crates/editor-core",
   "crates/workspace-model",

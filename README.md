@@ -156,7 +156,8 @@ From the **zaroxi repository root**:
 
 ```bash
 # 1. Make scripts executable (first time only)
-./apps/desktop/fix-permissions.sh
+chmod +x apps/desktop/*.sh
+chmod +x apps/desktop/check-setup.js
 
 # 2. Start the desktop app
 ./apps/desktop/run.sh
@@ -167,6 +168,8 @@ This will automatically:
 - Install npm dependencies if needed
 - Build Rust dependencies if needed
 - Start the development server
+
+**Important**: If scripts show "permission denied", you MUST run the `chmod` command first.
 
 ### Alternative Methods
 
