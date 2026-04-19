@@ -39,8 +39,4 @@ theme = { path = "../../../crates/theme" }
 [features]
 default = []
 
-[profile.dev]
-inherits = "workspace-dev"
-
-[profile.release]
-inherits = "workspace-release"
+# Profiles are inherited from workspace root
