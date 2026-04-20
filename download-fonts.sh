@@ -21,61 +21,93 @@ DOWNLOAD_URL="${NERD_FONTS_REPO}/${ZIP_FILE}"
 if curl -L -o "$FONT_DIR/$ZIP_FILE" "$DOWNLOAD_URL" --fail --silent --show-error; then
     echo "Downloaded JetBrainsMono.zip"
     
-    # Extract only the specific .woff2 files we need
-    echo "Extracting required font files..."
+    # First, list the contents to see what's actually in the zip
+    echo "Checking zip contents..."
+    unzip -l "$FONT_DIR/$ZIP_FILE" | grep -i "\.woff2" | head -20
     
-    # List of files we need to extract
-    FONT_FILES=(
-        "JetBrains Mono Regular Nerd Font Complete Mono.woff2"
-        "JetBrains Mono Bold Nerd Font Complete Mono.woff2"
-        "JetBrains Mono Italic Nerd Font Complete Mono.woff2"
-        "JetBrains Mono Bold Italic Nerd Font Complete Mono.woff2"
-    )
+    # Extract all .woff2 files to a temporary directory
+    TEMP_DIR=$(mktemp -d)
+    echo "Extracting all .woff2 files to temporary directory..."
     
-    # Extract each file and rename to match our CSS @font-face declarations
-    for font_file in "${FONT_FILES[@]}"; do
-        if unzip -q -j "$FONT_DIR/$ZIP_FILE" "$font_file" -d "$FONT_DIR" 2>/dev/null; then
-            echo "  Extracted: $font_file"
-        else
-            # Try alternative naming pattern
-            alt_file="${font_file// Complete Mono/}"
-            if unzip -q -j "$FONT_DIR/$ZIP_FILE" "$alt_file" -d "$FONT_DIR" 2>/dev/null; then
-                echo "  Extracted (alternative): $alt_file"
-            else
-                echo "  Warning: Could not extract $font_file"
+    # Extract all .woff2 files
+    if unzip -q -j "$FONT_DIR/$ZIP_FILE" "*.woff2" -d "$TEMP_DIR" 2>/dev/null; then
+        echo "Extracted .woff2 files successfully"
+        
+        # Find the specific files we need
+        # The actual filenames might vary, so we'll look for patterns
+        find "$TEMP_DIR" -name "*.woff2" -type f | while read -r font_file; do
+            filename=$(basename "$font_file")
+            
+            # Determine which variant this is based on the filename
+            case "$filename" in
+                *"Regular"*)
+                    if [[ "$filename" == *"Italic"* ]]; then
+                        # This should be Italic, not Regular
+                        continue
+                    fi
+                    target_name="JetBrainsMonoNerdFont-Regular.woff2"
+                    ;;
+                *"Bold"*)
+                    if [[ "$filename" == *"Italic"* ]]; then
+                        target_name="JetBrainsMonoNerdFont-BoldItalic.woff2"
+                    else
+                        target_name="JetBrainsMonoNerdFont-Bold.woff2"
+                    fi
+                    ;;
+                *"Italic"*)
+                    if [[ "$filename" != *"Bold"* ]]; then
+                        target_name="JetBrainsMonoNerdFont-Italic.woff2"
+                    else
+                        # Already handled in Bold* case
+                        continue
+                    fi
+                    ;;
+                *)
+                    # Skip files that don't match our patterns
+                    continue
+                    ;;
+            esac
+            
+            # Copy to the font directory with the correct name
+            cp "$font_file" "$FONT_DIR/$target_name"
+            echo "  Copied: $filename -> $target_name"
+        done
+        
+        # Clean up temporary directory
+        rm -rf "$TEMP_DIR"
+    else
+        echo "Error: Failed to extract .woff2 files from the zip"
+        echo "Trying alternative extraction method..."
+        
+        # Try extracting everything and then filtering
+        TEMP_DIR2=$(mktemp -d)
+        unzip -q "$FONT_DIR/$ZIP_FILE" -d "$TEMP_DIR2" 2>/dev/null || true
+        
+        # Find .woff2 files in the extracted directory
+        find "$TEMP_DIR2" -name "*.woff2" -type f | while read -r font_file; do
+            filename=$(basename "$font_file")
+            
+            # Use a simpler approach: look for specific patterns
+            if [[ "$filename" == *"Regular"* ]] && [[ "$filename" != *"Italic"* ]]; then
+                cp "$font_file" "$FONT_DIR/JetBrainsMonoNerdFont-Regular.woff2"
+                echo "  Found Regular variant"
+            elif [[ "$filename" == *"Bold"* ]] && [[ "$filename" != *"Italic"* ]]; then
+                cp "$font_file" "$FONT_DIR/JetBrainsMonoNerdFont-Bold.woff2"
+                echo "  Found Bold variant"
+            elif [[ "$filename" == *"Italic"* ]] && [[ "$filename" != *"Bold"* ]]; then
+                cp "$font_file" "$FONT_DIR/JetBrainsMonoNerdFont-Italic.woff2"
+                echo "  Found Italic variant"
+            elif [[ "$filename" == *"Bold"* ]] && [[ "$filename" == *"Italic"* ]]; then
+                cp "$font_file" "$FONT_DIR/JetBrainsMonoNerdFont-BoldItalic.woff2"
+                echo "  Found Bold Italic variant"
             fi
-        fi
-    done
+        done
+        
+        rm -rf "$TEMP_DIR2"
+    fi
     
-    # Rename files to match our CSS @font-face declarations
-    echo "Renaming files to match CSS @font-face declarations..."
-    
-    # Map original filenames to our desired filenames
-    declare -A RENAME_MAP=(
-        ["JetBrains Mono Regular Nerd Font Complete Mono.woff2"]="JetBrainsMonoNerdFont-Regular.woff2"
-        ["JetBrains Mono Bold Nerd Font Complete Mono.woff2"]="JetBrainsMonoNerdFont-Bold.woff2"
-        ["JetBrains Mono Italic Nerd Font Complete Mono.woff2"]="JetBrainsMonoNerdFont-Italic.woff2"
-        ["JetBrains Mono Bold Italic Nerd Font Complete Mono.woff2"]="JetBrainsMonoNerdFont-BoldItalic.woff2"
-        ["JetBrains Mono Regular Nerd Font.woff2"]="JetBrainsMonoNerdFont-Regular.woff2"
-        ["JetBrains Mono Bold Nerd Font.woff2"]="JetBrainsMonoNerdFont-Bold.woff2"
-        ["JetBrains Mono Italic Nerd Font.woff2"]="JetBrainsMonoNerdFont-Italic.woff2"
-        ["JetBrains Mono Bold Italic Nerd Font.woff2"]="JetBrainsMonoNerdFont-BoldItalic.woff2"
-    )
-    
-    for old_name in "${!RENAME_MAP[@]}"; do
-        if [ -f "$FONT_DIR/$old_name" ]; then
-            new_name="${RENAME_MAP[$old_name]}"
-            mv "$FONT_DIR/$old_name" "$FONT_DIR/$new_name"
-            echo "  Renamed: $old_name -> $new_name"
-        fi
-    done
-    
-    # Clean up extracted zip and any leftover files
+    # Clean up the zip file
     rm -f "$FONT_DIR/$ZIP_FILE"
-    rm -f "$FONT_DIR/"*.txt 2>/dev/null || true
-    rm -f "$FONT_DIR/"*.md 2>/dev/null || true
-    
-    echo "Cleaned up temporary files"
     
     # Verify we have the required files
     echo "Verifying downloaded fonts..."
@@ -99,8 +131,16 @@ if curl -L -o "$FONT_DIR/$ZIP_FILE" "$DOWNLOAD_URL" --fail --silent --show-error
     if [ "$all_present" = true ]; then
         echo "Success! All required font files are present."
     else
-        echo "Warning: Some font files are missing. You may need to download them manually."
-        echo "Visit: https://www.nerdfonts.com/font-downloads"
+        echo "Warning: Some font files are missing."
+        echo "The zip file structure may have changed. Here's what's in the fonts directory:"
+        ls -la "$FONT_DIR/" 2>/dev/null || echo "  (fonts directory is empty)"
+        echo ""
+        echo "You can manually download the font from:"
+        echo "https://github.com/ryanoasis/nerd-fonts/releases"
+        echo "Or visit: https://www.nerdfonts.com/font-downloads"
+        echo ""
+        echo "Alternatively, you can try downloading individual files from:"
+        echo "https://github.com/ryanoasis/nerd-fonts/tree/master/patched-fonts/JetBrainsMono"
     fi
     
 else
