@@ -8,6 +8,7 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "tauri": "node node_modules/@tauri-apps/cli/tauri.js",
+    "tauri:test": "node node_modules/@tauri-apps/cli/tauri.js --version",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
