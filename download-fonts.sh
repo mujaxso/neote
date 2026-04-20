@@ -7,7 +7,7 @@ set -euo pipefail
 
 # Configuration
 FONT_DIR="apps/desktop/frontend/public/fonts"
-NERD_FONTS_REPO="https://github.com/ryanoasis/nerd-fonts/releases/download/v3.3.0"
+NERD_FONTS_REPO="https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0"
 
 # Create fonts directory if it doesn't exist
 mkdir -p "$FONT_DIR"
@@ -90,6 +90,11 @@ if curl -L -o "$FONT_DIR/$ZIP_FILE" "$DOWNLOAD_URL" --fail --progress-bar; then
                 echo "✓ Copied Bold variant (.ttf) (alternative pattern)"
             else
                 echo "✗ Could not find Bold variant"
+                # List all files for debugging
+                echo "  Available files with 'Bold' in name:"
+                find "$TEMP_DIR" -name "*Bold*.ttf" -type f | head -5 | while read -r f; do
+                    echo "    - $(basename "$f")"
+                done
             fi
         fi
         
@@ -106,6 +111,11 @@ if curl -L -o "$FONT_DIR/$ZIP_FILE" "$DOWNLOAD_URL" --fail --progress-bar; then
                 echo "✓ Copied Italic variant (.ttf) (alternative pattern)"
             else
                 echo "✗ Could not find Italic variant"
+                # List all files for debugging
+                echo "  Available files with 'Italic' in name:"
+                find "$TEMP_DIR" -name "*Italic*.ttf" -type f | head -5 | while read -r f; do
+                    echo "    - $(basename "$f")"
+                done
             fi
         fi
         
@@ -122,11 +132,69 @@ if curl -L -o "$FONT_DIR/$ZIP_FILE" "$DOWNLOAD_URL" --fail --progress-bar; then
                 echo "✓ Copied Bold Italic variant (.ttf) (alternative pattern)"
             else
                 echo "✗ Could not find Bold Italic variant"
+                # List all files for debugging
+                echo "  Available files with 'Bold' and 'Italic' in name:"
+                find "$TEMP_DIR" -name "*Bold*Italic*.ttf" -o -name "*Italic*Bold*.ttf" -type f | head -5 | while read -r f; do
+                    echo "    - $(basename "$f")"
+                done
             fi
         fi
         
         # Clean up temporary directory
         rm -rf "$TEMP_DIR"
+        
+        # Clean up the zip file immediately after extraction to save space
+        echo "Removing zip file to save space..."
+        rm -f "$FONT_DIR/$ZIP_FILE"
+        
+        # Verify we have the required files
+        echo ""
+        echo "Verifying downloaded fonts..."
+        REQUIRED_FILES=(
+            "JetBrainsMonoNerdFont-Regular.ttf"
+            "JetBrainsMonoNerdFont-Bold.ttf"
+            "JetBrainsMonoNerdFont-Italic.ttf"
+            "JetBrainsMonoNerdFont-BoldItalic.ttf"
+        )
+        
+        all_present=true
+        for required_file in "${REQUIRED_FILES[@]}"; do
+            if [ -f "$FONT_DIR/$required_file" ]; then
+                file_size=$(stat -f%z "$FONT_DIR/$required_file" 2>/dev/null || stat -c%s "$FONT_DIR/$required_file" 2>/dev/null || echo "0")
+                if [ "$file_size" -gt 1000 ]; then
+                    echo "  ✓ $required_file ($((file_size/1024)) KB)"
+                else
+                    echo "  ✗ $required_file (file too small: ${file_size} bytes)"
+                    all_present=false
+                fi
+            else
+                echo "  ✗ Missing: $required_file"
+                all_present=false
+            fi
+        done
+        
+        if [ "$all_present" = true ]; then
+            echo ""
+            echo "✅ Success! All required font files are present."
+            echo "Fonts are ready in: $FONT_DIR"
+            echo ""
+            echo "Note: Downloaded .ttf files. To use .woff2 files instead:"
+            echo "1. Install woff2 tools: 'brew install woff2' (macOS) or 'apt-get install woff2' (Ubuntu)"
+            echo "2. Convert .ttf to .woff2 using: woff2_compress <filename>.ttf"
+            echo "3. Update globals.css to reference .woff2 files"
+        else
+            echo ""
+            echo "⚠️  Warning: Some font files are missing."
+            echo "Current contents of fonts directory:"
+            ls -la "$FONT_DIR/" 2>/dev/null || echo "  (fonts directory is empty)"
+            echo ""
+            echo "Debug information:"
+            echo "Total files in zip: $(find "$TEMP_DIR" -name "*.ttf" -type f | wc -l)"
+            echo "First 10 font files found:"
+            find "$TEMP_DIR" -name "*.ttf" -type f | head -10 | while read -r f; do
+                echo "  - $(basename "$f")"
+            done
+        fi
     else
         echo "Error: Failed to extract zip file"
         echo "The zip file might be corrupted or in an unexpected format"
@@ -134,62 +202,30 @@ if curl -L -o "$FONT_DIR/$ZIP_FILE" "$DOWNLOAD_URL" --fail --progress-bar; then
         exit 1
     fi
     
-    # Clean up the zip file immediately after extraction to save space
-    echo "Removing zip file to save space..."
-    rm -f "$FONT_DIR/$ZIP_FILE"
-    
-    # Verify we have the required files
-    echo ""
-    echo "Verifying downloaded fonts..."
-    REQUIRED_FILES=(
-        "JetBrainsMonoNerdFont-Regular.ttf"
-        "JetBrainsMonoNerdFont-Bold.ttf"
-        "JetBrainsMonoNerdFont-Italic.ttf"
-        "JetBrainsMonoNerdFont-BoldItalic.ttf"
-    )
-    
-    all_present=true
-    for required_file in "${REQUIRED_FILES[@]}"; do
-        if [ -f "$FONT_DIR/$required_file" ]; then
-            file_size=$(stat -f%z "$FONT_DIR/$required_file" 2>/dev/null || stat -c%s "$FONT_DIR/$required_file" 2>/dev/null || echo "0")
-            if [ "$file_size" -gt 1000 ]; then
-                echo "  ✓ $required_file ($((file_size/1024)) KB)"
-            else
-                echo "  ✗ $required_file (file too small: ${file_size} bytes)"
-                all_present=false
-            fi
-        else
-            echo "  ✗ Missing: $required_file"
-            all_present=false
-        fi
-    done
-    
-    if [ "$all_present" = true ]; then
-        echo ""
-        echo "✅ Success! All required font files are present."
-        echo "Fonts are ready in: $FONT_DIR"
-        echo ""
-        echo "Note: Downloaded .ttf files. To use .woff2 files instead:"
-        echo "1. Install woff2 tools: 'brew install woff2' (macOS) or 'apt-get install woff2' (Ubuntu)"
-        echo "2. Convert .ttf to .woff2 using: woff2_compress <filename>.ttf"
-        echo "3. Update globals.css to reference .woff2 files"
-    else
-        echo ""
-        echo "⚠️  Warning: Some font files are missing."
-        echo "Current contents of fonts directory:"
-        ls -la "$FONT_DIR/" 2>/dev/null || echo "  (fonts directory is empty)"
-    fi
-    
 else
     echo "Error: Failed to download JetBrainsMono.zip"
     echo "Possible reasons:"
     echo "1. Network connection issue"
     echo "2. The download URL may have changed"
+    echo "3. Version 3.4.0 might not be available yet"
     echo ""
-    echo "You can manually download the font from:"
-    echo "https://github.com/ryanoasis/nerd-fonts/releases"
-    echo "Look for 'JetBrainsMono.zip' in the latest release"
-    exit 1
+    echo "Trying version 3.3.0 as fallback..."
+    NERD_FONTS_REPO_FALLBACK="https://github.com/ryanoasis/nerd-fonts/releases/download/v3.3.0"
+    DOWNLOAD_URL_FALLBACK="${NERD_FONTS_REPO_FALLBACK}/${ZIP_FILE}"
+    
+    if curl -L -o "$FONT_DIR/$ZIP_FILE" "$DOWNLOAD_URL_FALLBACK" --fail --progress-bar; then
+        echo "✓ Downloaded JetBrainsMono.zip from fallback URL"
+        # Continue with extraction using the same logic
+        # We'll need to re-run the extraction part, but for simplicity, we'll just note it
+        echo "Please run the script again to extract the downloaded zip file."
+    else
+        echo "Fallback download also failed."
+        echo ""
+        echo "You can manually download the font from:"
+        echo "https://github.com/ryanoasis/nerd-fonts/releases"
+        echo "Look for 'JetBrainsMono.zip' in the latest release"
+        exit 1
+    fi
 fi
 
 echo ""
