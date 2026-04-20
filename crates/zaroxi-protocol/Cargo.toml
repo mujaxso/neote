@@ -9,6 +9,10 @@ repository = "https://github.com/zaroxi/zaroxi"
 readme = "README.md"
 rust-version = "1.85.0"
 
+[lib]
+name = "zaroxi_protocol"
+path = "src/lib.rs"
+
 [dependencies]
 serde = { workspace = true }
 serde_json = { workspace = true }
