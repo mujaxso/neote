@@ -18,98 +18,85 @@ echo "Downloading JetBrains Mono Nerd Font to $FONT_DIR..."
 ZIP_FILE="JetBrainsMono.zip"
 DOWNLOAD_URL="${NERD_FONTS_REPO}/${ZIP_FILE}"
 
-if curl -L -o "$FONT_DIR/$ZIP_FILE" "$DOWNLOAD_URL" --fail --silent --show-error; then
-    echo "Downloaded JetBrainsMono.zip"
+echo "Downloading from: $DOWNLOAD_URL"
+if curl -L -o "$FONT_DIR/$ZIP_FILE" "$DOWNLOAD_URL" --fail --progress-bar; then
+    echo "✓ Downloaded JetBrainsMono.zip"
     
-    # First, list the contents to see what's actually in the zip
-    echo "Checking zip contents..."
-    unzip -l "$FONT_DIR/$ZIP_FILE" | grep -i "\.woff2" | head -20
+    # Check if the zip file is valid and not empty
+    if [ ! -s "$FONT_DIR/$ZIP_FILE" ]; then
+        echo "Error: Downloaded zip file is empty"
+        rm -f "$FONT_DIR/$ZIP_FILE"
+        exit 1
+    fi
     
-    # Extract all .woff2 files to a temporary directory
+    # Create a temporary directory for extraction
     TEMP_DIR=$(mktemp -d)
-    echo "Extracting all .woff2 files to temporary directory..."
+    echo "Extracting font files..."
     
-    # Extract all .woff2 files
-    if unzip -q -j "$FONT_DIR/$ZIP_FILE" "*.woff2" -d "$TEMP_DIR" 2>/dev/null; then
-        echo "Extracted .woff2 files successfully"
+    # Extract the zip file
+    if unzip -q "$FONT_DIR/$ZIP_FILE" -d "$TEMP_DIR" 2>/dev/null; then
+        echo "✓ Extraction successful"
         
-        # Find the specific files we need
-        # The actual filenames might vary, so we'll look for patterns
+        # Find all .woff2 files in the extracted directory
+        echo "Looking for .woff2 files..."
         find "$TEMP_DIR" -name "*.woff2" -type f | while read -r font_file; do
             filename=$(basename "$font_file")
-            
-            # Determine which variant this is based on the filename
-            case "$filename" in
-                *"Regular"*)
-                    if [[ "$filename" == *"Italic"* ]]; then
-                        # This should be Italic, not Regular
-                        continue
-                    fi
-                    target_name="JetBrainsMonoNerdFont-Regular.woff2"
-                    ;;
-                *"Bold"*)
-                    if [[ "$filename" == *"Italic"* ]]; then
-                        target_name="JetBrainsMonoNerdFont-BoldItalic.woff2"
-                    else
-                        target_name="JetBrainsMonoNerdFont-Bold.woff2"
-                    fi
-                    ;;
-                *"Italic"*)
-                    if [[ "$filename" != *"Bold"* ]]; then
-                        target_name="JetBrainsMonoNerdFont-Italic.woff2"
-                    else
-                        # Already handled in Bold* case
-                        continue
-                    fi
-                    ;;
-                *)
-                    # Skip files that don't match our patterns
-                    continue
-                    ;;
-            esac
-            
-            # Copy to the font directory with the correct name
-            cp "$font_file" "$FONT_DIR/$target_name"
-            echo "  Copied: $filename -> $target_name"
+            echo "  Found: $filename"
         done
+        
+        # Now, find and copy the specific files we need
+        # The actual filenames in the zip might be different, so we need to be flexible
+        
+        # Look for Regular (not Italic)
+        REGULAR_FILE=$(find "$TEMP_DIR" -name "*.woff2" -type f | grep -i "regular" | grep -v -i "italic" | head -1)
+        if [ -n "$REGULAR_FILE" ]; then
+            cp "$REGULAR_FILE" "$FONT_DIR/JetBrainsMonoNerdFont-Regular.woff2"
+            echo "✓ Copied Regular variant"
+        else
+            echo "✗ Could not find Regular variant"
+        fi
+        
+        # Look for Bold (not Italic)
+        BOLD_FILE=$(find "$TEMP_DIR" -name "*.woff2" -type f | grep -i "bold" | grep -v -i "italic" | head -1)
+        if [ -n "$BOLD_FILE" ]; then
+            cp "$BOLD_FILE" "$FONT_DIR/JetBrainsMonoNerdFont-Bold.woff2"
+            echo "✓ Copied Bold variant"
+        else
+            echo "✗ Could not find Bold variant"
+        fi
+        
+        # Look for Italic (not Bold)
+        ITALIC_FILE=$(find "$TEMP_DIR" -name "*.woff2" -type f | grep -i "italic" | grep -v -i "bold" | head -1)
+        if [ -n "$ITALIC_FILE" ]; then
+            cp "$ITALIC_FILE" "$FONT_DIR/JetBrainsMonoNerdFont-Italic.woff2"
+            echo "✓ Copied Italic variant"
+        else
+            echo "✗ Could not find Italic variant"
+        fi
+        
+        # Look for Bold Italic
+        BOLD_ITALIC_FILE=$(find "$TEMP_DIR" -name "*.woff2" -type f | grep -i "bold" | grep -i "italic" | head -1)
+        if [ -n "$BOLD_ITALIC_FILE" ]; then
+            cp "$BOLD_ITALIC_FILE" "$FONT_DIR/JetBrainsMonoNerdFont-BoldItalic.woff2"
+            echo "✓ Copied Bold Italic variant"
+        else
+            echo "✗ Could not find Bold Italic variant"
+        fi
         
         # Clean up temporary directory
         rm -rf "$TEMP_DIR"
     else
-        echo "Error: Failed to extract .woff2 files from the zip"
-        echo "Trying alternative extraction method..."
-        
-        # Try extracting everything and then filtering
-        TEMP_DIR2=$(mktemp -d)
-        unzip -q "$FONT_DIR/$ZIP_FILE" -d "$TEMP_DIR2" 2>/dev/null || true
-        
-        # Find .woff2 files in the extracted directory
-        find "$TEMP_DIR2" -name "*.woff2" -type f | while read -r font_file; do
-            filename=$(basename "$font_file")
-            
-            # Use a simpler approach: look for specific patterns
-            if [[ "$filename" == *"Regular"* ]] && [[ "$filename" != *"Italic"* ]]; then
-                cp "$font_file" "$FONT_DIR/JetBrainsMonoNerdFont-Regular.woff2"
-                echo "  Found Regular variant"
-            elif [[ "$filename" == *"Bold"* ]] && [[ "$filename" != *"Italic"* ]]; then
-                cp "$font_file" "$FONT_DIR/JetBrainsMonoNerdFont-Bold.woff2"
-                echo "  Found Bold variant"
-            elif [[ "$filename" == *"Italic"* ]] && [[ "$filename" != *"Bold"* ]]; then
-                cp "$font_file" "$FONT_DIR/JetBrainsMonoNerdFont-Italic.woff2"
-                echo "  Found Italic variant"
-            elif [[ "$filename" == *"Bold"* ]] && [[ "$filename" == *"Italic"* ]]; then
-                cp "$font_file" "$FONT_DIR/JetBrainsMonoNerdFont-BoldItalic.woff2"
-                echo "  Found Bold Italic variant"
-            fi
-        done
-        
-        rm -rf "$TEMP_DIR2"
+        echo "Error: Failed to extract zip file"
+        echo "The zip file might be corrupted or in an unexpected format"
+        rm -f "$FONT_DIR/$ZIP_FILE"
+        exit 1
     fi
     
     # Clean up the zip file
     rm -f "$FONT_DIR/$ZIP_FILE"
     
     # Verify we have the required files
+    echo ""
     echo "Verifying downloaded fonts..."
     REQUIRED_FILES=(
         "JetBrainsMonoNerdFont-Regular.woff2"
@@ -129,26 +116,36 @@ if curl -L -o "$FONT_DIR/$ZIP_FILE" "$DOWNLOAD_URL" --fail --silent --show-error
     done
     
     if [ "$all_present" = true ]; then
-        echo "Success! All required font files are present."
+        echo ""
+        echo "✅ Success! All required font files are present."
+        echo "Fonts are ready in: $FONT_DIR"
     else
-        echo "Warning: Some font files are missing."
-        echo "The zip file structure may have changed. Here's what's in the fonts directory:"
+        echo ""
+        echo "⚠️  Warning: Some font files are missing."
+        echo "Current contents of fonts directory:"
         ls -la "$FONT_DIR/" 2>/dev/null || echo "  (fonts directory is empty)"
         echo ""
-        echo "You can manually download the font from:"
-        echo "https://github.com/ryanoasis/nerd-fonts/releases"
-        echo "Or visit: https://www.nerdfonts.com/font-downloads"
-        echo ""
-        echo "Alternatively, you can try downloading individual files from:"
-        echo "https://github.com/ryanoasis/nerd-fonts/tree/master/patched-fonts/JetBrainsMono"
+        echo "You may need to manually download the fonts:"
+        echo "1. Visit: https://www.nerdfonts.com/font-downloads"
+        echo "2. Download 'JetBrainsMono.zip'"
+        echo "3. Extract the following .woff2 files to $FONT_DIR:"
+        echo "   - JetBrainsMonoNerdFont-Regular.woff2"
+        echo "   - JetBrainsMonoNerdFont-Bold.woff2"
+        echo "   - JetBrainsMonoNerdFont-Italic.woff2"
+        echo "   - JetBrainsMonoNerdFont-BoldItalic.woff2"
     fi
     
 else
     echo "Error: Failed to download JetBrainsMono.zip"
+    echo "Possible reasons:"
+    echo "1. Network connection issue"
+    echo "2. The download URL may have changed"
+    echo ""
     echo "You can manually download the font from:"
     echo "https://github.com/ryanoasis/nerd-fonts/releases"
-    echo "Or visit: https://www.nerdfonts.com/font-downloads"
+    echo "Look for 'JetBrainsMono.zip' in the latest release"
     exit 1
 fi
 
-echo "Font download complete!"
+echo ""
+echo "Font download process complete!"
