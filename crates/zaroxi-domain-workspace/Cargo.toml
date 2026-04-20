@@ -1,0 +1,14 @@
+[package]
+name = "zaroxi-domain-workspace"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+description = "Workspace domain models for Zaroxi Studio"
+
+[dependencies]
+zaroxi-domain-editor = { workspace = true }
+zaroxi-core-ids = { workspace = true }
+zaroxi-protocol = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+uuid = { workspace = true, features = ["v4", "serde"] }
+thiserror = { workspace = true }

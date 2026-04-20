@@ -1,37 +1,28 @@
 [workspace]
-resolver = "3"
+resolver = "2"
 members = [
-  # Applications
-  "apps/desktop/src-tauri",
-  
-  # Core crates
-  "crates/zaroxi-protocol",
-  "crates/zaroxi-theme",
-  
-  # Domain crates
-  "domain/zaroxi-domain-ai-context",
-  "domain/zaroxi-domain-editor",
-  "domain/zaroxi-domain-workspace",
-  
-  # AI crates
-  "ai/zaroxi-ai-agent",
-  
-  # Infrastructure crates
-  "infrastructure/zaroxi-infra-permissions",
-  "infrastructure/zaroxi-infra-rpc",
-  "infrastructure/zaroxi-infra-settings",
-  
-  # Language crates
-  "language/zaroxi-lang-lsp",
-  "language/zaroxi-lang-syntax",
-  
-  # Operations crates
-  "operations/zaroxi-ops-file",
-  "operations/zaroxi-ops-patch",
-  
-  # Services
-  "services/ai-daemon",
-  "services/workspace-daemon",
+    # Library crates
+    "crates/zaroxi-ai-agent",
+    "crates/zaroxi-core-ids",
+    "crates/zaroxi-domain-ai-context",
+    "crates/zaroxi-domain-editor",
+    "crates/zaroxi-domain-workspace",
+    "crates/zaroxi-infra-permissions",
+    "crates/zaroxi-infra-rpc",
+    "crates/zaroxi-infra-settings",
+    "crates/zaroxi-lang-lsp",
+    "crates/zaroxi-lang-syntax",
+    "crates/zaroxi-ops-file",
+    "crates/zaroxi-ops-patch",
+    "crates/zaroxi-protocol",
+    "crates/zaroxi-service-ai",
+    "crates/zaroxi-service-workspace",
+    "crates/zaroxi-theme",
+    
+    # Application binaries
+    "apps/desktop/src-tauri",
+    "apps/ai-daemon",
+    "apps/workspace-daemon",
 ]
 
 [workspace.package]
@@ -48,8 +39,6 @@ tracing = "0.1"
 uuid = { version = "1", features = ["v4", "serde"] }
 thiserror = "2"
 rfd = { version = "0.14", default-features = false, features = ["tokio", "xdg-portal"] }
-tree-sitter-rust = "0.24"
-tree-sitter-toml = "0.20"
 tree-sitter = "0.26.8"
 libloading = "0.8"
 ureq = { version = "2", features = ["json"] }
