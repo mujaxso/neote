@@ -56,6 +56,7 @@ impl WorkspaceService {
     pub async fn open_workspace(&self, path: std::path::PathBuf) -> Result<zaroxi_domain_workspace::workspace::Workspace> {
         use zaroxi_domain_workspace::workspace::Workspace;
         use uuid::Uuid;
+        use chrono::Utc;
         
         // Validate path exists
         if !path.exists() {
@@ -65,9 +66,7 @@ impl WorkspaceService {
             return Err(anyhow::anyhow!("Path is not a directory: {:?}", path));
         }
 
-        // Try to create a workspace with available timestamp types
-        // First, check what type the Workspace struct expects
-        // For now, we'll use a placeholder approach
+        let now = Utc::now();
         let workspace = Workspace {
             id: Uuid::new_v4(),
             root_path: path.to_string_lossy().to_string(),
@@ -76,11 +75,8 @@ impl WorkspaceService {
                 .unwrap_or("workspace")
                 .to_string(),
             is_open: true,
-            // These fields need to be of the correct type
-            // We'll need to check the actual type in zaroxi_domain_workspace
-            // For compilation, we'll use default values
-            created_at: (),
-            last_accessed_at: (),
+            created_at: now,
+            last_accessed_at: now,
         };
         
         info!("Opened workspace: {} at {:?}", workspace.name, workspace.root_path);
