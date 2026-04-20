@@ -19,12 +19,14 @@ pub struct OpenWorkspaceResponse {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct WorkspaceTreeRequest {
     pub workspace_id: String,
     pub root_path: String,
 }
 
 #[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct WorkspaceTreeResponse {
     pub workspace_id: String,
     pub root_path: String,
@@ -259,7 +261,7 @@ pub struct OpenDialogResponse {
 
 #[command]
 pub async fn open_file_dialog() -> Result<OpenDialogResponse, String> {
-    use tracing::{info, warn, error};
+    use tracing::{info, warn};
     
     info!("Opening file dialog for workspace selection");
     

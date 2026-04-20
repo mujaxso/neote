@@ -217,10 +217,12 @@ pub struct FileEntry {
 
 /// Explorer tree node for frontend consumption
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ExplorerTreeNode {
     pub id: String,
     pub path: String,
     pub name: String,
+    #[serde(rename = "isDir")]
     pub is_dir: bool,
     pub file_type: Option<String>,
     pub size: Option<u64>,

@@ -188,6 +188,7 @@ export class WorkspaceService {
   // Explorer-specific operations
   static async getWorkspaceTree(request: WorkspaceTreeRequest): Promise<WorkspaceTreeResponse> {
     console.log('[WorkspaceService] getWorkspaceTree called with:', request);
+    console.log('[WorkspaceService] Request JSON:', JSON.stringify(request));
     
     // Check if we're in Tauri environment - use multiple detection methods
     const isTauri = 
@@ -243,7 +244,13 @@ export class WorkspaceService {
     
     try {
       console.log('[WorkspaceService] Invoking get_workspace_tree command...');
-      const result = await bridge.invoke<WorkspaceTreeResponse>('get_workspace_tree', { request });
+      // Log the exact invocation
+      const result = await bridge.invoke<WorkspaceTreeResponse>('get_workspace_tree', { 
+        request: {
+          workspace_id: request.workspaceId,
+          root_path: request.rootPath
+        }
+      });
       console.log('[WorkspaceService] getWorkspaceTree result:', result);
       console.log('[WorkspaceService] Tree length:', result.tree.length);
       if (result.tree.length > 0) {
