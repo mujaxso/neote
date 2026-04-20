@@ -3,6 +3,7 @@
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tracing::info;
+use anyhow::Result;
 
 /// Workspace service for handling workspace operations.
 pub struct WorkspaceService {
@@ -24,7 +25,7 @@ impl WorkspaceService {
     }
 
     /// Start the workspace service.
-    pub async fn start(&self) -> Result<(), anyhow::Error> {
+    pub async fn start(&self) -> Result<()> {
         let mut state = self.state.lock().await;
         if state.running {
             return Err(anyhow::anyhow!("Workspace service is already running"));
@@ -35,7 +36,7 @@ impl WorkspaceService {
     }
 
     /// Stop the workspace service.
-    pub async fn stop(&self) -> Result<(), anyhow::Error> {
+    pub async fn stop(&self) -> Result<()> {
         let mut state = self.state.lock().await;
         if !state.running {
             return Err(anyhow::anyhow!("Workspace service is not running"));
@@ -49,5 +50,32 @@ impl WorkspaceService {
     pub async fn is_running(&self) -> bool {
         let state = self.state.lock().await;
         state.running
+    }
+
+    /// Open a workspace at the given path
+    pub async fn open_workspace(&self, path: std::path::PathBuf) -> Result<zaroxi_domain_workspace::workspace::Workspace> {
+        use zaroxi_domain_workspace::workspace::Workspace;
+        use uuid::Uuid;
+        
+        // Validate path exists
+        if !path.exists() {
+            return Err(anyhow::anyhow!("Path does not exist: {:?}", path));
+        }
+        if !path.is_dir() {
+            return Err(anyhow::anyhow!("Path is not a directory: {:?}", path));
+        }
+
+        let workspace = Workspace {
+            id: Uuid::new_v4(),
+            root_path: path.to_string_lossy().to_string(),
+            name: path.file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or("workspace")
+                .to_string(),
+            is_open: true,
+        };
+        
+        info!("Opened workspace: {} at {:?}", workspace.name, workspace.root_path);
+        Ok(workspace)
     }
 }

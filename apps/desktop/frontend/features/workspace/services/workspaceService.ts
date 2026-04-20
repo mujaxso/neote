@@ -1,20 +1,54 @@
-// This will be the typed service layer for workspace operations
-// For now, it's a placeholder that will be connected to Tauri commands
+import { invoke } from '@tauri-apps/api/core';
+
+export interface OpenWorkspaceRequest {
+  path: string;
+}
+
+export interface OpenWorkspaceResponse {
+  workspaceId: string;
+  rootPath: string;
+  fileCount: number;
+}
+
+export interface ListDirectoryRequest {
+  path: string;
+}
+
+export interface DirectoryEntryDto {
+  path: string;
+  name: string;
+  isDir: boolean;
+  fileType?: string;
+}
+
+export interface OpenFileRequest {
+  path: string;
+}
+
+export interface OpenFileResponse {
+  content: string;
+  language?: string;
+}
+
+export interface SaveFileRequest {
+  path: string;
+  content: string;
+}
 
 export class WorkspaceService {
-  static async openWorkspace(request: { path: string }) {
-    // TODO: Connect to Tauri command
-    console.log('Opening workspace:', request.path);
-    return Promise.resolve({
-      workspaceId: '1',
-      rootPath: request.path,
-      fileCount: 0,
-    });
+  static async openWorkspace(request: OpenWorkspaceRequest): Promise<OpenWorkspaceResponse> {
+    return await invoke<OpenWorkspaceResponse>('open_workspace', { request });
   }
 
-  static async listDirectory(request: { path: string }) {
-    // TODO: Connect to Tauri command
-    console.log('Listing directory:', request.path);
-    return Promise.resolve([]);
+  static async listDirectory(request: ListDirectoryRequest): Promise<DirectoryEntryDto[]> {
+    return await invoke<DirectoryEntryDto[]>('list_directory', { request });
+  }
+
+  static async openFile(request: OpenFileRequest): Promise<OpenFileResponse> {
+    return await invoke<OpenFileResponse>('open_file', { request });
+  }
+
+  static async saveFile(request: SaveFileRequest): Promise<void> {
+    return await invoke<void>('save_file', { request });
   }
 }

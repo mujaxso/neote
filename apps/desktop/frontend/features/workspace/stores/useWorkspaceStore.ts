@@ -1,17 +1,11 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
+import { WorkspaceService, type OpenWorkspaceResponse, type DirectoryEntryDto } from '../services/workspaceService';
 
 interface Workspace {
   id: string;
   name: string;
   rootPath: string;
-}
-
-interface DirectoryEntryDto {
-  path: string;
-  name: string;
-  isDir: boolean;
-  fileType?: string;
 }
 
 interface WorkspaceStore {
@@ -26,6 +20,8 @@ interface WorkspaceStore {
   refreshFileTree: () => Promise<void>;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
+  setCurrentWorkspace: (workspace: Workspace | null) => void;
+  setFileTree: (tree: DirectoryEntryDto[]) => void;
 }
 
 export const useWorkspaceStore = create<WorkspaceStore>()(
@@ -40,13 +36,12 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
         openWorkspace: async (path: string) => {
           set({ isLoading: true, error: null });
           try {
-            // TODO: Replace with actual Tauri command
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            const response = await WorkspaceService.openWorkspace({ path });
             
             const workspace: Workspace = {
-              id: '1',
-              name: path.split('/').pop() || 'Workspace',
-              rootPath: path,
+              id: response.workspaceId,
+              name: path.split(/[\\/]/).pop() || 'Workspace',
+              rootPath: response.rootPath,
             };
             
             set({ 
@@ -69,14 +64,9 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
           if (!currentWorkspace) return;
           
           try {
-            // TODO: Replace with actual Tauri command
-            await new Promise(resolve => setTimeout(resolve, 500));
-            
-            const entries: DirectoryEntryDto[] = [
-              { path: `${currentWorkspace.rootPath}/Cargo.toml`, name: 'Cargo.toml', isDir: false, fileType: 'toml' },
-              { path: `${currentWorkspace.rootPath}/src`, name: 'src', isDir: true },
-              { path: `${currentWorkspace.rootPath}/README.md`, name: 'README.md', isDir: false, fileType: 'markdown' },
-            ];
+            const entries = await WorkspaceService.listDirectory({ 
+              path: currentWorkspace.rootPath 
+            });
             
             set({ fileTree: entries });
           } catch (error) {
@@ -86,6 +76,8 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
         
         setLoading: (loading) => set({ isLoading: loading }),
         setError: (error) => set({ error }),
+        setCurrentWorkspace: (workspace) => set({ currentWorkspace: workspace }),
+        setFileTree: (tree) => set({ fileTree: tree }),
       }),
       {
         name: 'workspace-storage',

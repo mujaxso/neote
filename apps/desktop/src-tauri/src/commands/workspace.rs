@@ -1,5 +1,10 @@
+use std::path::PathBuf;
+use std::sync::Arc;
 use serde::{Deserialize, Serialize};
 use tauri::command;
+use tauri::State;
+
+use crate::services::workspace_service::WorkspaceService;
 
 #[derive(Debug, Deserialize)]
 pub struct OpenWorkspaceRequest {
@@ -14,13 +19,25 @@ pub struct OpenWorkspaceResponse {
 }
 
 #[command]
-pub async fn open_workspace(request: OpenWorkspaceRequest) -> Result<OpenWorkspaceResponse, String> {
-    // TODO: Implement workspace opening
-    Ok(OpenWorkspaceResponse {
-        workspace_id: "1".to_string(),
-        root_path: request.path,
-        file_count: 0,
-    })
+pub async fn open_workspace(
+    request: OpenWorkspaceRequest,
+    workspace_service: State<'_, Arc<WorkspaceService>>,
+) -> Result<OpenWorkspaceResponse, String> {
+    let path = PathBuf::from(&request.path);
+    
+    // Validate path exists
+    if !path.exists() {
+        return Err(format!("Path does not exist: {}", request.path));
+    }
+    
+    // Open workspace using the service
+    let workspace = workspace_service.open_workspace(path)
+        .await
+        .map_err(|e| format!("Failed to open workspace: {}", e))?;
+    
+    // Convert to DTO
+    let response = crate::adapters::workspace_adapter::domain_workspace_to_dto(&workspace);
+    Ok(response)
 }
 
 #[derive(Debug, Deserialize)]
@@ -37,32 +54,77 @@ pub struct DirectoryEntryDto {
 }
 
 #[command]
-pub async fn list_directory(request: ListDirectoryRequest) -> Result<Vec<DirectoryEntryDto>, String> {
-    // TODO: Implement directory listing
-    Ok(vec![
-        DirectoryEntryDto {
-            path: format!("{}/Cargo.toml", request.path),
-            name: "Cargo.toml".to_string(),
-            is_dir: false,
-            file_type: Some("toml".to_string()),
-        },
-        DirectoryEntryDto {
-            path: format!("{}/src", request.path),
-            name: "src".to_string(),
-            is_dir: true,
-            file_type: None,
-        },
-    ])
+pub async fn list_directory(
+    request: ListDirectoryRequest,
+    workspace_service: State<'_, Arc<WorkspaceService>>,
+) -> Result<Vec<DirectoryEntryDto>, String> {
+    let path = PathBuf::from(&request.path);
+    
+    // Validate path exists
+    if !path.exists() {
+        return Err(format!("Path does not exist: {}", request.path));
+    }
+    
+    // List directory using the service
+    let entries = workspace_service.list_directory(path)
+        .await
+        .map_err(|e| format!("Failed to list directory: {}", e))?;
+    
+    // Convert to DTOs
+    let dtos = entries.iter()
+        .map(crate::adapters::workspace_adapter::file_entry_to_dto)
+        .collect();
+    
+    Ok(dtos)
+}
+
+#[derive(Debug, Deserialize)]
+pub struct OpenFileRequest {
+    pub path: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct OpenFileResponse {
+    pub content: String,
+    pub language: Option<String>,
 }
 
 #[command]
-pub async fn open_file() -> Result<(), String> {
-    // TODO: Implement file opening
-    Ok(())
+pub async fn open_file(request: OpenFileRequest) -> Result<OpenFileResponse, String> {
+    use std::fs;
+    
+    let path = PathBuf::from(&request.path);
+    
+    // Read file content
+    let content = fs::read_to_string(&path)
+        .map_err(|e| format!("Failed to read file: {}", e))?;
+    
+    // Determine language from file extension
+    let language = path.extension()
+        .and_then(|ext| ext.to_str())
+        .map(|s| s.to_string());
+    
+    Ok(OpenFileResponse {
+        content,
+        language,
+    })
+}
+
+#[derive(Debug, Deserialize)]
+pub struct SaveFileRequest {
+    pub path: String,
+    pub content: String,
 }
 
 #[command]
-pub async fn save_file() -> Result<(), String> {
-    // TODO: Implement file saving
+pub async fn save_file(request: SaveFileRequest) -> Result<(), String> {
+    use std::fs;
+    
+    let path = PathBuf::from(&request.path);
+    
+    // Write file content
+    fs::write(&path, request.content)
+        .map_err(|e| format!("Failed to save file: {}", e))?;
+    
     Ok(())
 }

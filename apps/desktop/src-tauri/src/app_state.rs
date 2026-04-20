@@ -1,8 +1,11 @@
+// App state placeholder for future use
 #[derive(Default)]
 pub struct AppState {
-    // Add your app state here
+    // Will be used for additional app state in the future
 }
 
 impl AppState {
-    // No custom constructor needed - using Default
+    pub fn new() -> Self {
+        Self::default()
+    }
 }

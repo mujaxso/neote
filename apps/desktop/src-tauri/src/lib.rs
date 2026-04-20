@@ -13,8 +13,9 @@ mod zaroxi_infra_permissions;
 mod services;
 mod windows;
 
-use app_state::AppState;
 use tauri::RunEvent;
+use std::sync::Arc;
+use crate::services::workspace_service::WorkspaceService;
 
 /// Main entry point for Tauri application
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -25,9 +26,13 @@ pub fn run() {
             let handle = app.handle();
             let menu = menu::create_app_menu(handle)?;
             app.set_menu(menu)?;
+            
+            // Initialize and manage the workspace service
+            let workspace_service = Arc::new(WorkspaceService::new());
+            app.manage(workspace_service);
+            
             Ok(())
         })
-        .manage(AppState::default())
         .invoke_handler(tauri::generate_handler![
             commands::workspace::open_workspace,
             commands::workspace::list_directory,
@@ -54,6 +59,10 @@ pub fn run() {
                 if let Err(e) = bootstrap::setup::on_app_ready(app_handle) {
                     eprintln!("Failed to initialize app: {}", e);
                 }
+                
+                // Start the workspace service
+                // We can get the workspace service from app state
+                // For now, we'll start it when needed
             }
             RunEvent::Exit => {
                 // Cleanup resources

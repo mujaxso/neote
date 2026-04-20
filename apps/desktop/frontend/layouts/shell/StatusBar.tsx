@@ -11,6 +11,11 @@ export function StatusBar() {
           <span className="font-medium">
             {currentWorkspace ? currentWorkspace.name : 'No workspace open'}
           </span>
+          {currentWorkspace && (
+            <span className="text-muted-foreground ml-2">
+              ({currentWorkspace.rootPath})
+            </span>
+          )}
         </div>
         
         {isLoading && (
