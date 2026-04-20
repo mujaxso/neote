@@ -21,6 +21,7 @@ export function ExplorerContainer() {
   const handleOpenWorkspace = async () => {
     try {
       setLoading(true);
+      setError(null);
       const dialogResult = await WorkspaceService.openFileDialog();
       
       if (dialogResult.selectedPath) {
@@ -34,6 +35,7 @@ export function ExplorerContainer() {
             rootPath: workspace.rootPath
           });
           console.log('[ExplorerContainer] Tree received with', tree.tree.length, 'nodes');
+          console.log('[ExplorerContainer] Tree sample:', tree.tree.slice(0, 3));
           
           setCurrentWorkspace(workspace);
           setWorkspaceTree(tree.tree);
@@ -43,10 +45,13 @@ export function ExplorerContainer() {
           console.error('[ExplorerContainer] Error:', error);
           throw error;
         }
+      } else {
+        console.log('[ExplorerContainer] No path selected');
       }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Failed to open workspace';
       setError(errorMsg);
+      console.error('[ExplorerContainer] Failed to open workspace:', error);
     } finally {
       setLoading(false);
     }
@@ -151,7 +156,8 @@ export function ExplorerContainer() {
     hasWorkspace: !!currentWorkspace
   });
 
-  if (isLoading && workspaceTree.length === 0) {
+  // Loading state
+  if (isLoading) {
     return (
       <div className="p-4">
         <div className="space-y-2">
@@ -166,7 +172,8 @@ export function ExplorerContainer() {
     );
   }
 
-  if (workspaceTree.length === 0) {
+  // Workspace is open but tree is empty (could be empty directory or error)
+  if (currentWorkspace && workspaceTree.length === 0) {
     return (
       <div className="p-8 text-center text-muted-foreground">
         <p>No files found in workspace.</p>

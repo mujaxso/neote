@@ -83,7 +83,15 @@ export interface WorkspaceEvent {
 export class WorkspaceService {
   // Command operations
   static async openWorkspace(request: OpenWorkspaceRequest): Promise<OpenWorkspaceResponse> {
-    return await bridge.invoke<OpenWorkspaceResponse>('open_workspace', { request });
+    console.log('[WorkspaceService] openWorkspace called with:', request);
+    try {
+      const result = await bridge.invoke<OpenWorkspaceResponse>('open_workspace', { request });
+      console.log('[WorkspaceService] openWorkspace result:', result);
+      return result;
+    } catch (error) {
+      console.error('[WorkspaceService] openWorkspace error:', error);
+      throw error;
+    }
   }
 
   static async listDirectory(request: ListDirectoryRequest): Promise<DirectoryEntryDto[]> {
@@ -104,7 +112,19 @@ export class WorkspaceService {
 
   // Explorer-specific operations
   static async getWorkspaceTree(request: WorkspaceTreeRequest): Promise<WorkspaceTreeResponse> {
-    return await bridge.invoke<WorkspaceTreeResponse>('get_workspace_tree', { request });
+    console.log('[WorkspaceService] getWorkspaceTree called with:', request);
+    try {
+      const result = await bridge.invoke<WorkspaceTreeResponse>('get_workspace_tree', { request });
+      console.log('[WorkspaceService] getWorkspaceTree result:', result);
+      console.log('[WorkspaceService] Tree length:', result.tree.length);
+      if (result.tree.length > 0) {
+        console.log('[WorkspaceService] First few nodes:', result.tree.slice(0, 3));
+      }
+      return result;
+    } catch (error) {
+      console.error('[WorkspaceService] getWorkspaceTree error:', error);
+      throw error;
+    }
   }
 
   static async loadDirectoryChildren(path: string): Promise<DirectoryEntryDto[]> {

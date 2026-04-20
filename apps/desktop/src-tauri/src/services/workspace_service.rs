@@ -94,6 +94,14 @@ impl WorkspaceService {
     pub async fn build_workspace_tree(&self, root_path: PathBuf) -> Result<Vec<ExplorerTreeNode>> {
         info!("Building workspace tree from root: {:?}", root_path);
         
+        // Ensure the path exists and is a directory
+        if !root_path.exists() {
+            return Err(anyhow::anyhow!("Path does not exist: {:?}", root_path));
+        }
+        if !root_path.is_dir() {
+            return Err(anyhow::anyhow!("Path is not a directory: {:?}", root_path));
+        }
+        
         let mut tree = Vec::new();
         
         // Get immediate children of the root directory
@@ -101,7 +109,7 @@ impl WorkspaceService {
             Ok(entries) => entries,
             Err(e) => {
                 eprintln!("Failed to list root directory {:?}: {}", root_path, e);
-                return Ok(Vec::new());
+                return Err(anyhow::anyhow!("Failed to list directory: {}", e));
             }
         };
         
@@ -120,6 +128,12 @@ impl WorkspaceService {
         });
         
         for entry in entries {
+            let modified_str = entry.modified.and_then(|t| {
+                let duration = t.duration_since(std::time::UNIX_EPOCH).ok()?;
+                chrono::DateTime::from_timestamp(duration.as_secs() as i64, 0)
+                    .map(|dt| dt.format("%Y-%m-%d %H:%M:%S").to_string())
+            });
+            
             let node = ExplorerTreeNode {
                 id: entry.path.clone(),
                 path: entry.path.clone(),
@@ -127,13 +141,7 @@ impl WorkspaceService {
                 is_dir: entry.is_dir,
                 file_type: entry.file_type.clone(),
                 size: entry.size,
-                modified: entry.modified.and_then(|t| {
-                    chrono::DateTime::from_timestamp(
-                        t.duration_since(std::time::UNIX_EPOCH).ok()?.as_secs() as i64,
-                        0
-                    )
-                    .map(|dt| dt.format("%Y-%m-%d %H:%M:%S").to_string())
-                }),
+                modified: modified_str,
                 children: if entry.is_dir {
                     // For directories, we'll load children lazily
                     Some(Vec::new())
@@ -149,7 +157,7 @@ impl WorkspaceService {
         if tree.is_empty() {
             info!("Tree is empty - directory might be empty or inaccessible");
         } else {
-            info!("Sample node: {:?}", tree[0]);
+            info!("Sample node: path={}, name={}, is_dir={}", tree[0].path, tree[0].name, tree[0].is_dir);
         }
         Ok(tree)
     }
