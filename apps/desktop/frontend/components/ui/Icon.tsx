@@ -16,16 +16,20 @@ export function Icon({ name, size = 16, className, label }: IconProps) {
       className={cn(
         'font-icon inline-flex items-center justify-center antialiased',
         'leading-none tracking-normal',
+        'select-none',
         className
       )}
       style={{ 
         fontSize: size,
         width: size,
         height: size,
+        fontVariantLigatures: 'normal',
+        fontFeatureSettings: '"liga" 1, "calt" 1',
       }}
       role="img"
       aria-label={label || name}
       title={label || name}
+      data-icon-name={name}
     >
       {iconGlyph}
     </span>
