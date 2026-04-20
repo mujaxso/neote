@@ -65,6 +65,20 @@ export function ExplorerContainer() {
     } else {
       // Open file in editor
       setActiveFilePath(node.path);
+      
+      // Check if we're in Tauri environment - use multiple detection methods
+      const isTauri = 
+        typeof window !== 'undefined' && 
+        (window.__TAURI__ !== undefined || 
+         (window as any).__TAURI_INTERNALS__ !== undefined ||
+         navigator.userAgent.includes('Tauri'));
+      
+      if (!isTauri) {
+        console.warn('[ExplorerContainer] Not in Tauri environment - file operations disabled');
+        setError('File operations require running the app through Tauri (npm run tauri dev)');
+        return;
+      }
+      
       try {
         await WorkspaceService.openFileInEditor(node.path);
       } catch (error) {
