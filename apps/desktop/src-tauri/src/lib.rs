@@ -20,6 +20,22 @@ use crate::services::workspace_service::WorkspaceService;
 /// Main entry point for Tauri application
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // Initialize tracing subscriber for logging
+    #[cfg(debug_assertions)]
+    {
+        use tracing_subscriber::{fmt, prelude::*, EnvFilter};
+        
+        let filter = EnvFilter::try_from_default_env()
+            .unwrap_or_else(|_| EnvFilter::new("info,workspace_service=debug,tauri=warn"));
+        
+        tracing_subscriber::registry()
+            .with(fmt::layer().with_writer(std::io::stdout))
+            .with(filter)
+            .init();
+        
+        tracing::info!("Tracing initialized for Zaroxi Desktop");
+    }
+    
     tauri::Builder::default()
         .setup(|app| {
             // Create menu for the main window
@@ -30,6 +46,8 @@ pub fn run() {
             // Initialize and manage the workspace service
             let workspace_service = Arc::new(WorkspaceService::new());
             app.manage(workspace_service);
+            
+            tracing::info!("Zaroxi Desktop app setup complete");
             
             Ok(())
         })
@@ -57,9 +75,11 @@ pub fn run() {
         .expect("Failed to build Tauri application")
         .run(|app_handle, event| match event {
             RunEvent::Ready => {
+                tracing::info!("App is ready");
+                
                 // Initialize services after app is ready
                 if let Err(e) = bootstrap::setup::on_app_ready(app_handle) {
-                    eprintln!("Failed to initialize app: {}", e);
+                    tracing::error!("Failed to initialize app: {}", e);
                 }
                 
                 // Start the workspace service
@@ -67,6 +87,7 @@ pub fn run() {
                 // For now, we'll start it when needed
             }
             RunEvent::Exit => {
+                tracing::info!("App is exiting");
                 // Cleanup resources
                 events::emitter::broadcast_shutdown(app_handle);
             }

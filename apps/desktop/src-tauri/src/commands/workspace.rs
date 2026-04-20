@@ -37,7 +37,7 @@ pub async fn open_workspace(
     workspace_service: State<'_, Arc<WorkspaceService>>,
     app_handle: AppHandle,
 ) -> Result<OpenWorkspaceResponse, String> {
-    use tracing::info;
+    use tracing::{info, warn, error};
     
     info!("Opening workspace at path: {}", request.path);
     
@@ -45,23 +45,38 @@ pub async fn open_workspace(
     
     // Validate path exists
     if !path.exists() {
+        error!("Path does not exist: {}", request.path);
         return Err(format!("Path does not exist: {}", request.path));
     }
     
-    // Open workspace using the service
-    let workspace = workspace_service.open_workspace(path)
-        .await
-        .map_err(|e| format!("Failed to open workspace: {}", e))?;
+    if !path.is_dir() {
+        error!("Path is not a directory: {}", request.path);
+        return Err(format!("Path is not a directory: {}", request.path));
+    }
     
-    info!("Workspace opened: {} ({})", workspace.name, workspace.id);
+    info!("Path exists and is a directory, opening workspace...");
+    
+    // Open workspace using the service
+    let workspace = match workspace_service.open_workspace(path).await {
+        Ok(workspace) => {
+            info!("Workspace opened successfully: {} ({})", workspace.name, workspace.id);
+            workspace
+        }
+        Err(e) => {
+            error!("Failed to open workspace: {}", e);
+            return Err(format!("Failed to open workspace: {}", e));
+        }
+    };
     
     // Convert to DTO
     let response = crate::adapters::workspace_adapter::domain_workspace_to_dto(&workspace);
+    info!("Converted to DTO: workspace_id={}, root_path={}, file_count={}", 
+          response.workspace_id, response.root_path, response.file_count);
     
     // Emit event
     let emitter = crate::events::workspace_events::WorkspaceEventEmitter::new(&app_handle);
     if let Err(e) = emitter.emit_workspace_opened(&workspace.id.to_string(), &workspace.root_path) {
-        eprintln!("Failed to emit workspace opened event: {}", e);
+        error!("Failed to emit workspace opened event: {}", e);
     } else {
         info!("Emitted workspace opened event");
     }

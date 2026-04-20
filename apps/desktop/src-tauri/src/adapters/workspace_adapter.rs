@@ -5,17 +5,31 @@ use chrono::{DateTime, Utc};
 pub fn domain_workspace_to_dto(
     workspace: &zaroxi_domain_workspace::workspace::Workspace,
 ) -> crate::commands::workspace::OpenWorkspaceResponse {
+    use tracing::{info, warn, error};
+    
     // Count files in the workspace directory
     let file_count = match std::fs::read_dir(&workspace.root_path) {
-        Ok(entries) => entries.count(),
-        Err(_) => 0,
+        Ok(entries) => {
+            let count = entries.count();
+            info!("Counted {} entries in workspace directory: {}", count, workspace.root_path);
+            count
+        }
+        Err(e) => {
+            error!("Failed to read directory {}: {}", workspace.root_path, e);
+            0
+        }
     };
     
-    crate::commands::workspace::OpenWorkspaceResponse {
+    let response = crate::commands::workspace::OpenWorkspaceResponse {
         workspace_id: workspace.id.to_string(),
         root_path: workspace.root_path.clone(),
         file_count,
-    }
+    };
+    
+    info!("Created DTO: workspace_id={}, root_path={}, file_count={}", 
+          response.workspace_id, response.root_path, response.file_count);
+    
+    response
 }
 
 /// Convert file entry to DTO
