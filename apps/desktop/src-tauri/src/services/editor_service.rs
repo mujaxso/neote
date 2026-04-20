@@ -11,7 +11,7 @@ impl EditorService {
     }
 
     /// Create a new document from file content
-    pub fn create_document_from_file(&self, path: PathBuf, content: String) -> Result<Document> {
+    pub fn create_document_from_file(&self, _path: PathBuf, content: String) -> Result<Document> {
         let mut document = Document::new();
         
         // Insert content into document
@@ -27,7 +27,7 @@ impl EditorService {
     }
 
     /// Get document content as string
-    pub fn get_document_content(&self, document: &Document) -> String {
+    pub fn get_document_content(&self, _document: &Document) -> String {
         // This is a simplified implementation
         // In reality, we need to extract text from the rope
         // For now, return empty string
