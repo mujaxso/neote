@@ -4,6 +4,8 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 use tracing::info;
 use anyhow::Result;
+use uuid::Uuid;
+use chrono::{DateTime, Utc};
 
 /// Workspace service for handling workspace operations.
 pub struct WorkspaceService {
@@ -106,5 +108,4 @@ pub struct WorkspaceMetadata {
     pub file_count: usize,
     pub total_size: u64,
     pub last_indexed: Option<chrono::DateTime<chrono::Utc>>,
-}
 }
