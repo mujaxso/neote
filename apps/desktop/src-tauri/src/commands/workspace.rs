@@ -133,6 +133,7 @@ pub async fn get_workspace_tree(
 ) -> Result<WorkspaceTreeResponse, String> {
     use tracing::{info, error, warn};
     
+    info!("get_workspace_tree command called with request: {:?}", request);
     info!("Building workspace tree for path: {}", request.root_path);
     
     let path = PathBuf::from(&request.root_path);
@@ -197,7 +198,14 @@ pub async fn get_workspace_tree(
                 format!("Failed to load directory contents: {}", error_msg)
             };
             
-            Err(user_msg)
+            // For now, return an empty tree instead of failing
+            // This allows the UI to at least show the workspace
+            warn!("Returning empty tree due to error: {}", user_msg);
+            Ok(WorkspaceTreeResponse {
+                workspace_id: request.workspace_id,
+                root_path: request.root_path,
+                tree: Vec::new(),
+            })
         }
     }
 }

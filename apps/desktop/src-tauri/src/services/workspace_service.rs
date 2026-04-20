@@ -172,7 +172,7 @@ impl WorkspaceService {
                 } else {
                     None
                 },
-                parent_path: root_path.to_string_lossy().to_string(),
+                parent_path: Some(root_path.to_string_lossy().to_string()),
             };
             tree.push(node);
         }
@@ -228,5 +228,6 @@ pub struct ExplorerTreeNode {
     pub size: Option<u64>,
     pub modified: Option<String>,
     pub children: Option<Vec<ExplorerTreeNode>>,
-    pub parent_path: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub parent_path: Option<String>,
 }
