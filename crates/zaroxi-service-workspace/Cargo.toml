@@ -1,9 +1,17 @@
 [package]
 name = "zaroxi-service-workspace"
-version = "0.1.0"
-edition = "2024"
-license = "MIT"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
 description = "Workspace service orchestration logic for Zaroxi Studio"
+authors = ["Zaroxi Team"]
+repository = "https://github.com/zaroxi/zaroxi"
+readme = "README.md"
+rust-version = "1.85.0"
+
+[lib]
+name = "zaroxi_service_workspace"
+path = "src/lib.rs"
 
 [dependencies]
 zaroxi-domain-workspace = { workspace = true }
