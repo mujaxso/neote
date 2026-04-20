@@ -22,7 +22,7 @@ export function WorkspaceExplorer({
   onOpenFile, 
   onOpenFolder 
 }: WorkspaceExplorerProps) {
-  const { openWorkspaceViaDialog, currentWorkspace } = useWorkspaceStore();
+  const { openWorkspaceViaDialog, currentWorkspace, currentDirectory, navigateToParent } = useWorkspaceStore();
 
   const handleOpenWorkspace = async () => {
     await openWorkspaceViaDialog();
@@ -87,11 +87,13 @@ export function WorkspaceExplorer({
         </div>
         <div className="text-center text-muted-foreground py-8">
           <p>No files to display</p>
-          <p className="text-sm mt-1">Workspace: {currentWorkspace.name}</p>
+          <p className="text-sm mt-1">Directory: {currentDirectory || currentWorkspace.rootPath}</p>
         </div>
       </div>
     );
   }
+
+  const isAtRoot = currentDirectory === currentWorkspace.rootPath;
 
   return (
     <div className="py-2">
@@ -111,7 +113,26 @@ export function WorkspaceExplorer({
           </button>
         </div>
       </div>
-      <div className="space-y-1">
+      
+      {/* Current directory path and navigation */}
+      <div className="px-3 py-2 border-b border-border">
+        <div className="flex items-center justify-between">
+          <div className="text-xs text-muted-foreground truncate">
+            {currentDirectory || currentWorkspace.rootPath}
+          </div>
+          {!isAtRoot && (
+            <button
+              onClick={navigateToParent}
+              className="text-xs px-2 py-1 bg-muted rounded hover:bg-muted/80"
+              title="Go up"
+            >
+              <Icon name="arrow-up" size={12} />
+            </button>
+          )}
+        </div>
+      </div>
+      
+      <div className="space-y-1 mt-2">
         {files.map((file) => (
           <button
             key={file.path}

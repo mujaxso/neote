@@ -11,6 +11,7 @@ interface Workspace {
 interface WorkspaceStore {
   // State
   currentWorkspace: Workspace | null;
+  currentDirectory: string | null;
   fileTree: DirectoryEntryDto[];
   isLoading: boolean;
   error: string | null;
@@ -20,9 +21,11 @@ interface WorkspaceStore {
   openWorkspaceViaDialog: () => Promise<void>;
   refreshFileTree: (path?: string) => Promise<void>;
   openFolder: (path: string) => Promise<void>;
+  navigateToParent: () => Promise<void>;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   setCurrentWorkspace: (workspace: Workspace | null) => void;
+  setCurrentDirectory: (path: string | null) => void;
   setFileTree: (tree: DirectoryEntryDto[]) => void;
 }
 
@@ -31,6 +34,7 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
     persist(
       (set, get) => ({
         currentWorkspace: null,
+        currentDirectory: null,
         fileTree: [],
         isLoading: false,
         error: null,
@@ -48,11 +52,12 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
             
             set({ 
               currentWorkspace: workspace,
+              currentDirectory: response.rootPath,
               isLoading: false 
             });
             
             // Refresh file tree after opening
-            await get().refreshFileTree();
+            await get().refreshFileTree(response.rootPath);
           } catch (error) {
             set({ 
               error: error instanceof Error ? error.message : 'Unknown error',
@@ -83,11 +88,12 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
             
             set({ 
               currentWorkspace: workspace,
+              currentDirectory: response.rootPath,
               isLoading: false 
             });
             
             // Refresh file tree after opening
-            await get().refreshFileTree();
+            await get().refreshFileTree(response.rootPath);
           } catch (error) {
             set({ 
               error: error instanceof Error ? error.message : 'Unknown error',
@@ -107,7 +113,10 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
               path: targetPath 
             });
             
-            set({ fileTree: entries });
+            set({ 
+              fileTree: entries,
+              currentDirectory: targetPath 
+            });
           } catch (error) {
             console.error('Failed to refresh file tree:', error);
           }
@@ -121,6 +130,17 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
             await get().refreshFileTree(path);
           } catch (error) {
             console.error('Failed to open folder:', error);
+          }
+        },
+        
+        navigateToParent: async () => {
+          const { currentDirectory } = get();
+          if (!currentDirectory) return;
+          
+          // Get parent directory
+          const parentPath = currentDirectory.split(/[\\/]/).slice(0, -1).join('/');
+          if (parentPath) {
+            await get().refreshFileTree(parentPath);
           }
         },
         setFileTree: (tree) => set({ fileTree: tree }),

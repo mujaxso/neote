@@ -24,6 +24,21 @@ export function EditorContainer({ filePath }: EditorContainerProps) {
       setLanguage('rust');
       setFileName('editor.rs');
     }
+    
+    // Add keyboard shortcut for save (Ctrl+S)
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        if (filePath) {
+          handleEditorSave();
+        }
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
   }, [filePath]);
 
   const loadFile = async (path: string) => {
@@ -59,8 +74,34 @@ export function EditorContainer({ filePath }: EditorContainerProps) {
         content: content,
       });
       console.log('File saved successfully');
+      // Show a temporary success message
+      const saveBtn = document.querySelector('.save-button');
+      if (saveBtn) {
+        const originalText = saveBtn.textContent;
+        saveBtn.textContent = 'Saved!';
+        saveBtn.classList.add('bg-green-500');
+        setTimeout(() => {
+          if (saveBtn.textContent === 'Saved!') {
+            saveBtn.textContent = originalText;
+            saveBtn.classList.remove('bg-green-500');
+          }
+        }, 1000);
+      }
     } catch (error) {
       console.error('Failed to save file:', error);
+      // Show error
+      const saveBtn = document.querySelector('.save-button');
+      if (saveBtn) {
+        const originalText = saveBtn.textContent;
+        saveBtn.textContent = 'Error!';
+        saveBtn.classList.add('bg-red-500');
+        setTimeout(() => {
+          if (saveBtn.textContent === 'Error!') {
+            saveBtn.textContent = originalText;
+            saveBtn.classList.remove('bg-red-500');
+          }
+        }, 1000);
+      }
     }
   };
 
@@ -77,7 +118,7 @@ export function EditorContainer({ filePath }: EditorContainerProps) {
           {filePath && (
             <button
               onClick={handleEditorSave}
-              className="px-3 py-1 text-xs bg-primary text-primary-foreground rounded hover:bg-primary/90"
+              className="save-button px-3 py-1 text-xs bg-primary text-primary-foreground rounded hover:bg-primary/90 transition-colors"
             >
               Save
             </button>
