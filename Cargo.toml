@@ -48,3 +48,22 @@ parking_lot = "0.12"
 log = "0.4"
 env_logger = "0.11"
 tauri = { version = "2.10.3", features = [] }
+tauri-build = "2.10.3"
+
+# Add workspace crate dependencies
+zaroxi-protocol = { path = "crates/zaroxi-protocol" }
+zaroxi-domain-editor = { path = "crates/zaroxi-domain-editor" }
+zaroxi-domain-workspace = { path = "crates/zaroxi-domain-workspace" }
+zaroxi-domain-ai-context = { path = "crates/zaroxi-domain-ai-context" }
+zaroxi-ai-agent = { path = "crates/zaroxi-ai-agent" }
+zaroxi-ops-patch = { path = "crates/zaroxi-ops-patch" }
+zaroxi-infra-rpc = { path = "crates/zaroxi-infra-rpc" }
+zaroxi-infra-settings = { path = "crates/zaroxi-infra-settings" }
+zaroxi-infra-permissions = { path = "crates/zaroxi-infra-permissions" }
+zaroxi-ops-file = { path = "crates/zaroxi-ops-file" }
+zaroxi-lang-syntax = { path = "crates/zaroxi-lang-syntax" }
+zaroxi-theme = { path = "crates/zaroxi-theme" }
+zaroxi-service-ai = { path = "crates/zaroxi-service-ai" }
+zaroxi-service-workspace = { path = "crates/zaroxi-service-workspace" }
+zaroxi-lang-lsp = { path = "crates/zaroxi-lang-lsp" }
+zaroxi-core-ids = { path = "crates/zaroxi-core-ids" }
