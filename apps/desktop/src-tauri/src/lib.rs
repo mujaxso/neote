@@ -36,6 +36,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::workspace::open_workspace,
             commands::workspace::list_directory,
+            commands::workspace::get_workspace_tree,
             commands::workspace::open_file,
             commands::workspace::save_file,
             commands::workspace::open_file_dialog,
