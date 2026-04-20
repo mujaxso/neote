@@ -6,9 +6,10 @@ interface IconProps {
   size?: number;
   className?: string;
   label?: string;
+  debug?: boolean;
 }
 
-export function Icon({ name, size = 16, className, label }: IconProps) {
+export function Icon({ name, size = 16, className, label, debug = false }: IconProps) {
   const iconGlyph = nerdFontIcons[name] || '?';
   
   return (
@@ -17,6 +18,7 @@ export function Icon({ name, size = 16, className, label }: IconProps) {
         'font-icon inline-flex items-center justify-center antialiased',
         'leading-none tracking-normal',
         'select-none',
+        debug && 'outline outline-1 outline-red-500',
         className
       )}
       style={{ 
@@ -30,6 +32,7 @@ export function Icon({ name, size = 16, className, label }: IconProps) {
       aria-label={label || name}
       title={label || name}
       data-icon-name={name}
+      data-debug-font="JetBrainsMonoNL Nerd Font Mono"
     >
       {iconGlyph}
     </span>

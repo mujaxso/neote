@@ -30,7 +30,7 @@ export function StatusBar() {
       
       <div className="flex items-center space-x-4 font-mono">
         <div className="flex items-center space-x-1">
-          <Icon name="file-code" size={12} className="text-muted-foreground" label="Encoding" />
+          <Icon name="file-code" size={12} className="text-muted-foreground" label="Encoding" debug={true} />
           <span className="text-muted-foreground">UTF-8</span>
         </div>
         <div className="flex items-center space-x-1">

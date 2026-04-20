@@ -50,6 +50,24 @@ export function FontLoader() {
         testElement2.textContent = 'A'; // Regular character
         document.body.appendChild(testElement2);
         
+        // Test with multiple known Nerd Font icons
+        const testIcons = ['', '', '', '', '']; // Rust, folder, folder-open, settings, search
+        const testElements = testIcons.map((icon, i) => {
+          const el = document.createElement('span');
+          el.style.fontFamily = '"JetBrainsMonoNL Nerd Font Mono", monospace';
+          el.style.fontSize = '20px';
+          el.style.position = 'fixed';
+          el.style.top = `${10 + i * 30}px`;
+          el.style.left = '10px';
+          el.style.backgroundColor = 'rgba(0,0,0,0.7)';
+          el.style.color = 'white';
+          el.style.padding = '5px';
+          el.style.zIndex = '99999';
+          el.textContent = `Icon ${i}: ${icon}`;
+          document.body.appendChild(el);
+          return el;
+        });
+        
         // Check if the font is being used
         setTimeout(() => {
           const isFontApplied = document.fonts.check('20px "JetBrainsMonoNL Nerd Font Mono"');
@@ -66,8 +84,23 @@ export function FontLoader() {
           console.log('Icon element width:', testElement.offsetWidth);
           console.log('Regular char width:', testElement2.offsetWidth);
           
+          // Log each test icon
+          testElements.forEach((el, i) => {
+            console.log(`Test icon ${i}:`, {
+              text: el.textContent,
+              width: el.offsetWidth,
+              height: el.offsetHeight,
+              computedFont: window.getComputedStyle(el).fontFamily
+            });
+          });
+          
           document.body.removeChild(testElement);
           document.body.removeChild(testElement2);
+          testElements.forEach(el => {
+            if (document.body.contains(el)) {
+              document.body.removeChild(el);
+            }
+          });
           
           if (isFontApplied) {
             document.body.classList.add('fonts-loaded');
@@ -77,7 +110,7 @@ export function FontLoader() {
             console.warn('Font loaded but not applied. Using fallback:', computedStyle.fontFamily);
             setFontsLoaded(false);
           }
-        }, 200);
+        }, 500);
         
       } catch (error) {
         console.error('Failed to load JetBrainsMonoNL Nerd Font Mono:', error);
