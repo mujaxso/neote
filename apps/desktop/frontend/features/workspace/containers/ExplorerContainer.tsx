@@ -21,17 +21,26 @@ export function ExplorerContainer() {
   const handleOpenWorkspace = async () => {
     try {
       setLoading(true);
+      console.log('Opening file dialog...');
       const dialogResult = await WorkspaceService.openFileDialog();
+      console.log('Dialog result:', dialogResult);
       
       if (dialogResult.selectedPath) {
+        console.log('Selected path:', dialogResult.selectedPath);
         const result = await WorkspaceService.openWorkspaceAndLoadTree(dialogResult.selectedPath);
+        console.log('Workspace opened:', result.workspace);
+        console.log('Tree data:', result.tree.tree);
+        
         setCurrentWorkspace(result.workspace);
         setWorkspaceTree(result.tree.tree);
         // Expand the root path by default
         toggleExpanded(result.workspace.rootPath);
+      } else {
+        console.log('No path selected');
       }
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to open workspace');
+      const errorMsg = error instanceof Error ? error.message : 'Failed to open workspace';
+      setError(errorMsg);
       console.error('Failed to open workspace:', error);
     } finally {
       setLoading(false);
@@ -113,9 +122,10 @@ export function ExplorerContainer() {
           </p>
           <button
             onClick={handleOpenWorkspace}
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90 transition-colors text-sm"
+            disabled={isLoading}
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Open Workspace
+            {isLoading ? 'Opening...' : 'Open Workspace'}
           </button>
           <p className="mt-4 text-xs text-muted-foreground">
             You can also use the folder icon in the activity rail.
@@ -129,10 +139,13 @@ export function ExplorerContainer() {
     return (
       <div className="p-4">
         <div className="space-y-2">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="h-6 bg-muted rounded animate-pulse"></div>
-          ))}
+          <div className="h-4 bg-muted rounded animate-pulse w-3/4"></div>
+          <div className="h-4 bg-muted rounded animate-pulse w-1/2"></div>
+          <div className="h-4 bg-muted rounded animate-pulse w-5/6"></div>
+          <div className="h-4 bg-muted rounded animate-pulse w-2/3"></div>
+          <div className="h-4 bg-muted rounded animate-pulse w-4/5"></div>
         </div>
+        <p className="text-xs text-muted-foreground mt-4 text-center">Loading workspace tree...</p>
       </div>
     );
   }
@@ -141,6 +154,7 @@ export function ExplorerContainer() {
     return (
       <div className="p-8 text-center text-muted-foreground">
         <p>No files found in workspace.</p>
+        <p className="text-sm mt-2">Path: {currentWorkspace.rootPath}</p>
         <button
           onClick={handleOpenWorkspace}
           className="mt-4 px-4 py-2 text-sm bg-muted hover:bg-muted/80 rounded-md transition-colors"

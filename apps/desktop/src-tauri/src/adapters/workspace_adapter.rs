@@ -5,8 +5,9 @@ use chrono::{DateTime, Utc};
 pub fn domain_workspace_to_dto(
     workspace: &zaroxi_domain_workspace::workspace::Workspace,
 ) -> crate::commands::workspace::OpenWorkspaceResponse {
-    // TODO: Calculate actual file count from file tree
-    let file_count = 0;
+    // For now, we'll use a placeholder file count
+    // In a real implementation, we would count files in the workspace
+    let file_count = 1; // Placeholder
     
     crate::commands::workspace::OpenWorkspaceResponse {
         workspace_id: workspace.id.to_string(),

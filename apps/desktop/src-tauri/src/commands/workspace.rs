@@ -37,6 +37,10 @@ pub async fn open_workspace(
     workspace_service: State<'_, Arc<WorkspaceService>>,
     app_handle: AppHandle,
 ) -> Result<OpenWorkspaceResponse, String> {
+    use tracing::info;
+    
+    info!("Opening workspace at path: {}", request.path);
+    
     let path = PathBuf::from(&request.path);
     
     // Validate path exists
@@ -49,6 +53,8 @@ pub async fn open_workspace(
         .await
         .map_err(|e| format!("Failed to open workspace: {}", e))?;
     
+    info!("Workspace opened: {} ({})", workspace.name, workspace.id);
+    
     // Convert to DTO
     let response = crate::adapters::workspace_adapter::domain_workspace_to_dto(&workspace);
     
@@ -56,6 +62,8 @@ pub async fn open_workspace(
     let emitter = crate::events::workspace_events::WorkspaceEventEmitter::new(&app_handle);
     if let Err(e) = emitter.emit_workspace_opened(&workspace.id.to_string(), &workspace.root_path) {
         eprintln!("Failed to emit workspace opened event: {}", e);
+    } else {
+        info!("Emitted workspace opened event");
     }
     
     Ok(response)
@@ -106,6 +114,10 @@ pub async fn get_workspace_tree(
     request: WorkspaceTreeRequest,
     workspace_service: State<'_, Arc<WorkspaceService>>,
 ) -> Result<WorkspaceTreeResponse, String> {
+    use tracing::info;
+    
+    info!("Building workspace tree for path: {}", request.root_path);
+    
     let path = PathBuf::from(&request.root_path);
     
     // Validate path exists
@@ -116,7 +128,13 @@ pub async fn get_workspace_tree(
     // Build workspace tree
     let tree = workspace_service.build_workspace_tree(path)
         .await
-        .map_err(|e| format!("Failed to build workspace tree: {}", e))?;
+        .map_err(|e| {
+            let error_msg = format!("Failed to build workspace tree: {}", e);
+            info!("{}", error_msg);
+            error_msg
+        })?;
+    
+    info!("Built tree with {} nodes", tree.len());
     
     Ok(WorkspaceTreeResponse {
         workspace_id: request.workspace_id,
