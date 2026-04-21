@@ -27,6 +27,8 @@ export interface ActivityItem {
   description?: string;
   // Which side the panel should appear on
   side: 'left' | 'right';
+  // Position in the activity rail
+  position?: 'top' | 'bottom';
 }
 
 export const ACTIVITY_REGISTRY: ActivityItem[] = [
@@ -38,6 +40,7 @@ export const ACTIVITY_REGISTRY: ActivityItem[] = [
     available: true,
     description: 'Browse and manage workspace files',
     side: 'left',
+    position: 'top',
   },
   {
     id: 'search',
@@ -48,6 +51,7 @@ export const ACTIVITY_REGISTRY: ActivityItem[] = [
     shortcut: 'Ctrl+Shift+F',
     description: 'Search across workspace',
     side: 'left',
+    position: 'top',
   },
   {
     id: 'git',
@@ -58,6 +62,7 @@ export const ACTIVITY_REGISTRY: ActivityItem[] = [
     badge: 0,
     description: 'Git version control operations',
     side: 'left',
+    position: 'top',
   },
   {
     id: 'debug',
@@ -67,6 +72,7 @@ export const ACTIVITY_REGISTRY: ActivityItem[] = [
     available: true,
     description: 'Debug and run your code',
     side: 'left',
+    position: 'top',
   },
   {
     id: 'extensions',
@@ -76,6 +82,7 @@ export const ACTIVITY_REGISTRY: ActivityItem[] = [
     available: true,
     description: 'Manage extensions and add-ons',
     side: 'left',
+    position: 'top',
   },
   {
     id: 'assistant',
@@ -85,6 +92,7 @@ export const ACTIVITY_REGISTRY: ActivityItem[] = [
     available: true,
     description: 'AI-powered coding assistance',
     side: 'right',
+    position: 'top',
   },
   {
     id: 'settings',
@@ -94,6 +102,7 @@ export const ACTIVITY_REGISTRY: ActivityItem[] = [
     available: true,
     description: 'Configure Zaroxi settings',
     side: 'left',
+    position: 'bottom',
   },
 ];
 

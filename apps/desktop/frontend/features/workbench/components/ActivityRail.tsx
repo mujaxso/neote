@@ -19,12 +19,16 @@ export function ActivityRail({ className }: ActivityRailProps) {
   
   const activities = getAvailableActivities();
 
+  // Separate activities by position
+  const topActivities = activities.filter(activity => activity.position !== 'bottom');
+  const bottomActivities = activities.filter(activity => activity.position === 'bottom');
+
   return (
     <TooltipProvider delayDuration={300}>
       <div className={cn('w-12 flex flex-col items-center py-4 border-r border-border bg-sidebar', className)}>
-        {/* Main activity items */}
+        {/* Top activity items */}
         <div className="flex flex-col items-center space-y-4">
-          {activities.map((activity) => {
+          {topActivities.map((activity) => {
             const isActive = activity.side === 'left' 
               ? activeLeftPanel === activity.id && isLeftPanelVisible
               : activeRightPanel === activity.id && isRightPanelVisible;
@@ -67,9 +71,46 @@ export function ActivityRail({ className }: ActivityRailProps) {
         {/* Spacer */}
         <div className="flex-1" />
         
-        {/* Bottom items (could be moved to registry in the future) */}
+        {/* Bottom activity items (Settings) */}
         <div className="flex flex-col items-center space-y-4">
-          {/* Additional global actions could go here */}
+          {bottomActivities.map((activity) => {
+            const isActive = activity.side === 'left' 
+              ? activeLeftPanel === activity.id && isLeftPanelVisible
+              : activeRightPanel === activity.id && isRightPanelVisible;
+            
+            return (
+              <Tooltip key={activity.id}>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => togglePanel(activity.id)}
+                    className={cn(
+                      'relative w-10 h-10 flex items-center justify-center rounded-lg transition-colors',
+                      isActive
+                        ? 'bg-accent text-accent-foreground'
+                        : 'hover:bg-muted text-muted-foreground'
+                    )}
+                    aria-label={activity.label}
+                  >
+                    <Icon name={activity.icon} size={20} />
+                    {activity.badge !== undefined && activity.badge > 0 && (
+                      <span className="absolute -top-1 -right-1 w-4 h-4 text-xs flex items-center justify-center rounded-full bg-destructive text-destructive-foreground">
+                        {activity.badge > 9 ? '9+' : activity.badge}
+                      </span>
+                    )}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  <div className="text-sm font-medium">{activity.label}</div>
+                  {activity.description && (
+                    <div className="text-xs text-muted-foreground mt-0.5">{activity.description}</div>
+                  )}
+                  {activity.shortcut && (
+                    <div className="text-xs font-mono mt-1 text-accent">{activity.shortcut}</div>
+                  )}
+                </TooltipContent>
+              </Tooltip>
+            );
+          })}
         </div>
       </div>
     </TooltipProvider>

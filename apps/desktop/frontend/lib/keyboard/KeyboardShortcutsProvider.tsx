@@ -18,12 +18,6 @@ function KeyboardShortcutsHandler({ children }: KeyboardShortcutsProviderProps) 
             toggleLeftPanelVisibility();
           }
           break;
-        case ',':
-          if (e.ctrlKey || e.metaKey) {
-            e.preventDefault();
-            activateLeftPanel('settings');
-          }
-          break;
         case '.':
           if (e.ctrlKey || e.metaKey) {
             e.preventDefault();
