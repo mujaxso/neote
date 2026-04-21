@@ -9,11 +9,9 @@
     "preview": "vite preview",
     "tauri": "tauri",
     "type-check": "tsc --noEmit",
-    "download-fonts": "bash ../download-fonts.sh",
-    "fix:shebangs": "node scripts/fix-shebangs.js"
+    "download-fonts": "bash ../download-fonts.sh"
   },
   "dependencies": {
-    "@radix-ui/react-tooltip": "^1.2.8",
     "@tauri-apps/api": "^2.0.0",
     "@tauri-apps/plugin-clipboard-manager": "^2.0.0",
     "@tauri-apps/plugin-global-shortcut": "^2.0.0",
