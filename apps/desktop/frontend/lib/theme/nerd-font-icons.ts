@@ -245,8 +245,8 @@ export const nerdFontIcons = {
   'dark-mode': '',
   'light-mode': '',
   // Activity rail icons
-  'sparkles': '',
-  'puzzle': '',
+  'sparkles': '',
+  'puzzle': '',
 } as const;
 
 export type NerdFontIconName = keyof typeof nerdFontIcons;
