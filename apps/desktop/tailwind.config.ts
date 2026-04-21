@@ -42,8 +42,9 @@ export default {
         },
       },
       fontFamily: {
-        mono: ['"JetBrains Mono"', '"Fira Code"', 'monospace'],
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-sans)', 'system-ui', 'sans-serif'],
+        mono: ['var(--font-mono)', 'monospace'],
+        icon: ['var(--font-icon)', 'monospace'],
       },
       animation: {
         'pulse-subtle': 'pulse-subtle 2s ease-in-out infinite',

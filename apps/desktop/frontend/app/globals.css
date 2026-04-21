@@ -5,9 +5,9 @@
 @layer base {
   :root {
     /* Font family tokens */
-    --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    --font-mono: 'JetBrains Mono Nerd Font', 'JetBrains Mono', 'Cascadia Code', 'Fira Code', 'Menlo', 'Monaco', 'Courier New', monospace;
-    --font-icon: 'JetBrains Mono Nerd Font', 'JetBrains Mono', monospace;
+    --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --font-mono: 'Zaroxi Mono', 'JetBrains Mono', 'Cascadia Code', 'Fira Code', monospace;
+    --font-icon: 'Zaroxi Mono', monospace;
     
     /* Color tokens (existing) */
     --background: 0 0% 100%;
@@ -70,9 +70,9 @@
     font-feature-settings: "rlig" 1, "calt" 1;
   }
   
-  /* Font face definitions for JetBrains Mono Nerd Font */
+  /* Font face definitions for Zaroxi Mono */
   @font-face {
-    font-family: 'JetBrains Mono Nerd Font';
+    font-family: 'Zaroxi Mono';
     src: url('/fonts/JetBrainsMonoNerdFont-Regular.ttf') format('truetype');
     font-weight: 400;
     font-style: normal;
@@ -80,7 +80,7 @@
   }
   
   @font-face {
-    font-family: 'JetBrains Mono Nerd Font';
+    font-family: 'Zaroxi Mono';
     src: url('/fonts/JetBrainsMonoNerdFont-Bold.ttf') format('truetype');
     font-weight: 700;
     font-style: normal;
@@ -88,7 +88,7 @@
   }
   
   @font-face {
-    font-family: 'JetBrains Mono Nerd Font';
+    font-family: 'Zaroxi Mono';
     src: url('/fonts/JetBrainsMonoNerdFont-Italic.ttf') format('truetype');
     font-weight: 400;
     font-style: italic;
@@ -96,7 +96,7 @@
   }
   
   @font-face {
-    font-family: 'JetBrains Mono Nerd Font';
+    font-family: 'Zaroxi Mono';
     src: url('/fonts/JetBrainsMonoNerdFont-BoldItalic.ttf') format('truetype');
     font-weight: 700;
     font-style: italic;
