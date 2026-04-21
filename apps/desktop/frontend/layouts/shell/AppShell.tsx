@@ -100,8 +100,8 @@ export function AppShell() {
         )}
       </div>
       
-      {/* Status Bar - Temporarily disabled */}
-      {/* <StatusBar /> */}
+      {/* Status Bar */}
+      <StatusBar />
     </div>
   );
 }
