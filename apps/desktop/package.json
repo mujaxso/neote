@@ -4,11 +4,11 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "node node_modules/vite/bin/vite.js --port 1420",
-    "build": "node node_modules/typescript/bin/tsc && node node_modules/vite/bin/vite.js build",
-    "preview": "node node_modules/vite/bin/vite.js preview",
-    "tauri": "node node_modules/@tauri-apps/cli/bin/tauri",
-    "type-check": "node node_modules/typescript/bin/tsc --noEmit",
+    "dev": "npx vite --port 1420",
+    "build": "npx tsc && npx vite build",
+    "preview": "npx vite preview",
+    "tauri": "npx @tauri-apps/cli",
+    "type-check": "npx tsc --noEmit",
     "download-fonts": "bash ../download-fonts.sh"
   },
   "dependencies": {
