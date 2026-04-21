@@ -20,8 +20,17 @@ impl ThemeService {
     
     /// Check if system prefers dark mode
     pub fn system_prefers_dark(&self) -> bool {
-        // Use Tauri's window theme detection when available
-        // For now, default to dark
+        // Try to get from main window
+        if let Some(window) = self.app_handle.get_webview_window("main") {
+            match window.theme() {
+                Ok(tauri::Theme::Dark) => return true,
+                Ok(tauri::Theme::Light) => return false,
+                _ => {}
+            }
+        }
+        
+        // Fallback to checking system preference via darkreader
+        // For now, default to dark for consistency
         true
     }
     
