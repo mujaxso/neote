@@ -3,6 +3,39 @@
 use tauri::command;
 use zaroxi_theme::{ThemeSettings, ZaroxiTheme};
 use std::fs;
+use std::path::PathBuf;
+use std::env;
+
+fn get_config_dir() -> Result<PathBuf, String> {
+    // Try to get config directory using platform-specific methods
+    let mut config_dir = if cfg!(target_os = "windows") {
+        env::var_os("APPDATA")
+            .map(PathBuf::from)
+            .ok_or_else(|| "APPDATA environment variable not found".to_string())?
+    } else if cfg!(target_os = "macos") {
+        let mut home = env::var_os("HOME")
+            .map(PathBuf::from)
+            .ok_or_else(|| "HOME environment variable not found".to_string())?;
+        home.push("Library");
+        home.push("Application Support");
+        home
+    } else {
+        // Linux and other Unix-like systems
+        env::var_os("XDG_CONFIG_HOME")
+            .map(PathBuf::from)
+            .or_else(|| {
+                env::var_os("HOME").map(|home| {
+                    let mut path = PathBuf::from(home);
+                    path.push(".config");
+                    path
+                })
+            })
+            .ok_or_else(|| "Could not find config directory".to_string())?
+    };
+    
+    config_dir.push("zaroxi");
+    Ok(config_dir)
+}
 
 #[command]
 pub async fn load_settings() -> Result<serde_json::Value, String> {
@@ -25,44 +58,53 @@ pub async fn save_settings(settings: serde_json::Value) -> Result<(), String> {
 
 #[command]
 pub async fn load_theme_settings() -> Result<ThemeSettings, String> {
-    // Get config directory using tauri's path resolver
-    let config_dir = tauri::path::config_dir()
-        .ok_or_else(|| "Failed to get config directory".to_string())?
-        .join("zaroxi");
-    
-    let theme_path = config_dir.join("theme_settings.json");
-    
-    if !theme_path.exists() {
-        return Ok(ThemeSettings::default());
+    match get_config_dir() {
+        Ok(config_dir) => {
+            let theme_path = config_dir.join("theme_settings.json");
+            
+            if !theme_path.exists() {
+                return Ok(ThemeSettings::default());
+            }
+            
+            let content = fs::read_to_string(&theme_path)
+                .map_err(|e| format!("Failed to read theme settings: {}", e))?;
+            
+            serde_json::from_str(&content)
+                .map_err(|e| format!("Failed to parse theme settings: {}", e))
+        }
+        Err(e) => {
+            // If we can't get config dir, return default
+            // Use println since tracing might not be available
+            println!("Failed to get config directory: {}, using default theme", e);
+            Ok(ThemeSettings::default())
+        }
     }
-    
-    let content = fs::read_to_string(&theme_path)
-        .map_err(|e| format!("Failed to read theme settings: {}", e))?;
-    
-    serde_json::from_str(&content)
-        .map_err(|e| format!("Failed to parse theme settings: {}", e))
 }
 
 #[command]
 pub async fn save_theme_settings(settings: ThemeSettings) -> Result<(), String> {
-    // Get config directory using tauri's path resolver
-    let config_dir = tauri::path::config_dir()
-        .ok_or_else(|| "Failed to get config directory".to_string())?
-        .join("zaroxi");
-    
-    // Create config directory if it doesn't exist
-    fs::create_dir_all(&config_dir)
-        .map_err(|e| format!("Failed to create config directory: {}", e))?;
-    
-    let theme_path = config_dir.join("theme_settings.json");
-    
-    let content = serde_json::to_string_pretty(&settings)
-        .map_err(|e| format!("Failed to serialize theme settings: {}", e))?;
-    
-    fs::write(&theme_path, content)
-        .map_err(|e| format!("Failed to write theme settings: {}", e))?;
-    
-    Ok(())
+    match get_config_dir() {
+        Ok(config_dir) => {
+            // Create config directory if it doesn't exist
+            fs::create_dir_all(&config_dir)
+                .map_err(|e| format!("Failed to create config directory: {}", e))?;
+            
+            let theme_path = config_dir.join("theme_settings.json");
+            
+            let content = serde_json::to_string_pretty(&settings)
+                .map_err(|e| format!("Failed to serialize theme settings: {}", e))?;
+            
+            fs::write(&theme_path, content)
+                .map_err(|e| format!("Failed to write theme settings: {}", e))?;
+            
+            Ok(())
+        }
+        Err(e) => {
+            println!("Failed to get config directory: {}", e);
+            // Still return Ok since theme is applied in memory
+            Ok(())
+        }
+    }
 }
 
 #[command]
