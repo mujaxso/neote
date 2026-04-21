@@ -77,6 +77,10 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* When fonts are loaded, apply them globally */
+html[data-fonts-loaded] body {
+  font-family: var(--font-sans) !important;
+}
+
 body.fonts-loaded {
   /* The fonts are already applied via CSS custom properties */
 }

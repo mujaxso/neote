@@ -45,13 +45,14 @@ export function FontLoader() {
         // Verify the font is available
         const isLoaded = document.fonts.check('12px "Zaroxi Mono"');
         if (isLoaded) {
+          document.documentElement.setAttribute('data-fonts-loaded', 'true');
           document.body.classList.add('fonts-loaded');
           setFontsLoaded(true);
         } else {
           setFontsLoaded(false);
         }
       } catch (error) {
-        console.error('Failed to load fonts:', error);
+        // Font loading failed silently
         setFontsLoaded(false);
       }
     };
