@@ -51,6 +51,13 @@ export function AppShell() {
 
   return (
     <div className="flex flex-col h-screen bg-app text-primary font-sans">
+      {/* Debug: Remove this after confirming app works */}
+      <div className="absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center z-50 pointer-events-none">
+        <div className="bg-red-500 text-white p-2 rounded opacity-100">
+          Debug: AppShell rendering
+        </div>
+      </div>
+      
       <CommandPalette />
       
       {/* Compact Top Bar */}
@@ -69,9 +76,9 @@ export function AppShell() {
         
         {/* Settings Panel (full width when active) */}
         {isSettingsActive && (
-          <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex-1 flex flex-col overflow-hidden bg-app">
             <Suspense fallback={
-              <div className="p-4">
+              <div className="p-4 bg-app">
                 <div className="space-y-2">
                   <div className="h-4 bg-muted rounded animate-pulse w-3/4"></div>
                   <div className="h-4 bg-muted rounded animate-pulse w-1/2"></div>
@@ -87,7 +94,7 @@ export function AppShell() {
         {/* Main Content Area (Editor) */}
         {showMainContent && (
           <div className="flex-1 flex flex-col overflow-hidden">
-            <div className="flex-1 overflow-hidden">
+            <div className="flex-1 overflow-hidden bg-editor">
               <EditorContainer />
             </div>
           </div>

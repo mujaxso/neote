@@ -53,7 +53,7 @@ function AppProviderContent({ children }: AppProviderProps) {
   }, [activateLeftPanel]);
 
   return (
-    <div className="font-sans antialiased bg-app text-primary h-screen flex flex-col">
+    <div className="font-sans antialiased text-primary h-screen flex flex-col">
       <div className="flex-1 overflow-hidden">
         {children}
       </div>

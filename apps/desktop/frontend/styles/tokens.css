@@ -6,6 +6,11 @@ html, body, #root {
   height: 100%;
   overflow: hidden;
   background-color: var(--color-app-background);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
 }
 
 :root {
@@ -142,6 +147,8 @@ html, body, #root {
   position: relative;
   z-index: 1;
   min-height: 100vh;
+  width: 100%;
+  height: 100%;
 }
 .bg-shell { background-color: var(--color-shell-background); }
 .bg-panel { background-color: var(--color-panel-background); }

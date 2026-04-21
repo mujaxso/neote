@@ -22,5 +22,5 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     );
   }
   
-  return <>{children}</>;
+  return <div className="bg-app min-h-screen w-full h-full">{children}</div>;
 }
