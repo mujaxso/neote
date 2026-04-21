@@ -7,9 +7,9 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['var(--font-sans)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-        mono: ['var(--font-mono)', 'ui-monospace', 'SFMono-Regular', 'monospace'],
-        icon: ['var(--font-icon)', 'ui-monospace', 'SFMono-Regular', 'monospace'],
+        sans: ['"JetBrainsMonoNL Nerd Font Mono"', '"JetBrainsMonoNL NFM"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        mono: ['"JetBrainsMonoNL Nerd Font Mono"', '"JetBrainsMonoNL NFM"', 'ui-monospace', 'SFMono-Regular', 'monospace'],
+        icon: ['"JetBrainsMonoNL Nerd Font Mono"', '"JetBrainsMonoNL NFM"', 'ui-monospace', 'SFMono-Regular', 'monospace'],
       },
     },
   },

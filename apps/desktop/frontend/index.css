@@ -38,6 +38,12 @@
   --font-icon: "JetBrainsMonoNL Nerd Font Mono", "JetBrainsMonoNL NFM", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
+/* Test if the font is actually available */
+@font-face {
+  font-family: "TestFont";
+  src: local("JetBrainsMonoNL Nerd Font Mono"), local("JetBrainsMonoNL NFM");
+}
+
 /* Apply base font to the entire app */
 body {
   font-family: var(--font-sans) !important;
@@ -69,42 +75,19 @@ h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-mono) !important;
 }
 
-/* Force the font on all elements to ensure consistency */
+/* Reset font inheritance */
 * {
   font-family: inherit;
 }
 
-/* Ensure icons are displayed correctly */
-.font-icon {
-  font-family: var(--font-icon) !important;
-  font-feature-settings: "liga" 1, "calt" 1;
-}
-
-/* Show a fallback while fonts are loading */
-/* Temporarily disabled for debugging */
-/*
-body:not(.fonts-loaded) .font-icon {
-  visibility: hidden;
-}
-
-body.fonts-loaded .font-icon {
-  visibility: visible;
-}
-*/
-
-/* Always show icons for now */
-.font-icon {
-  visibility: visible !important;
-  display: inline-flex !important;
-}
-
-/* When fonts are loaded, ensure everything uses the correct font */
+/* When fonts are loaded, apply them globally */
 body.fonts-loaded {
-  font-family: var(--font-sans) !important;
+  font-family: "JetBrainsMonoNL Nerd Font Mono", "JetBrainsMonoNL NFM", ui-sans-serif, system-ui, sans-serif !important;
 }
 
-body.fonts-loaded * {
-  font-family: inherit !important;
+/* Ensure code elements use monospace */
+code, pre, kbd, samp {
+  font-family: "JetBrainsMonoNL Nerd Font Mono", "JetBrainsMonoNL NFM", ui-monospace, monospace !important;
 }
 
 /* Debug styles */
@@ -120,23 +103,4 @@ body.fonts-loaded * {
   z-index: 9999;
   border-radius: 3px;
   font-family: "JetBrainsMonoNL Nerd Font Mono", monospace;
-}
-
-/* Force font on all text elements */
-div, span, p, a, li, td, th, label, small, strong, em {
-  font-family: var(--font-sans) !important;
-}
-
-/* Ensure Tailwind classes use the correct font */
-.font-sans {
-  font-family: var(--font-sans) !important;
-}
-
-.font-mono {
-  font-family: var(--font-mono) !important;
-}
-
-/* Override any inline styles that might set font-family */
-[class*="font-"] {
-  font-family: inherit !important;
 }
