@@ -25,7 +25,7 @@ export function ActivityRail({ className }: ActivityRailProps) {
 
   return (
     <TooltipProvider delayDuration={300}>
-      <div className={cn('w-12 flex flex-col items-center py-4 border-r border-border bg-sidebar', className)}>
+      <div className={cn('w-12 flex flex-col items-center py-4 border-r border-border bg-sidebar h-full', className)}>
         {/* Top activity items */}
         <div className="flex flex-col items-center space-y-4">
           {topActivities.map((activity) => {
@@ -68,8 +68,8 @@ export function ActivityRail({ className }: ActivityRailProps) {
           })}
         </div>
         
-        {/* Spacer */}
-        <div className="flex-1" />
+        {/* Spacer - This pushes the bottom items down */}
+        <div className="flex-1 min-h-8" />
         
         {/* Bottom activity items (Settings) */}
         <div className="flex flex-col items-center space-y-4">
@@ -84,7 +84,7 @@ export function ActivityRail({ className }: ActivityRailProps) {
                   <button
                     onClick={() => togglePanel(activity.id)}
                     className={cn(
-                      'relative w-10 h-10 flex items-center justify-center rounded-lg transition-colors',
+                      'relative w-10 h-10 flex items-center justify-center rounded-lg transition-colors mb-2',
                       isActive
                         ? 'bg-accent text-accent-foreground'
                         : 'hover:bg-muted text-muted-foreground'

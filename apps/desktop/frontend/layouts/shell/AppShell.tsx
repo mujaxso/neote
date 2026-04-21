@@ -37,7 +37,9 @@ export function AppShell() {
       
       <div className="flex flex-1 overflow-hidden">
         {/* Activity Rail - Always visible */}
-        <ActivityRail />
+        <div className="h-full">
+          <ActivityRail />
+        </div>
         
         {/* Left Panel (for all left-side panels except settings) */}
         {showLeftPanel && (
