@@ -26,7 +26,7 @@ pub async fn save_settings(settings: serde_json::Value) -> Result<(), String> {
 #[command]
 pub async fn load_theme_settings() -> Result<ThemeSettings, String> {
     // Get config directory using tauri's path resolver
-    let config_dir = tauri::api::path::config_dir()
+    let config_dir = tauri::path::config_dir()
         .ok_or_else(|| "Failed to get config directory".to_string())?
         .join("zaroxi");
     
@@ -46,7 +46,7 @@ pub async fn load_theme_settings() -> Result<ThemeSettings, String> {
 #[command]
 pub async fn save_theme_settings(settings: ThemeSettings) -> Result<(), String> {
     // Get config directory using tauri's path resolver
-    let config_dir = tauri::api::path::config_dir()
+    let config_dir = tauri::path::config_dir()
         .ok_or_else(|| "Failed to get config directory".to_string())?
         .join("zaroxi");
     
