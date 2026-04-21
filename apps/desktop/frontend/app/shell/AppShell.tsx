@@ -1,41 +1,85 @@
-import React from 'react';
-import { ActivityRail } from '@/layouts/shell/ActivityRail';
 import { StatusBar } from '@/layouts/shell/StatusBar';
 import { CommandPalette } from '@/layouts/shell/CommandPalette';
-import { ExplorerContainer } from '@/features/workspace/containers/ExplorerContainer';
 import { EditorContainer } from '@/features/editor/containers/EditorContainer';
-import { AssistantPanelContainer } from '@/features/assistant/containers/AssistantPanelContainer';
+import { ActivityRail } from '@/features/workbench/components/ActivityRail';
+import { PanelHost } from '@/features/workbench/components/PanelHost';
+import { useWorkbenchStore } from '@/features/workbench/store/workbenchStore';
+import { getActivityItem } from '@/features/workbench/config/activityRegistry';
+import { Suspense, lazy } from 'react';
+
+// Lazy load full-width panel components
+const SettingsPanel = lazy(() => import('@/features/settings/panel/SettingsPanel'));
 
 export function AppShell() {
-  const [activePanel, setActivePanel] = React.useState('explorer');
-  const [assistantOpen, setAssistantOpen] = React.useState(false);
+  const { 
+    activeLeftPanel, 
+    isLeftPanelVisible, 
+    isRightPanelVisible, 
+    activeRightPanel 
+  } = useWorkbenchStore();
+  
+  // Get activity items for the active panels
+  const leftActivity = activeLeftPanel ? getActivityItem(activeLeftPanel) : null;
+  
+  // Determine if we should show full-width panel (only settings)
+  const isSettingsActive = leftActivity?.id === 'settings' && isLeftPanelVisible;
+  
+  // Show left panel when it's visible and not settings
+  const showLeftPanel = isLeftPanelVisible && activeLeftPanel && !isSettingsActive;
+  // Show right panel when it's visible
+  const showRightPanel = isRightPanelVisible && activeRightPanel;
+  // Show main content when not showing settings
+  const showMainContent = !isSettingsActive;
 
   return (
-    <div className="flex flex-col h-screen bg-background text-foreground">
-      <div className="flex flex-1 overflow-hidden">
-        <ActivityRail 
-          activePanel={activePanel as any}
-          onPanelChange={(panel) => setActivePanel(panel)}
-          onAssistantToggle={() => setAssistantOpen(!assistantOpen)}
-        />
-        <div className="flex-1 flex overflow-hidden">
-          {activePanel === 'explorer' && (
-            <div className="w-64 border-r border-border overflow-auto">
-              <ExplorerContainer />
-            </div>
-          )}
-          <div className="flex-1 overflow-hidden">
-            <EditorContainer />
-          </div>
-          {assistantOpen && (
-            <div className="w-96 border-l border-border overflow-auto">
-              <AssistantPanelContainer />
-            </div>
-          )}
-        </div>
-      </div>
-      <StatusBar />
+    <div className="flex flex-col h-screen bg-background text-foreground font-sans">
       <CommandPalette />
+      
+      <div className="flex flex-1 overflow-hidden">
+        {/* Activity Rail - Always visible */}
+        <div className="h-full">
+          <ActivityRail />
+        </div>
+        
+        {/* Left Panel (for all left-side panels except settings) */}
+        {showLeftPanel && (
+          <PanelHost side="left" />
+        )}
+        
+        {/* Settings Panel (full width when active) */}
+        {isSettingsActive && (
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <Suspense fallback={
+              <div className="p-4">
+                <div className="space-y-2">
+                  <div className="h-4 bg-muted rounded animate-pulse w-3/4"></div>
+                  <div className="h-4 bg-muted rounded animate-pulse w-1/2"></div>
+                  <div className="h-4 bg-muted rounded animate-pulse w-5/6"></div>
+                </div>
+              </div>
+            }>
+              <SettingsPanel />
+            </Suspense>
+          </div>
+        )}
+        
+        {/* Main Content Area (Editor) */}
+        {showMainContent && (
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <div className="flex-1 overflow-hidden">
+              <EditorContainer />
+            </div>
+          </div>
+        )}
+        
+        {/* Right Panel (Assistant) */}
+        {showRightPanel && (
+          <PanelHost side="right" />
+        )}
+      </div>
+      
+      {/* Status Bar */}
+      <StatusBar />
     </div>
   );
 }

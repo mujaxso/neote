@@ -44,6 +44,7 @@ impl ThemeService {
     }
     
     /// Get the current theme mode, considering system preference
+    #[allow(dead_code)]
     pub async fn current_theme_mode(&self) -> ZaroxiTheme {
         self.load_theme_mode().await
     }

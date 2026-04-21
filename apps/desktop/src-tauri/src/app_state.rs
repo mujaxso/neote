@@ -4,6 +4,7 @@ use zaroxi_theme::{ThemeManager, ThemeSettings};
 
 #[derive(Default)]
 pub struct AppState {
+    #[allow(dead_code)]
     theme_manager: Mutex<ThemeManager>,
 }
 
@@ -14,10 +15,12 @@ impl AppState {
         }
     }
     
+    #[allow(dead_code)]
     pub fn get_theme_manager(&self) -> &Mutex<ThemeManager> {
         &self.theme_manager
     }
     
+    #[allow(dead_code)]
     pub fn update_theme_settings(&self, settings: ThemeSettings) -> Result<(), String> {
         let mut manager = self.theme_manager.lock().map_err(|e| e.to_string())?;
         manager.update_settings(settings);
