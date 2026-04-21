@@ -5,9 +5,9 @@
 @layer base {
   :root {
     /* Font family tokens */
-    --font-sans: 'JetBrainsMono Nerd Font Mono', 'JetBrains Mono', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    --font-mono: 'JetBrainsMono Nerd Font Mono', 'JetBrains Mono', 'Cascadia Code', 'Fira Code', monospace;
-    --font-icon: 'JetBrainsMono Nerd Font Mono', monospace;
+    --font-sans: 'Zaroxi Mono', 'JetBrainsMono Nerd Font Mono', 'JetBrains Mono', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --font-mono: 'Zaroxi Mono', 'JetBrainsMono Nerd Font Mono', 'JetBrains Mono', 'Cascadia Code', 'Fira Code', monospace;
+    --font-icon: 'Zaroxi Mono', 'JetBrainsMono Nerd Font Mono', monospace;
     
     /* Color tokens (existing) */
     --background: 0 0% 100%;
