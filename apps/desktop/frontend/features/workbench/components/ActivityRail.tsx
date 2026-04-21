@@ -1,6 +1,6 @@
 import { Icon } from '@/components/ui/Icon';
 import { cn } from '@/lib/utils';
-import { useWorkbenchStore, PanelId } from '../store/workbenchStore';
+import { useWorkbenchStore } from '../store/workbenchStore';
 import { getAvailableActivities } from '../config/activityRegistry';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/Tooltip';
 
@@ -9,7 +9,13 @@ interface ActivityRailProps {
 }
 
 export function ActivityRail({ className }: ActivityRailProps) {
-  const { activePanel, isPanelVisible, togglePanel } = useWorkbenchStore();
+  const { 
+    activeLeftPanel, 
+    activeRightPanel, 
+    isLeftPanelVisible, 
+    isRightPanelVisible,
+    togglePanel 
+  } = useWorkbenchStore();
   
   const activities = getAvailableActivities();
 
@@ -19,7 +25,10 @@ export function ActivityRail({ className }: ActivityRailProps) {
         {/* Main activity items */}
         <div className="flex flex-col items-center space-y-4">
           {activities.map((activity) => {
-            const isActive = activePanel === activity.id && isPanelVisible;
+            const isActive = activity.side === 'left' 
+              ? activeLeftPanel === activity.id && isLeftPanelVisible
+              : activeRightPanel === activity.id && isRightPanelVisible;
+            
             return (
               <Tooltip key={activity.id}>
                 <TooltipTrigger asChild>

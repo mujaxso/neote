@@ -9,6 +9,7 @@ const SourceControlPanel = lazy(() => import('@/features/scm/panel/SourceControl
 const DebugPanel = lazy(() => import('@/features/debug/panel/DebugPanel'));
 const AssistantPanel = lazy(() => import('@/features/assistant/panel/AssistantPanel'));
 const SettingsPanel = lazy(() => import('@/features/settings/panel/SettingsPanel'));
+const ExtensionsPanel = lazy(() => import('@/features/extensions/panel/ExtensionsPanel'));
 
 export interface ActivityItem {
   id: PanelId;
@@ -24,6 +25,8 @@ export interface ActivityItem {
   shortcut?: string;
   // Description for tooltips
   description?: string;
+  // Which side the panel should appear on
+  side: 'left' | 'right';
 }
 
 export const ACTIVITY_REGISTRY: ActivityItem[] = [
@@ -34,6 +37,7 @@ export const ACTIVITY_REGISTRY: ActivityItem[] = [
     panelComponent: ExplorerPanel,
     available: true,
     description: 'Browse and manage workspace files',
+    side: 'left',
   },
   {
     id: 'search',
@@ -43,6 +47,7 @@ export const ACTIVITY_REGISTRY: ActivityItem[] = [
     available: true,
     shortcut: 'Ctrl+Shift+F',
     description: 'Search across workspace',
+    side: 'left',
   },
   {
     id: 'git',
@@ -52,6 +57,7 @@ export const ACTIVITY_REGISTRY: ActivityItem[] = [
     available: true,
     badge: 0,
     description: 'Git version control operations',
+    side: 'left',
   },
   {
     id: 'debug',
@@ -60,14 +66,16 @@ export const ACTIVITY_REGISTRY: ActivityItem[] = [
     panelComponent: DebugPanel,
     available: true,
     description: 'Debug and run your code',
+    side: 'left',
   },
   {
     id: 'extensions',
     label: 'Extensions',
     icon: 'puzzle',
-    panelComponent: SettingsPanel, // Temporary, will be replaced with actual ExtensionsPanel
+    panelComponent: ExtensionsPanel,
     available: true,
     description: 'Manage extensions and add-ons',
+    side: 'left',
   },
   {
     id: 'assistant',
@@ -76,6 +84,7 @@ export const ACTIVITY_REGISTRY: ActivityItem[] = [
     panelComponent: AssistantPanel,
     available: true,
     description: 'AI-powered coding assistance',
+    side: 'right',
   },
   {
     id: 'settings',
@@ -84,6 +93,7 @@ export const ACTIVITY_REGISTRY: ActivityItem[] = [
     panelComponent: SettingsPanel,
     available: true,
     description: 'Configure Zaroxi settings',
+    side: 'left',
   },
 ];
 
@@ -95,4 +105,9 @@ export function getActivityItem(id: PanelId): ActivityItem | undefined {
 // Get all available activity items
 export function getAvailableActivities(): ActivityItem[] {
   return ACTIVITY_REGISTRY.filter(item => item.available);
+}
+
+// Get activities for a specific side
+export function getActivitiesBySide(side: 'left' | 'right'): ActivityItem[] {
+  return getAvailableActivities().filter(item => item.side === side);
 }
