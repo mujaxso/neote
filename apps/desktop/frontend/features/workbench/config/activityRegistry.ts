@@ -71,7 +71,7 @@ export const ACTIVITY_REGISTRY: ActivityItem[] = [
   {
     id: 'extensions',
     label: 'Extensions',
-    icon: 'puzzle',
+    icon: 'box',
     panelComponent: ExtensionsPanel,
     available: true,
     description: 'Manage extensions and add-ons',
@@ -80,7 +80,7 @@ export const ACTIVITY_REGISTRY: ActivityItem[] = [
   {
     id: 'assistant',
     label: 'AI Assistant',
-    icon: 'sparkles',
+    icon: 'assistant',
     panelComponent: AssistantPanel,
     available: true,
     description: 'AI-powered coding assistance',
