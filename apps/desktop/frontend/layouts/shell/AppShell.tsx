@@ -34,14 +34,18 @@ export function AppShell() {
   const showMainContent = !isSettingsActive;
 
   useEffect(() => {
-    const cleanupPromise = setupWindowControls();
+    let cleanup: (() => void) | undefined;
+    
+    const init = async () => {
+      cleanup = await setupWindowControls();
+    };
+    
+    init();
+    
     return () => {
-      // Cleanup when component unmounts
-      cleanupPromise.then(cleanup => {
-        if (cleanup && typeof cleanup === 'function') {
-          cleanup();
-        }
-      }).catch(console.error);
+      if (cleanup && typeof cleanup === 'function') {
+        cleanup();
+      }
     };
   }, []);
 

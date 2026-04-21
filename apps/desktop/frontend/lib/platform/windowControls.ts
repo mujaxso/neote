@@ -11,15 +11,6 @@ export async function setupWindowControls() {
       const appWindow = getCurrent();
       
       // Make the top bar draggable
-      const setupDrag = () => {
-        const dragRegions = document.querySelectorAll('[data-tauri-drag-region]');
-        dragRegions.forEach(region => {
-          // Remove existing listeners to avoid duplicates
-          region.removeEventListener('mousedown', handleDrag);
-          region.addEventListener('mousedown', handleDrag);
-        });
-      };
-
       const handleDrag = (e: MouseEvent) => {
         // Check if the click is on a button or element with data-no-drag attribute
         const target = e.target as HTMLElement;
@@ -28,6 +19,16 @@ export async function setupWindowControls() {
         }
         // Start window dragging
         appWindow.startDragging();
+      };
+
+      // Setup drag regions
+      const setupDrag = () => {
+        const dragRegions = document.querySelectorAll('[data-tauri-drag-region]');
+        dragRegions.forEach(region => {
+          // Remove existing listeners to avoid duplicates
+          region.removeEventListener('mousedown', handleDrag);
+          region.addEventListener('mousedown', handleDrag);
+        });
       };
 
       // Initial setup
