@@ -51,12 +51,6 @@ export function AppShell() {
 
   return (
     <div className="flex flex-col h-screen bg-app text-primary font-sans">
-      {/* Debug: Remove this after confirming app works */}
-      <div className="absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center z-50 pointer-events-none">
-        <div className="bg-red-500 text-white p-2 rounded opacity-100">
-          Debug: AppShell rendering
-        </div>
-      </div>
       
       <CommandPalette />
       
@@ -106,8 +100,8 @@ export function AppShell() {
         )}
       </div>
       
-      {/* Status Bar */}
-      <StatusBar />
+      {/* Status Bar - Temporarily disabled */}
+      {/* <StatusBar /> */}
     </div>
   );
 }

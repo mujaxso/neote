@@ -1,4 +1,4 @@
-import { getCurrent } from '@tauri-apps/api/window';
+import { WebviewWindow } from '@tauri-apps/api/window';
 
 export async function isTauri(): Promise<boolean> {
   return typeof window !== 'undefined' && '__TAURI__' in window;
@@ -8,7 +8,7 @@ export async function setupWindowControls() {
   if (await isTauri()) {
     try {
       // Enable custom window controls
-      const appWindow = getCurrent();
+      const appWindow = WebviewWindow.getCurrent();
       
       // Make the top bar draggable
       const handleDrag = (e: MouseEvent) => {
@@ -60,7 +60,7 @@ export const windowControlActions = {
   minimize: async () => {
     if (await isTauri()) {
       try {
-        const window = getCurrent();
+        const window = WebviewWindow.getCurrent();
         await window.minimize();
       } catch (error) {
         console.error('Error minimizing window:', error);
@@ -70,7 +70,7 @@ export const windowControlActions = {
   maximize: async () => {
     if (await isTauri()) {
       try {
-        const window = getCurrent();
+        const window = WebviewWindow.getCurrent();
         const isMaximized = await window.isMaximized();
         if (isMaximized) {
           await window.unmaximize();
@@ -85,7 +85,7 @@ export const windowControlActions = {
   close: async () => {
     if (await isTauri()) {
       try {
-        const window = getCurrent();
+        const window = WebviewWindow.getCurrent();
         await window.close();
       } catch (error) {
         console.error('Error closing window:', error);

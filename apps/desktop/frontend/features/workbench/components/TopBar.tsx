@@ -2,7 +2,7 @@ import { Icon } from '@/components/ui/Icon';
 import { cn } from '@/lib/utils';
 import { useWorkbenchStore } from '../store/workbenchStore';
 import { useEffect, useState } from 'react';
-import { getCurrentWindow } from '@tauri-apps/api/window';
+import { WebviewWindow } from '@tauri-apps/api/window';
 import { isTauri } from '@/lib/platform/windowControls';
 
 interface TopBarProps {
@@ -20,7 +20,7 @@ export function TopBar({ className }: TopBarProps) {
       setIsTauriEnv(tauriCheck);
       if (tauriCheck) {
         try {
-          const currentWindow = getCurrentWindow();
+          const currentWindow = WebviewWindow.getCurrent();
           const updateMaximized = async () => {
             setIsMaximized(await currentWindow.isMaximized());
           };
@@ -46,7 +46,7 @@ export function TopBar({ className }: TopBarProps) {
   const handleMinimize = async () => {
     if (isTauriEnv) {
       try {
-        const window = getCurrentWindow();
+        const window = WebviewWindow.getCurrent();
         await window.minimize();
       } catch (error) {
         console.error('Error minimizing window:', error);
@@ -57,7 +57,7 @@ export function TopBar({ className }: TopBarProps) {
   const handleMaximize = async () => {
     if (isTauriEnv) {
       try {
-        const window = getCurrentWindow();
+        const window = WebviewWindow.getCurrent();
         if (isMaximized) {
           await window.unmaximize();
         } else {
@@ -73,7 +73,7 @@ export function TopBar({ className }: TopBarProps) {
   const handleClose = async () => {
     if (isTauriEnv) {
       try {
-        const window = getCurrentWindow();
+        const window = WebviewWindow.getCurrent();
         await window.close();
       } catch (error) {
         console.error('Error closing window:', error);
