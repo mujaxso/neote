@@ -44,7 +44,7 @@ export function AppShell() {
       {/* Compact Top Bar */}
       <TopBar />
       
-      <div className="flex flex-1 overflow-hidden bg-app">
+      <div className="flex flex-1 overflow-hidden">
         {/* Activity Rail - Always visible */}
         <div className="h-full">
           <ActivityRail />
@@ -57,7 +57,7 @@ export function AppShell() {
         
         {/* Settings Panel (full width when active) */}
         {isSettingsActive && (
-          <div className="flex-1 flex flex-col overflow-hidden bg-app">
+          <div className="flex-1 flex flex-col overflow-hidden">
             <Suspense fallback={
               <div className="p-4">
                 <div className="space-y-2">
@@ -75,7 +75,7 @@ export function AppShell() {
         {/* Main Content Area (Editor) */}
         {showMainContent && (
           <div className="flex-1 flex flex-col overflow-hidden">
-            <div className="flex-1 overflow-hidden bg-editor">
+            <div className="flex-1 overflow-hidden">
               <EditorContainer />
             </div>
           </div>

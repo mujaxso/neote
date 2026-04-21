@@ -90,11 +90,17 @@ export function TopBar({ className }: TopBarProps) {
         isTauriEnv ? 'cursor-default' : 'cursor-auto',
         className
       )}
-      data-tauri-drag-region={isTauriEnv ? "true" : "false"}
+      {...(isTauriEnv ? { 'data-tauri-drag-region': 'true' } : {})}
     >
       {/* Left section: Brand and menu */}
-      <div className="flex items-center gap-6" data-tauri-drag-region={isTauriEnv ? "true" : "false"}>
-        <div className="flex items-center gap-2" data-tauri-drag-region={isTauriEnv ? "true" : "false"}>
+      <div 
+        className="flex items-center gap-6" 
+        {...(isTauriEnv ? { 'data-tauri-drag-region': 'true' } : {})}
+      >
+        <div 
+          className="flex items-center gap-2" 
+          {...(isTauriEnv ? { 'data-tauri-drag-region': 'true' } : {})}
+        >
           <Icon name="code" size={16} className="text-accent" />
           <span className="font-semibold text-sm tracking-tight">Zaroxi Studio</span>
         </div>
@@ -132,7 +138,10 @@ export function TopBar({ className }: TopBarProps) {
       </div>
 
       {/* Center section: Workspace context */}
-      <div className="flex-1 flex justify-center" data-tauri-drag-region={isTauriEnv ? "true" : "false"}>
+      <div 
+        className="flex-1 flex justify-center" 
+        {...(isTauriEnv ? { 'data-tauri-drag-region': 'true' } : {})}
+      >
         <div className="text-xs text-muted truncate max-w-md">
           No workspace open
         </div>

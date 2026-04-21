@@ -11,7 +11,7 @@ export async function setupWindowControls() {
       const appWindow = getCurrent();
       
       // Make the top bar draggable
-      const dragRegions = document.querySelectorAll('[data-tauri-drag-region="true"]');
+      const dragRegions = document.querySelectorAll('[data-tauri-drag-region]');
       dragRegions.forEach(region => {
         region.addEventListener('mousedown', (e) => {
           // Check if the click is on a button or element with data-no-drag attribute
@@ -19,6 +19,7 @@ export async function setupWindowControls() {
           if (target.closest('[data-no-drag="true"]')) {
             return;
           }
+          // Start window dragging
           appWindow.startDragging();
         });
       });

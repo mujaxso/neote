@@ -67,6 +67,8 @@ pub fn run() {
             let main_window = app.get_webview_window("main").expect("Failed to get main window");
             
             // Call our window setup function to ensure decorations are removed
+            // Note: main_window is a WebviewWindow, which implements Deref to Window
+            // So we can pass it as &Window
             if let Err(e) = windows::setup_window(&main_window) {
                 tracing::error!("Failed to setup window: {}", e);
             }
@@ -140,7 +142,7 @@ pub fn run() {
             }
         })
         .on_window_event(|window, event| {
-            windows::handle_window_event(&window, event);
+            windows::handle_window_event(window, event);
         })
         .build(tauri::generate_context!())
         .expect("Failed to build Tauri application")
