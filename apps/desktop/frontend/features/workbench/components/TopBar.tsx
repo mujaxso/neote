@@ -16,21 +16,28 @@ export function TopBar({ className }: TopBarProps) {
 
   useEffect(() => {
     const checkTauri = async () => {
-      setIsTauriEnv(await isTauri());
-      if (await isTauri()) {
-        const currentWindow = getCurrentWindow();
-        const updateMaximized = async () => {
-          setIsMaximized(await currentWindow.isMaximized());
-        };
-        updateMaximized();
-        
-        const unlisten = await currentWindow.onResized(() => {
-          updateMaximized();
-        });
-        
-        return () => {
-          unlisten();
-        };
+      const tauriCheck = await isTauri();
+      setIsTauriEnv(tauriCheck);
+      if (tauriCheck) {
+        try {
+          const currentWindow = getCurrentWindow();
+          const updateMaximized = async () => {
+            setIsMaximized(await currentWindow.isMaximized());
+          };
+          await updateMaximized();
+          
+          const unlisten = await currentWindow.onResized(() => {
+            updateMaximized();
+          });
+          
+          return () => {
+            if (unlisten) {
+              unlisten();
+            }
+          };
+        } catch (error) {
+          console.error('Error setting up window listeners:', error);
+        }
       }
     };
     checkTauri();
@@ -38,27 +45,39 @@ export function TopBar({ className }: TopBarProps) {
 
   const handleMinimize = async () => {
     if (isTauriEnv) {
-      const window = getCurrentWindow();
-      await window.minimize();
+      try {
+        const window = getCurrentWindow();
+        await window.minimize();
+      } catch (error) {
+        console.error('Error minimizing window:', error);
+      }
     }
   };
 
   const handleMaximize = async () => {
     if (isTauriEnv) {
-      const window = getCurrentWindow();
-      if (isMaximized) {
-        await window.unmaximize();
-      } else {
-        await window.maximize();
+      try {
+        const window = getCurrentWindow();
+        if (isMaximized) {
+          await window.unmaximize();
+        } else {
+          await window.maximize();
+        }
+        setIsMaximized(!isMaximized);
+      } catch (error) {
+        console.error('Error toggling maximize:', error);
       }
-      setIsMaximized(!isMaximized);
     }
   };
 
   const handleClose = async () => {
     if (isTauriEnv) {
-      const window = getCurrentWindow();
-      await window.close();
+      try {
+        const window = getCurrentWindow();
+        await window.close();
+      } catch (error) {
+        console.error('Error closing window:', error);
+      }
     }
   };
 
@@ -68,14 +87,14 @@ export function TopBar({ className }: TopBarProps) {
         'h-10 flex items-center justify-between px-4 border-b border-divider',
         'bg-title-bar text-title-bar-foreground',
         'select-none',
-        isTauriEnv && 'cursor-default',
+        isTauriEnv ? 'cursor-default' : 'cursor-auto',
         className
       )}
-      data-tauri-drag-region={isTauriEnv}
+      data-tauri-drag-region={isTauriEnv ? "true" : "false"}
     >
       {/* Left section: Brand and menu */}
-      <div className="flex items-center gap-6" data-tauri-drag-region={isTauriEnv}>
-        <div className="flex items-center gap-2" data-tauri-drag-region={isTauriEnv}>
+      <div className="flex items-center gap-6" data-tauri-drag-region={isTauriEnv ? "true" : "false"}>
+        <div className="flex items-center gap-2" data-tauri-drag-region={isTauriEnv ? "true" : "false"}>
           <Icon name="code" size={16} className="text-accent" />
           <span className="font-semibold text-sm tracking-tight">Zaroxi Studio</span>
         </div>
@@ -84,24 +103,28 @@ export function TopBar({ className }: TopBarProps) {
           <button
             onClick={() => togglePanel('explorer')}
             className="px-3 py-1.5 text-xs rounded hover:bg-hover-bg transition-colors"
+            data-no-drag="true"
           >
             File
           </button>
           <button
             onClick={() => togglePanel('search')}
             className="px-3 py-1.5 text-xs rounded hover:bg-hover-bg transition-colors"
+            data-no-drag="true"
           >
             Edit
           </button>
           <button
             onClick={() => togglePanel('settings')}
             className="px-3 py-1.5 text-xs rounded hover:bg-hover-bg transition-colors"
+            data-no-drag="true"
           >
             View
           </button>
           <button
             onClick={() => togglePanel('assistant')}
             className="px-3 py-1.5 text-xs rounded hover:bg-hover-bg transition-colors"
+            data-no-drag="true"
           >
             Tools
           </button>
@@ -109,7 +132,7 @@ export function TopBar({ className }: TopBarProps) {
       </div>
 
       {/* Center section: Workspace context */}
-      <div className="flex-1 flex justify-center" data-tauri-drag-region={isTauriEnv}>
+      <div className="flex-1 flex justify-center" data-tauri-drag-region={isTauriEnv ? "true" : "false"}>
         <div className="text-xs text-muted truncate max-w-md">
           No workspace open
         </div>
@@ -123,6 +146,7 @@ export function TopBar({ className }: TopBarProps) {
               onClick={handleMinimize}
               className="w-8 h-8 flex items-center justify-center rounded hover:bg-hover-bg transition-colors"
               aria-label="Minimize"
+              data-no-drag="true"
             >
               <Icon name="window-minimize" size={12} />
             </button>
@@ -130,6 +154,7 @@ export function TopBar({ className }: TopBarProps) {
               onClick={handleMaximize}
               className="w-8 h-8 flex items-center justify-center rounded hover:bg-hover-bg transition-colors"
               aria-label={isMaximized ? 'Restore' : 'Maximize'}
+              data-no-drag="true"
             >
               <Icon name={isMaximized ? 'window-restore' : 'window-maximize'} size={12} />
             </button>
@@ -137,6 +162,7 @@ export function TopBar({ className }: TopBarProps) {
               onClick={handleClose}
               className="w-8 h-8 flex items-center justify-center rounded hover:bg-destructive/20 hover:text-destructive transition-colors"
               aria-label="Close"
+              data-no-drag="true"
             >
               <Icon name="window-close" size={12} />
             </button>

@@ -6,44 +6,62 @@ export async function isTauri(): Promise<boolean> {
 
 export async function setupWindowControls() {
   if (await isTauri()) {
-    // Enable custom window controls
-    const appWindow = getCurrent();
-    
-    // Make the top bar draggable
-    const dragRegions = document.querySelectorAll('[data-tauri-drag-region="true"]');
-    dragRegions.forEach(region => {
-      region.addEventListener('mousedown', (e) => {
-        if (e.target instanceof HTMLElement && e.target.closest('button')) {
-          return;
-        }
-        appWindow.startDragging();
+    try {
+      // Enable custom window controls
+      const appWindow = getCurrent();
+      
+      // Make the top bar draggable
+      const dragRegions = document.querySelectorAll('[data-tauri-drag-region="true"]');
+      dragRegions.forEach(region => {
+        region.addEventListener('mousedown', (e) => {
+          // Check if the click is on a button or element with data-no-drag attribute
+          const target = e.target as HTMLElement;
+          if (target.closest('[data-no-drag="true"]')) {
+            return;
+          }
+          appWindow.startDragging();
+        });
       });
-    });
+    } catch (error) {
+      console.error('Error setting up window controls:', error);
+    }
   }
 }
 
 export const windowControlActions = {
   minimize: async () => {
     if (await isTauri()) {
-      const window = getCurrent();
-      await window.minimize();
+      try {
+        const window = getCurrent();
+        await window.minimize();
+      } catch (error) {
+        console.error('Error minimizing window:', error);
+      }
     }
   },
   maximize: async () => {
     if (await isTauri()) {
-      const window = getCurrent();
-      const isMaximized = await window.isMaximized();
-      if (isMaximized) {
-        await window.unmaximize();
-      } else {
-        await window.maximize();
+      try {
+        const window = getCurrent();
+        const isMaximized = await window.isMaximized();
+        if (isMaximized) {
+          await window.unmaximize();
+        } else {
+          await window.maximize();
+        }
+      } catch (error) {
+        console.error('Error toggling maximize:', error);
       }
     }
   },
   close: async () => {
     if (await isTauri()) {
-      const window = getCurrent();
-      await window.close();
+      try {
+        const window = getCurrent();
+        await window.close();
+      } catch (error) {
+        console.error('Error closing window:', error);
+      }
     }
   },
 };
