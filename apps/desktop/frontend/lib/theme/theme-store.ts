@@ -2,7 +2,24 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
-import { ZaroxiTheme, ThemeData, ThemeSettings } from './types';
+import { ZaroxiTheme, ThemeSettings } from './types';
+
+// Helper to convert Rust enum to TypeScript string
+function toRustTheme(mode: ZaroxiTheme): 'Dark' | 'Light' | 'System' {
+  switch (mode) {
+    case 'dark': return 'Dark';
+    case 'light': return 'Light';
+    case 'system': return 'System';
+  }
+}
+
+function fromRustTheme(mode: 'Dark' | 'Light' | 'System'): ZaroxiTheme {
+  switch (mode) {
+    case 'Dark': return 'dark';
+    case 'Light': return 'light';
+    case 'System': return 'system';
+  }
+}
 
 interface ThemeStore {
   themeMode: ZaroxiTheme;
@@ -27,7 +44,9 @@ export const useThemeStore = create<ThemeStore>()(
       setThemeMode: async (mode) => {
         set({ isLoading: true });
         try {
-          await invoke('set_theme', { theme: mode });
+          // Convert to Rust enum format
+          const rustTheme = toRustTheme(mode);
+          await invoke('set_theme', { theme: rustTheme });
           
           // Determine if dark based on mode
           const isSystem = mode === 'system';
@@ -53,14 +72,16 @@ export const useThemeStore = create<ThemeStore>()(
         set({ isLoading: true });
         try {
           const settings: ThemeSettings = await invoke('load_theme_settings');
-          const currentTheme: ZaroxiTheme = await invoke('get_current_theme');
+          // The Rust command returns a ZaroxiTheme enum which needs conversion
+          const currentTheme: 'Dark' | 'Light' | 'System' = await invoke('get_current_theme');
+          const tsTheme = fromRustTheme(currentTheme);
           
-          const isSystem = currentTheme === 'system';
+          const isSystem = tsTheme === 'system';
           const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-          const isDark = currentTheme === 'dark' || (isSystem && systemPrefersDark);
+          const isDark = tsTheme === 'dark' || (isSystem && systemPrefersDark);
           
           set({ 
-            themeMode: currentTheme,
+            themeMode: tsTheme,
             isDark,
             isSystem,
             isLoading: false 
@@ -95,8 +116,12 @@ export const useThemeStore = create<ThemeStore>()(
 
 // Listen to theme changes from backend
 export function setupThemeListener() {
-  return listen<{ mode: ZaroxiTheme; isDark: boolean }>('theme:changed', (event) => {
-    useThemeStore.getState().applyTheme(event.payload);
+  return listen<{ mode: 'Dark' | 'Light' | 'System'; isDark: boolean }>('theme:changed', (event) => {
+    const tsMode = fromRustTheme(event.payload.mode);
+    useThemeStore.getState().applyTheme({ 
+      mode: tsMode, 
+      isDark: event.payload.isDark 
+    });
   });
 }
 

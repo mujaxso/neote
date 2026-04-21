@@ -2,20 +2,24 @@
 
 use tauri::command;
 use zaroxi_theme::{ThemeSettings, ZaroxiTheme};
-use std::sync::Mutex;
-use tauri::State;
 
-/// App state for theme settings
-pub struct ThemeState {
-    settings: Mutex<ThemeSettings>,
+#[command]
+pub async fn load_settings() -> Result<serde_json::Value, String> {
+    // TODO: Implement actual settings loading
+    Ok(serde_json::json!({
+        "theme": "system",
+        "editor": {
+            "font_size": 14,
+            "line_height": 1.5
+        }
+    }))
 }
 
-impl ThemeState {
-    pub fn new() -> Self {
-        Self {
-            settings: Mutex::new(ThemeSettings::default()),
-        }
-    }
+#[command]
+pub async fn save_settings(settings: serde_json::Value) -> Result<(), String> {
+    // TODO: Implement actual settings saving
+    println!("Saving settings: {:?}", settings);
+    Ok(())
 }
 
 #[command]

@@ -18,6 +18,7 @@ impl Default for ThemeSettings {
 }
 
 /// Manages theme state and resolution
+#[derive(Default)]
 pub struct ThemeManager {
     settings: ThemeSettings,
 }

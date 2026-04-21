@@ -1,6 +1,6 @@
 //! Theme service for desktop app orchestration
 use tauri::{AppHandle, Manager};
-use zaroxi_theme::{ThemeManager, ThemeSettings, ZaroxiTheme};
+use zaroxi_theme::ZaroxiTheme;
 
 /// Theme service for desktop-specific theme orchestration
 pub struct ThemeService {
@@ -44,7 +44,7 @@ impl ThemeService {
         };
         
         // Emit event to frontend with theme data
-        let _ = self.app_handle.emit_all(
+        let _ = self.app_handle.emit(
             "theme:changed",
             serde_json::json!({
                 "mode": theme_mode,
@@ -63,7 +63,7 @@ impl ThemeService {
             ZaroxiTheme::System => self.system_prefers_dark(),
         };
         
-        let _ = self.app_handle.emit_all(
+        let _ = self.app_handle.emit(
             "theme:changed",
             serde_json::json!({
                 "mode": theme_mode,
