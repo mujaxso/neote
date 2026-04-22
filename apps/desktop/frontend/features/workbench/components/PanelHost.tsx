@@ -60,11 +60,15 @@ export function PanelHost({ className, side = 'left' }: PanelHostProps) {
             &nbsp;
           </span>
         </div>
-        {activityItem.shortcut && (
-          <span className="text-xs text-primary/80 font-mono leading-none">
-            {activityItem.shortcut}
-          </span>
-        )}
+        <div className="flex items-center space-x-2">
+          {activityItem.shortcut ? (
+            <span className="text-xs text-primary/80 font-mono leading-none">
+              {activityItem.shortcut}
+            </span>
+          ) : (
+            <div className="w-0"></div>
+          )}
+        </div>
       </div>
       
       <div className="flex-1 overflow-auto bg-panel">
