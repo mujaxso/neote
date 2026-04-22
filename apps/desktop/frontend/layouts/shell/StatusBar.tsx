@@ -31,7 +31,7 @@ export function StatusBar({ className }: StatusBarProps) {
 
   return (
     <div className={cn(
-      "h-7 border-t border-divider bg-status-bar flex items-center justify-between px-3 text-xs font-sans",
+      "h-7 border-t border-divider bg-shell-background flex items-center justify-between px-3 text-xs font-sans",
       "text-secondary",
       className
     )}>

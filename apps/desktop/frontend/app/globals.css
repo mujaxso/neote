@@ -38,6 +38,15 @@
     --status-bar: hsl(210 40% 98%);
     --status-bar-foreground: hsl(215.4 16.3% 46.9%);
     --status-bar-border: hsl(214.3 31.8% 91.4%);
+    
+    /* Additional theme-specific colors */
+    --status-bar-background: hsl(210 40% 98%);
+    --status-bar-foreground: hsl(215.4 16.3% 46.9%);
+    --status-bar-border: hsl(214.3 31.8% 91.4%);
+    
+    /* Shell background from theme */
+    --shell-background: hsl(210 40% 98%);
+    --text-secondary: hsl(215.4 16.3% 46.9%);
   }
 
   .dark {
@@ -64,8 +73,13 @@
     --editor: 222.2 84% 4.9%;
     --editor-foreground: 210 40% 98%;
     
-    /* Status bar colors for dark theme */
+    /* Status bar colors for dark theme - match shell_background from theme */
     --status-bar: hsl(217.2 32.6% 10.5%);
+    --status-bar-foreground: hsl(215 20.2% 75.1%);
+    --status-bar-border: hsl(217.2 32.6% 17.5%);
+    
+    /* Additional theme-specific colors */
+    --status-bar-background: hsl(217.2 32.6% 10.5%);
     --status-bar-foreground: hsl(215 20.2% 75.1%);
     --status-bar-border: hsl(217.2 32.6% 17.5%);
   }
@@ -110,16 +124,16 @@
 }
 
 @layer components {
-  /* Status bar styles */
+  /* Status bar styles - use theme colors directly */
   .bg-status-bar {
-    background-color: var(--status-bar);
+    @apply bg-status-bar-background;
   }
   
   .text-status-bar {
-    color: var(--status-bar-foreground);
+    @apply text-status-bar-foreground;
   }
   
   .border-status-bar {
-    border-color: var(--status-bar-border);
+    @apply border-status-bar-border;
   }
 }
