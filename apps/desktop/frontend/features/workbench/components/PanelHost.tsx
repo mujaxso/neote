@@ -60,9 +60,6 @@ export function PanelHost({ className, side = 'left' }: PanelHostProps) {
             </span>
           )}
         </div>
-        {activityItem.description && (
-          <p className="text-xs text-primary/80 mt-0.5 leading-none">{activityItem.description}</p>
-        )}
       </div>
       
       <div className="flex-1 overflow-auto bg-panel">
