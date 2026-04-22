@@ -133,7 +133,7 @@ export function TopBar({ className }: TopBarProps) {
         className="flex-1 flex justify-center" 
         {...(isTauriEnv ? { 'data-tauri-drag-region': 'true' } : {})}
       >
-        <div className="text-xs text-muted truncate max-w-md">
+        <div className="text-xs text-primary/90 truncate max-w-md">
           No workspace open
         </div>
       </div>

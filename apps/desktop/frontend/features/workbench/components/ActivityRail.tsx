@@ -61,7 +61,7 @@ export function ActivityRail({ className }: ActivityRailProps) {
                 <TooltipContent side="right" className="border bg-panel shadow-lg">
                   <div className="text-sm font-semibold text-primary">{activity.label}</div>
                   {activity.description && (
-                    <div className="text-xs text-primary/80 mt-0.5">{activity.description}</div>
+                    <div className="text-xs text-primary/90 mt-0.5">{activity.description}</div>
                   )}
                   {activity.shortcut && (
                     <div className="text-xs font-mono mt-1 text-accent">{activity.shortcut}</div>
@@ -110,7 +110,7 @@ export function ActivityRail({ className }: ActivityRailProps) {
                 <TooltipContent side="right" className="border bg-panel shadow-lg">
                   <div className="text-sm font-semibold text-primary">{activity.label}</div>
                   {activity.description && (
-                    <div className="text-xs text-primary/80 mt-0.5">{activity.description}</div>
+                    <div className="text-xs text-primary/90 mt-0.5">{activity.description}</div>
                   )}
                   {activity.shortcut && (
                     <div className="text-xs font-mono mt-1 text-accent">{activity.shortcut}</div>
