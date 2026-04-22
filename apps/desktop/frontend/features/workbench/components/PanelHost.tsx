@@ -45,13 +45,15 @@ export function PanelHost({ className, side = 'left' }: PanelHostProps) {
       style={{ width: panelWidth }}
     >
       <div className="flex-shrink-0 border-b border-divider px-4 py-2 flex items-center justify-between bg-activity-rail">
-        <div className="flex items-center space-x-1.5">
-          <h3 className="font-semibold text-sm text-primary leading-none">{activityItem.label}</h3>
-          {activityItem.badge !== undefined && activityItem.badge > 0 && (
-            <span className="px-1 py-0.5 text-xs rounded-full bg-accent text-on-accent font-medium leading-none">
-              {activityItem.badge}
-            </span>
-          )}
+        <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2">
+            <h3 className="font-semibold text-sm text-primary leading-none">{activityItem.label}</h3>
+            {activityItem.badge !== undefined && activityItem.badge > 0 && (
+              <span className="px-1 py-0.5 text-xs rounded-full bg-accent text-on-accent font-medium leading-none">
+                {activityItem.badge}
+              </span>
+            )}
+          </div>
         </div>
         {activityItem.shortcut && (
           <span className="text-xs text-primary/80 font-mono leading-none">
