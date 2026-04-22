@@ -107,24 +107,24 @@ export function EditorContainer() {
   };
 
   return (
-    <div className="h-full flex flex-col bg-editor">
-      <div className="border-b border-border px-4 py-2 flex items-center justify-between bg-panel-header">
-        <div className="text-sm font-medium flex items-center space-x-2">
-          <span className="text-primary">{fileName}</span>
+    <div className="h-full flex flex-col bg-editor border-l border-r border-border">
+      <div className="border-b border-divider px-5 py-3 flex items-center justify-between bg-panel-header">
+        <div className="text-sm font-medium flex items-center space-x-3">
+          <span className="text-primary font-semibold">{fileName}</span>
           {isLoading && (
-            <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+            <div className="w-2.5 h-2.5 rounded-full bg-accent animate-pulse" />
           )}
           {activeFilePath && (
-            <span className="text-xs text-muted truncate max-w-xs" title={activeFilePath}>
+            <span className="text-sm text-muted truncate max-w-md font-normal" title={activeFilePath}>
               {activeFilePath}
             </span>
           )}
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-3">
           {activeFilePath && (
             <button
               onClick={handleEditorSave}
-              className="save-button px-3 py-1 text-xs bg-accent text-on-accent rounded hover:bg-accent-hover transition-colors"
+              className="save-button px-4 py-2 text-sm bg-accent text-on-accent rounded-md hover:bg-accent-hover transition-colors font-medium shadow-sm"
             >
               Save
             </button>

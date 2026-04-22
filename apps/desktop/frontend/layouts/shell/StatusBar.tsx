@@ -5,46 +5,46 @@ export function StatusBar() {
   const { currentWorkspace, isLoading } = useWorkspaceStore();
   
   return (
-    <div className="h-6 border-t border-border bg-sidebar flex items-center justify-between px-3 text-xs font-sans">
-      <div className="flex items-center space-x-4">
-        <div className="flex items-center space-x-1">
-          <Icon name="workspace" size={12} className="text-muted-foreground" label="Workspace" />
-          <span className="text-muted-foreground">Workspace:</span>
-          <span className="font-medium">
+    <div className="h-7 border-t border-divider bg-status-bar flex items-center justify-between px-4 text-xs font-sans">
+      <div className="flex items-center space-x-6">
+        <div className="flex items-center space-x-2">
+          <Icon name="workspace" size={13} className="text-secondary" label="Workspace" />
+          <span className="text-secondary">Workspace:</span>
+          <span className="font-medium text-primary">
             {currentWorkspace ? currentWorkspace.name : 'No workspace open'}
           </span>
           {currentWorkspace && (
-            <span className="text-muted-foreground ml-2 font-mono text-[11px]">
+            <span className="text-muted ml-2 font-mono text-[11px]">
               ({currentWorkspace.rootPath})
             </span>
           )}
         </div>
         
         {isLoading && (
-          <div className="flex items-center space-x-1">
-            <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-            <span className="text-muted-foreground">Loading...</span>
+          <div className="flex items-center space-x-2">
+            <div className="w-2.5 h-2.5 rounded-full bg-accent animate-pulse" />
+            <span className="text-secondary">Loading...</span>
           </div>
         )}
       </div>
       
-      <div className="flex items-center space-x-4 font-mono">
-        <div className="flex items-center space-x-1">
-          <Icon name="file-code" size={12} className="text-foreground" label="Encoding" debug={true} />
-          <span className="text-foreground">UTF-8</span>
+      <div className="flex items-center space-x-6 font-mono">
+        <div className="flex items-center space-x-2">
+          <Icon name="file-code" size={13} className="text-secondary" label="Encoding" />
+          <span className="text-primary">UTF-8</span>
         </div>
-        <div className="flex items-center space-x-1">
-          <Icon name="indent" size={12} className="text-foreground" label="Indentation" />
-          <span className="text-foreground">Spaces: 2</span>
+        <div className="flex items-center space-x-2">
+          <Icon name="indent" size={13} className="text-secondary" label="Indentation" />
+          <span className="text-primary">Spaces: 2</span>
         </div>
-        <div className="flex items-center space-x-1">
-          <Icon name="cursor" size={12} className="text-foreground" label="Cursor position" />
-          <span className="text-foreground">LN 1, COL 1</span>
+        <div className="flex items-center space-x-2">
+          <Icon name="cursor" size={13} className="text-secondary" label="Cursor position" />
+          <span className="text-primary">LN 1, COL 1</span>
         </div>
         {/* Font test indicator */}
-        <div className="flex items-center space-x-1">
-          <Icon name="check" size={12} className="text-green-500" label="Font loaded" />
-          <span className="text-foreground text-[10px]">Nerd Font</span>
+        <div className="flex items-center space-x-2">
+          <Icon name="check" size={13} className="text-success" label="Font loaded" />
+          <span className="text-primary text-[11px]">Nerd Font</span>
         </div>
       </div>
     </div>
