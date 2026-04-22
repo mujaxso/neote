@@ -1,6 +1,16 @@
 use tauri::AppHandle;
+use crate::services::theme_service::ThemeService;
 
-pub fn on_app_ready(_app_handle: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
+pub fn on_app_ready(app_handle: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
     // App is ready, start services
+    let theme_service = ThemeService::new(app_handle.clone());
+    
+    // Apply theme on startup
+    tauri::async_runtime::spawn(async move {
+        if let Err(e) = theme_service.apply_theme().await {
+            tracing::error!("Failed to apply theme on startup: {}", e);
+        }
+    });
+    
     Ok(())
 }
