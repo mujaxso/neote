@@ -25,7 +25,7 @@ export function ActivityRail({ className }: ActivityRailProps) {
 
   return (
     <TooltipProvider delayDuration={300}>
-      <div className={cn('w-12 flex flex-col items-center py-4 border-r border-divider bg-activity-rail h-full', className)}>
+      <div className={cn('w-12 flex flex-col items-center py-4 bg-activity-rail h-full', className)}>
         {/* Top activity items */}
         <div className="flex flex-col items-center space-y-3">
           {topActivities.map((activity) => {
@@ -58,10 +58,10 @@ export function ActivityRail({ className }: ActivityRailProps) {
                     )}
                   </button>
                 </TooltipTrigger>
-                <TooltipContent side="right" className="border border-divider bg-panel">
+                <TooltipContent side="right" className="border border-divider bg-panel shadow-lg">
                   <div className="text-sm font-semibold text-primary">{activity.label}</div>
                   {activity.description && (
-                    <div className="text-xs text-muted mt-0.5">{activity.description}</div>
+                    <div className="text-xs text-primary/80 mt-0.5">{activity.description}</div>
                   )}
                   {activity.shortcut && (
                     <div className="text-xs font-mono mt-1 text-accent">{activity.shortcut}</div>
@@ -107,10 +107,10 @@ export function ActivityRail({ className }: ActivityRailProps) {
                     )}
                   </button>
                 </TooltipTrigger>
-                <TooltipContent side="right" className="border border-divider bg-panel">
+                <TooltipContent side="right" className="border border-divider bg-panel shadow-lg">
                   <div className="text-sm font-semibold text-primary">{activity.label}</div>
                   {activity.description && (
-                    <div className="text-xs text-muted mt-0.5">{activity.description}</div>
+                    <div className="text-xs text-primary/80 mt-0.5">{activity.description}</div>
                   )}
                   {activity.shortcut && (
                     <div className="text-xs font-mono mt-1 text-accent">{activity.shortcut}</div>

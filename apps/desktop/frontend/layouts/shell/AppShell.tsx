@@ -59,7 +59,7 @@ export function AppShell() {
       
       <div className="flex flex-1 overflow-hidden">
         {/* Activity Rail - Always visible */}
-        <div className="h-full border-r border-divider">
+        <div className="h-full">
           <ActivityRail />
         </div>
         
@@ -70,7 +70,7 @@ export function AppShell() {
         
         {/* Settings Panel (full width when active) */}
         {isSettingsActive && (
-          <div className="flex-1 flex flex-col overflow-hidden bg-panel border-l border-divider">
+          <div className="flex-1 flex flex-col overflow-hidden bg-panel">
             <Suspense fallback={
               <div className="p-4 bg-panel">
                 <div className="space-y-2">
