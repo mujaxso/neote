@@ -45,7 +45,7 @@ export function PanelHost({ className, side = 'left' }: PanelHostProps) {
       )}
       style={{ width: panelWidth }}
     >
-      <div className="border-b border-divider px-4 py-2 flex items-center justify-between bg-activity-rail h-[42px]">
+      <div className="border-b border-divider px-4 py-2 flex items-center justify-between bg-activity-rail h-9">
         <div className="flex items-center space-x-3">
           <div className="flex items-center space-x-2">
             <Icon name={activityItem.icon} size={14} className="text-primary" />
@@ -60,7 +60,7 @@ export function PanelHost({ className, side = 'left' }: PanelHostProps) {
             &nbsp;
           </span>
         </div>
-        <div className="flex items-center space-x-2 h-5">
+        <div className="flex items-center space-x-2">
           {activityItem.shortcut ? (
             <span className="text-xs text-primary/80 font-mono leading-none">
               {activityItem.shortcut}
