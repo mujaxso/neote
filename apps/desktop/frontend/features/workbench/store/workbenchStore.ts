@@ -39,7 +39,7 @@ export interface PanelActions {
   togglePanel: (panelId: PanelId) => void;
 }
 
-const DEFAULT_PANEL_WIDTH = 280;
+const DEFAULT_PANEL_WIDTH = 240;
 const DEFAULT_RIGHT_PANEL_WIDTH = 320;
 
 export const useWorkbenchStore = create<PanelState & PanelActions>()(

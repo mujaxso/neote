@@ -44,7 +44,7 @@ export function PanelHost({ className, side = 'left' }: PanelHostProps) {
         ? moveEvent.clientX - startXRef.current
         : startXRef.current - moveEvent.clientX;
       
-      const newWidth = Math.max(200, Math.min(600, startWidthRef.current + delta));
+      const newWidth = Math.max(180, Math.min(400, startWidthRef.current + delta));
       
       if (side === 'left') {
         setLeftPanelWidth(newWidth);
@@ -115,7 +115,7 @@ export function PanelHost({ className, side = 'left' }: PanelHostProps) {
         className={cn(
           'h-full bg-panel overflow-hidden flex flex-col relative',
           side === 'left' ? 'border-r' : 'border-l',
-          'min-w-[200px] max-w-[600px]',
+          'min-w-[180px] max-w-[400px]',
           className
         )}
         style={{ width: panelWidth }}
