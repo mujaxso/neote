@@ -39,7 +39,7 @@ export function ActivityRail({ className }: ActivityRailProps) {
                   <button
                     onClick={() => togglePanel(activity.id)}
                     className={cn(
-                      'relative w-10 h-10 flex items-center justify-center rounded-md transition-all duration-150',
+                      'relative w-9 h-9 flex items-center justify-center rounded-md transition-all duration-150',
                       isActive
                         ? 'bg-accent text-on-accent shadow-sm'
                         : 'text-primary hover:bg-hover-bg hover:text-accent active:scale-95'
@@ -48,7 +48,7 @@ export function ActivityRail({ className }: ActivityRailProps) {
                   >
                     <Icon 
                       name={activity.icon} 
-                      size={18} 
+                      size={16} 
                       className={isActive ? '' : 'opacity-80 hover:opacity-100'}
                     />
                     {activity.badge !== undefined && activity.badge > 0 && (
@@ -88,7 +88,7 @@ export function ActivityRail({ className }: ActivityRailProps) {
                   <button
                     onClick={() => togglePanel(activity.id)}
                     className={cn(
-                      'relative w-10 h-10 flex items-center justify-center rounded-md transition-all duration-150',
+                      'relative w-9 h-9 flex items-center justify-center rounded-md transition-all duration-150',
                       isActive
                         ? 'bg-accent text-on-accent shadow-sm'
                         : 'text-primary hover:bg-hover-bg hover:text-accent active:scale-95'
@@ -97,7 +97,7 @@ export function ActivityRail({ className }: ActivityRailProps) {
                   >
                     <Icon 
                       name={activity.icon} 
-                      size={18} 
+                      size={16} 
                       className={isActive ? '' : 'opacity-80 hover:opacity-100'}
                     />
                     {activity.badge !== undefined && activity.badge > 0 && (

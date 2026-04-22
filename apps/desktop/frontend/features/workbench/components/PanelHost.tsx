@@ -43,10 +43,10 @@ export function PanelHost({ className, side = 'left' }: PanelHostProps) {
       )}
       style={{ width: panelWidth }}
     >
-      <div className="flex-shrink-0 border-b border-divider px-4 py-3 bg-panel/95">
-        <div className="flex items-center justify-between h-7">
+      <div className="flex-shrink-0 border-b border-divider px-4 py-2.5 bg-editor">
+        <div className="flex items-center justify-between h-6">
           <div className="flex items-center gap-2">
-            <h3 className="font-bold text-sm text-primary leading-none tracking-tight">{activityItem.label}</h3>
+            <h3 className="font-bold text-sm text-primary leading-none">{activityItem.label}</h3>
             {activityItem.badge !== undefined && activityItem.badge > 0 && (
               <span className="px-1.5 py-0.5 text-xs rounded-full bg-accent text-on-accent leading-none font-medium">
                 {activityItem.badge}
@@ -54,13 +54,13 @@ export function PanelHost({ className, side = 'left' }: PanelHostProps) {
             )}
           </div>
           {activityItem.shortcut && (
-            <span className="text-xs text-primary/70 font-mono leading-none tracking-tight">
+            <span className="text-xs text-primary/70 font-mono leading-none">
               {activityItem.shortcut}
             </span>
           )}
         </div>
         {activityItem.description && (
-          <p className="text-xs text-primary/70 mt-2 leading-tight tracking-tight">{activityItem.description}</p>
+          <p className="text-xs text-primary/70 mt-1.5 leading-tight">{activityItem.description}</p>
         )}
       </div>
       
