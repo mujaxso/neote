@@ -75,7 +75,7 @@ export function TopBar({ className }: TopBarProps) {
   return (
     <div 
       className={cn(
-        'h-11 flex items-center justify-between px-5 border-b border-divider',
+        'h-10 flex items-center justify-between px-4 border-b border-divider',
         'bg-title-bar text-title-bar-foreground',
         'select-none',
         isTauriEnv ? 'cursor-default' : 'cursor-auto',
@@ -85,42 +85,42 @@ export function TopBar({ className }: TopBarProps) {
     >
       {/* Left section: Brand and menu */}
       <div 
-        className="flex items-center gap-8" 
+        className="flex items-center gap-6" 
         {...(isTauriEnv ? { 'data-tauri-drag-region': 'true' } : {})}
       >
         <div 
-          className="flex items-center gap-3" 
+          className="flex items-center gap-2" 
           {...(isTauriEnv ? { 'data-tauri-drag-region': 'true' } : {})}
         >
-          <Icon name="code" size={18} className="text-accent" />
-          <span className="font-semibold text-sm tracking-tight text-primary">Zaroxi Studio</span>
+          <Icon name="code" size={16} className="text-accent" />
+          <span className="font-semibold text-sm text-primary">Zaroxi Studio</span>
         </div>
         
-        <div className="flex items-center gap-0.5">
+        <div className="flex items-center gap-0">
           <button
             onClick={() => togglePanel('explorer')}
-            className="px-3.5 py-2 text-sm rounded-md hover:bg-hover-bg transition-colors text-secondary hover:text-primary"
+            className="px-3 py-1.5 text-xs hover:bg-hover-bg transition-colors text-secondary hover:text-primary"
             data-no-drag="true"
           >
             File
           </button>
           <button
             onClick={() => togglePanel('search')}
-            className="px-3.5 py-2 text-sm rounded-md hover:bg-hover-bg transition-colors text-secondary hover:text-primary"
+            className="px-3 py-1.5 text-xs hover:bg-hover-bg transition-colors text-secondary hover:text-primary"
             data-no-drag="true"
           >
             Edit
           </button>
           <button
             onClick={() => togglePanel('settings')}
-            className="px-3.5 py-2 text-sm rounded-md hover:bg-hover-bg transition-colors text-secondary hover:text-primary"
+            className="px-3 py-1.5 text-xs hover:bg-hover-bg transition-colors text-secondary hover:text-primary"
             data-no-drag="true"
           >
             View
           </button>
           <button
             onClick={() => togglePanel('assistant')}
-            className="px-3.5 py-2 text-sm rounded-md hover:bg-hover-bg transition-colors text-secondary hover:text-primary"
+            className="px-3 py-1.5 text-xs hover:bg-hover-bg transition-colors text-secondary hover:text-primary"
             data-no-drag="true"
           >
             Tools

@@ -14,17 +14,17 @@ html, body, #root {
 }
 
 :root {
-  /* Light theme - Professional IDE palette */
-  --color-app-background: #f8f9fa;
-  --color-shell-background: #f1f3f5;
+  /* Light theme - Professional IDE with better contrast */
+  --color-app-background: #f5f5f5;
+  --color-shell-background: #ffffff;
   --color-panel-background: #ffffff;
   --color-panel-header-background: #f8f9fa;
   --color-elevated-panel-background: #ffffff;
   --color-editor-background: #ffffff;
   --color-input-background: #ffffff;
-  --color-status-bar-background: #f1f3f5;
+  --color-status-bar-background: #f8f9fa;
   --color-title-bar-background: #ffffff;
-  --color-title-bar-foreground: #212529;
+  --color-title-bar-foreground: #1a1a1a;
   --color-activity-rail-background: #f8f9fa;
   --color-sidebar-background: #ffffff;
   --color-tab-background: #f8f9fa;
@@ -32,121 +32,121 @@ html, body, #root {
   --color-assistant-panel-background: #f8f9fa;
   --color-workbench-chrome: #f8f9fa;
   
-  /* Enhanced text contrast */
-  --color-text-primary: #212529;
-  --color-text-secondary: #495057;
-  --color-text-muted: #6c757d;
-  --color-text-faint: #adb5bd;
+  /* Improved text contrast */
+  --color-text-primary: #1a1a1a;
+  --color-text-secondary: #424242;
+  --color-text-muted: #666666;
+  --color-text-faint: #888888;
   --color-text-on-accent: #ffffff;
-  --color-text-on-surface: #212529;
-  --color-text-disabled: #adb5bd;
-  --color-text-link: #0d6efd;
+  --color-text-on-surface: #1a1a1a;
+  --color-text-disabled: #999999;
+  --color-text-link: #0066cc;
   
-  /* Stronger borders for better separation */
-  --color-border: #dee2e6;
-  --color-border-subtle: rgba(222, 226, 230, 0.7);
-  --color-divider: #dee2e6;
-  --color-accent: #0d6efd;
-  --color-accent-hover: #0b5ed7;
-  --color-accent-soft: rgba(13, 110, 253, 0.12);
-  --color-accent-soft-background: rgba(13, 110, 253, 0.06);
+  /* Clearer borders */
+  --color-border: #e0e0e0;
+  --color-border-subtle: rgba(224, 224, 224, 0.7);
+  --color-divider: #e0e0e0;
+  --color-accent: #0066cc;
+  --color-accent-hover: #0052a3;
+  --color-accent-soft: rgba(0, 102, 204, 0.1);
+  --color-accent-soft-background: rgba(0, 102, 204, 0.05);
   
   /* More distinct states */
-  --color-hover-background: rgba(0, 0, 0, 0.04);
-  --color-active-background: rgba(0, 0, 0, 0.06);
-  --color-selected-background: rgba(13, 110, 253, 0.1);
-  --color-selected-text-background: rgba(13, 110, 253, 0.2);
-  --color-selected-editor-background: rgba(13, 110, 253, 0.15);
+  --color-hover-background: rgba(0, 0, 0, 0.05);
+  --color-active-background: rgba(0, 0, 0, 0.08);
+  --color-selected-background: rgba(0, 102, 204, 0.1);
+  --color-selected-text-background: rgba(0, 102, 204, 0.2);
+  --color-selected-editor-background: rgba(0, 102, 204, 0.15);
   
-  --color-success: #198754;
-  --color-warning: #ffc107;
-  --color-error: #dc3545;
-  --color-info: #0d6efd;
+  --color-success: #2e7d32;
+  --color-warning: #ed6c02;
+  --color-error: #d32f2f;
+  --color-info: #0066cc;
   
-  --color-focus-ring: rgba(13, 110, 253, 0.25);
+  --color-focus-ring: rgba(0, 102, 204, 0.3);
   
-  /* Editor-specific - cleaner, brighter */
+  /* Editor-specific */
   --color-editor-gutter-background: #f8f9fa;
-  --color-editor-line-highlight: rgba(0, 0, 0, 0.02);
-  --color-editor-cursor: #212529;
-  --color-editor-selection: rgba(13, 110, 253, 0.2);
-  --color-editor-find-highlight: rgba(255, 193, 7, 0.2);
+  --color-editor-line-highlight: rgba(0, 0, 0, 0.03);
+  --color-editor-cursor: #1a1a1a;
+  --color-editor-selection: rgba(0, 102, 204, 0.2);
+  --color-editor-find-highlight: rgba(237, 108, 2, 0.2);
   
-  --color-syntax-keyword: #dc3545;
-  --color-syntax-function: #198754;
-  --color-syntax-string: #ffc107;
-  --color-syntax-comment: #6c757d;
-  --color-syntax-type: #0d6efd;
-  --color-syntax-variable: #212529;
-  --color-syntax-constant: #ffc107;
+  --color-syntax-keyword: #d32f2f;
+  --color-syntax-function: #2e7d32;
+  --color-syntax-string: #ed6c02;
+  --color-syntax-comment: #666666;
+  --color-syntax-type: #0066cc;
+  --color-syntax-variable: #1a1a1a;
+  --color-syntax-constant: #ed6c02;
 }
 
 :root.dark {
-  /* Dark theme - Professional IDE with clear hierarchy */
-  --color-app-background: #0d1117;
-  --color-shell-background: #161b22;
-  --color-panel-background: #161b22;
-  --color-panel-header-background: #1c2128;
-  --color-elevated-panel-background: #1c2128;
-  --color-editor-background: #0d1117;
-  --color-input-background: #161b22;
-  --color-status-bar-background: #161b22;
-  --color-title-bar-background: #161b22;
-  --color-title-bar-foreground: #f0f6fc;
-  --color-activity-rail-background: #0d1117;
-  --color-sidebar-background: #161b22;
-  --color-tab-background: #161b22;
-  --color-tab-active-background: #0d1117;
-  --color-assistant-panel-background: #1c2128;
-  --color-workbench-chrome: #161b22;
+  /* Dark theme - Professional IDE with excellent readability */
+  --color-app-background: #1e1e1e;
+  --color-shell-background: #252526;
+  --color-panel-background: #252526;
+  --color-panel-header-background: #2d2d30;
+  --color-elevated-panel-background: #2d2d30;
+  --color-editor-background: #1e1e1e;
+  --color-input-background: #252526;
+  --color-status-bar-background: #007acc;
+  --color-title-bar-background: #3c3c3c;
+  --color-title-bar-foreground: #ffffff;
+  --color-activity-rail-background: #333333;
+  --color-sidebar-background: #252526;
+  --color-tab-background: #2d2d30;
+  --color-tab-active-background: #1e1e1e;
+  --color-assistant-panel-background: #2d2d30;
+  --color-workbench-chrome: #252526;
   
-  /* Enhanced contrast for dark theme */
-  --color-text-primary: #f0f6fc;
-  --color-text-secondary: #c9d1d9;
-  --color-text-muted: #8b949e;
-  --color-text-faint: #6e7681;
+  /* High contrast text for dark theme */
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #cccccc;
+  --color-text-muted: #999999;
+  --color-text-faint: #666666;
   --color-text-on-accent: #ffffff;
-  --color-text-on-surface: #f0f6fc;
-  --color-text-disabled: #6e7681;
-  --color-text-link: #58a6ff;
+  --color-text-on-surface: #ffffff;
+  --color-text-disabled: #666666;
+  --color-text-link: #4da6ff;
   
-  /* Stronger borders for better surface separation */
-  --color-border: #30363d;
-  --color-border-subtle: rgba(48, 54, 61, 0.7);
-  --color-divider: #30363d;
-  --color-accent: #58a6ff;
-  --color-accent-hover: #79c0ff;
-  --color-accent-soft: rgba(88, 166, 255, 0.2);
-  --color-accent-soft-background: rgba(88, 166, 255, 0.12);
+  /* Clear borders */
+  --color-border: #3c3c3c;
+  --color-border-subtle: rgba(60, 60, 60, 0.7);
+  --color-divider: #3c3c3c;
+  --color-accent: #007acc;
+  --color-accent-hover: #3399ff;
+  --color-accent-soft: rgba(0, 122, 204, 0.2);
+  --color-accent-soft-background: rgba(0, 122, 204, 0.1);
   
-  /* More visible states */
-  --color-hover-background: rgba(177, 186, 196, 0.12);
-  --color-active-background: rgba(177, 186, 196, 0.2);
-  --color-selected-background: rgba(88, 166, 255, 0.2);
-  --color-selected-text-background: rgba(88, 166, 255, 0.3);
-  --color-selected-editor-background: rgba(88, 166, 255, 0.25);
+  /* Visible states */
+  --color-hover-background: rgba(255, 255, 255, 0.1);
+  --color-active-background: rgba(255, 255, 255, 0.15);
+  --color-selected-background: rgba(0, 122, 204, 0.2);
+  --color-selected-text-background: rgba(0, 122, 204, 0.3);
+  --color-selected-editor-background: rgba(0, 122, 204, 0.25);
   
-  --color-success: #3fb950;
-  --color-warning: #d29922;
-  --color-error: #f85149;
-  --color-info: #58a6ff;
+  --color-success: #4caf50;
+  --color-warning: #ff9800;
+  --color-error: #f44336;
+  --color-info: #2196f3;
   
-  --color-focus-ring: rgba(88, 166, 255, 0.25);
+  --color-focus-ring: rgba(0, 122, 204, 0.4);
   
-  /* Editor-specific - darker for focus */
-  --color-editor-gutter-background: #0d1117;
-  --color-editor-line-highlight: rgba(177, 186, 196, 0.08);
-  --color-editor-cursor: #f0f6fc;
-  --color-editor-selection: rgba(88, 166, 255, 0.3);
-  --color-editor-find-highlight: rgba(210, 153, 34, 0.3);
+  /* Editor-specific - VS Code-like */
+  --color-editor-gutter-background: #1e1e1e;
+  --color-editor-line-highlight: rgba(255, 255, 255, 0.05);
+  --color-editor-cursor: #ffffff;
+  --color-editor-selection: rgba(0, 122, 204, 0.3);
+  --color-editor-find-highlight: rgba(255, 152, 0, 0.3);
   
-  --color-syntax-keyword: #ff7b72;
-  --color-syntax-function: #7ee787;
-  --color-syntax-string: #f0cc60;
-  --color-syntax-comment: #8b949e;
-  --color-syntax-type: #79c0ff;
-  --color-syntax-variable: #f0f6fc;
-  --color-syntax-constant: #f0cc60;
+  --color-syntax-keyword: #569cd6;
+  --color-syntax-function: #dcdcaa;
+  --color-syntax-string: #ce9178;
+  --color-syntax-comment: #6a9955;
+  --color-syntax-type: #4ec9b0;
+  --color-syntax-variable: #9cdcfe;
+  --color-syntax-constant: #4fc1ff;
 }
 
 /* Utility classes for semantic colors */
