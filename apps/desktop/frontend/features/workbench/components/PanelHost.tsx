@@ -32,14 +32,14 @@ export function PanelHost({ className, side = 'left' }: PanelHostProps) {
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     setIsResizing(true);
     startXRef.current = e.clientX;
     startWidthRef.current = panelWidth;
     
     // Add event listeners for mouse move and up
     const handleMouseMove = (moveEvent: MouseEvent) => {
-      if (!isResizing) return;
-      
+      moveEvent.preventDefault();
       const delta = side === 'left' 
         ? moveEvent.clientX - startXRef.current
         : startXRef.current - moveEvent.clientX;
@@ -57,17 +57,42 @@ export function PanelHost({ className, side = 'left' }: PanelHostProps) {
       setIsResizing(false);
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
     };
     
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
-  }, [isResizing, panelWidth, side, setLeftPanelWidth, setRightPanelWidth]);
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  }, [panelWidth, side, setLeftPanelWidth, setRightPanelWidth]);
 
+  // Clean up event listeners when resizing state changes
+  useEffect(() => {
+    if (!isResizing) {
+      return;
+    }
+    
+    const handleMouseUp = () => {
+      setIsResizing(false);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+    
+    document.addEventListener('mouseup', handleMouseUp);
+    
+    return () => {
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizing]);
+  
   // Clean up event listeners on unmount
   useEffect(() => {
     return () => {
       document.removeEventListener('mousemove', () => {});
       document.removeEventListener('mouseup', () => {});
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
     };
   }, []);
 
@@ -98,11 +123,14 @@ export function PanelHost({ className, side = 'left' }: PanelHostProps) {
         {/* Resize handle */}
         <div 
           className={cn(
-            'absolute top-0 bottom-0 w-1 cursor-col-resize z-10',
+            'absolute top-0 bottom-0 w-2 cursor-col-resize z-50 resize-handle',
             side === 'left' ? 'right-0' : 'left-0',
-            'hover:bg-accent/50 active:bg-accent transition-colors',
+            'hover:bg-accent active:bg-accent transition-colors',
             isResizing && 'bg-accent'
           )}
+          style={{
+            transform: side === 'left' ? 'translateX(1px)' : 'translateX(-1px)',
+          }}
           onMouseDown={handleMouseDown}
         />
         
@@ -148,7 +176,7 @@ export function PanelHost({ className, side = 'left' }: PanelHostProps) {
       </div>
       {/* Overlay during resizing */}
       {isResizing && (
-        <div className="fixed inset-0 z-50 cursor-col-resize no-select" />
+        <div className="fixed inset-0 z-40 cursor-col-resize no-select" />
       )}
     </>
   );

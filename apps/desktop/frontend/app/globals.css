@@ -148,4 +148,17 @@
     -moz-user-select: none;
     -ms-user-select: none;
   }
+  
+  /* Resize handle styles */
+  .resize-handle {
+    transition: background-color 0.15s ease;
+  }
+  
+  .resize-handle:hover {
+    background-color: rgba(66, 153, 225, 0.5);
+  }
+  
+  .resize-handle:active {
+    background-color: rgba(66, 153, 225, 0.8);
+  }
 }
