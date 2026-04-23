@@ -45,7 +45,9 @@ export function PanelHost({ className, side = 'left' }: PanelHostProps) {
         ? moveEvent.clientX - startXRef.current
         : startXRef.current - moveEvent.clientX;
       
-      const newWidth = Math.max(LAYOUT.panelLeft.minWidth, Math.min(LAYOUT.panelLeft.maxWidth, startWidthRef.current + delta));
+      const minW = side === 'left' ? LAYOUT.panelLeft.minWidth : LAYOUT.panelRight.minWidth;
+      const maxW = side === 'left' ? LAYOUT.panelLeft.maxWidth : LAYOUT.panelRight.maxWidth;
+      const newWidth = Math.max(minW, Math.min(maxW, startWidthRef.current + delta));
       
       if (side === 'left') {
         setLeftPanelWidth(newWidth);
@@ -118,7 +120,7 @@ export function PanelHost({ className, side = 'left' }: PanelHostProps) {
           side === 'left' ? 'border-r' : 'border-l',
           className
         )}
-        style={{ width: panelWidth, minWidth: LAYOUT.panelLeft.minWidth, maxWidth: LAYOUT.panelLeft.maxWidth }}
+        style={{ width: panelWidth, minWidth: side === 'left' ? LAYOUT.panelLeft.minWidth : LAYOUT.panelRight.minWidth, maxWidth: side === 'left' ? LAYOUT.panelLeft.maxWidth : LAYOUT.panelRight.maxWidth }}
       >
         {/* Resize handle */}
         <div 

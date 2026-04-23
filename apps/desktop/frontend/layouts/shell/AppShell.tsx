@@ -83,7 +83,7 @@ export function AppShell() {
       
       <div className="flex flex-1 overflow-hidden">
         {/* Activity Rail - Always visible */}
-        <div className="h-full">
+        <div className="h-full flex-shrink-0">
           <ActivityRail />
         </div>
         
