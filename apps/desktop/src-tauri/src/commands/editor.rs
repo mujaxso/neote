@@ -5,7 +5,6 @@ use std::sync::Mutex;
 use zaroxi_domain_editor::Document;
 use zaroxi_domain_editor::LargeFileMode;
 use zaroxi_ops_file::FileLoader;
-use zaroxi_ops_file::file_loader::FileSource;
 
 /// In-memory store for open documents.
 static DOCUMENTS: once_cell::sync::Lazy<Mutex<HashMap<String, Document>>> =
@@ -67,10 +66,10 @@ pub async fn open_document(path: String) -> Result<OpenDocumentResponse, String>
 
     // Create the editor document
     let document = match file_source {
-        FileSource::Memory(text) => {
+        zaroxi_ops_file::file_loader::FileSource::Memory(text) => {
             Document::from_text_with_path(&text, path.clone())
         }
-        FileSource::Mmap(mmap) => {
+        zaroxi_ops_file::file_loader::FileSource::Mmap(mmap) => {
             Document::from_mmap(mmap, path.clone(), size)
         }
     };
