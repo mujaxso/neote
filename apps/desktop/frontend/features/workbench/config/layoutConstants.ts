@@ -7,24 +7,24 @@ export const LAYOUT = {
 
   /** Left‑side panel (explorer, search, git, debug etc.) */
   panelLeft: {
-    minWidth: 140,
-    defaultWidth: 220,
-    maxWidth: 300,
+    minWidth: 100,
+    defaultWidth: 140,
+    maxWidth: 200,
     /** Minimum width when the window is narrow (< breakpoints.narrow). */
-    minNarrowWidth: 200,
+    minNarrowWidth: 120,
     /** Maximum width when the window is narrow. */
-    maxNarrowWidth: 280,
+    maxNarrowWidth: 160,
   },
 
   /** Right‑side panel (assistant, extensions etc.) */
   panelRight: {
-    minWidth: 220,
-    defaultWidth: 420,
-    maxWidth: 500,
+    minWidth: 140,
+    defaultWidth: 220,
+    maxWidth: 300,
     /** Minimum width when the window is narrow. */
-    minNarrowWidth: 350,
+    minNarrowWidth: 200,
     /** Maximum width when the window is narrow. */
-    maxNarrowWidth: 500,
+    maxNarrowWidth: 280,
   },
 
   /** Height of the compact top bar (px) */
