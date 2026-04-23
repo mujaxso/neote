@@ -39,7 +39,7 @@ export function CodeEditor({
       <pre
         className={cn(
           'relative h-full w-full overflow-auto p-0 font-mono text-sm leading-[22px]',
-          'bg-editor text-editor-foreground',
+          'bg-editor text-editor-foreground overflow-auto',
           className
         )}
       >
@@ -51,8 +51,8 @@ export function CodeEditor({
   return (
     <textarea
       className={cn(
-        'relative h-full w-full resize-none font-mono text-sm leading-[22px] p-0',
-        'bg-transparent text-editor-foreground caret-foreground outline-none',
+        'relative h-full w-full resize-none font-mono text-sm leading-[22px] p-0 overflow-auto',
+        'bg-transparent text-editor-foreground caret-foreground outline-none overflow-auto',
         className
       )}
       value={value}

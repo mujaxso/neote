@@ -20,6 +20,7 @@ pub struct OpenDocumentResponse {
     pub char_count: usize,
     pub large_file_mode: String,
     pub is_read_only: bool,
+    pub content: String,
 }
 
 /// Request for visible lines.
@@ -68,6 +69,9 @@ pub async fn open_document(path: String) -> Result<OpenDocumentResponse, String>
     let large_file_mode = LargeFileMode::from_size(size);
     let is_read_only = large_file_mode.is_read_only();
 
+    // Extract the full file content before consuming file_source
+    let content = file_source.as_str().to_string();
+
     // Create the editor document
     let document = match file_source {
         zaroxi_ops_file::file_loader::FileSource::Memory(text) => {
@@ -93,6 +97,7 @@ pub async fn open_document(path: String) -> Result<OpenDocumentResponse, String>
         char_count,
         large_file_mode: format!("{:?}", large_file_mode),
         is_read_only,
+        content,
     })
 }
 
