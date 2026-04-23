@@ -7,7 +7,7 @@ use crate::viewport::Viewport;
 use crate::document::LargeFileMode;
 
 /// The main editor state, combining document, cursor, selection, and viewport.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct EditorState {
     document: Document,
     cursor: Cursor,

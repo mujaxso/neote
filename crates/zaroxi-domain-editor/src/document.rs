@@ -6,7 +6,7 @@ use std::path::PathBuf;
 use memmap2::Mmap;
 
 /// Source of file content for the editor.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub enum FileSource {
     /// File loaded entirely into memory (small files).
     Memory(String),
@@ -75,7 +75,7 @@ impl LargeFileMode {
 }
 
 /// A text document with efficient editing operations.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Document {
     rope: Rope,
     version: u64,
@@ -195,12 +195,12 @@ impl Document {
             let text = source.as_str();
             let mut start = 0usize;
             let mut current_line = 0usize;
-            for (i, ch) in text.char_indices() {
+            for (_i, ch) in text.char_indices() {
                 if ch == '\n' {
                     if current_line == line_idx {
-                        return Some(text[start..i].to_string());
+                        return Some(text[start.._i].to_string());
                     }
-                    start = i + 1;
+                    start = _i + 1;
                     current_line += 1;
                 }
             }
@@ -223,12 +223,12 @@ impl Document {
             let text = source.as_str();
             let mut start = 0usize;
             let mut current_line = 0usize;
-            for (i, ch) in text.char_indices() {
+            for (_i, ch) in text.char_indices() {
                 if ch == '\n' {
                     if current_line == line_idx {
-                        return Some(Cow::Borrowed(&text[start..i]));
+                        return Some(Cow::Borrowed(&text[start.._i]));
                     }
-                    start = i + 1;
+                    start = _i + 1;
                     current_line += 1;
                 }
             }

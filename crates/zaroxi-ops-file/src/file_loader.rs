@@ -1,6 +1,5 @@
 use std::fs;
 use std::io::Read;
-use std::path::Path;
 use thiserror::Error;
 use memmap2::Mmap;
 
@@ -17,7 +16,7 @@ pub enum FileLoadError {
 }
 
 /// Source of file content for the editor.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub enum FileSource {
     /// File loaded entirely into memory (small files).
     Memory(String),
