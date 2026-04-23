@@ -1,5 +1,8 @@
 import { bridge } from '@/lib/bridge';
 
+// Cache for opened files to avoid re‑loading from disk.
+const fileCache = new Map<string, OpenFileResponse>();
+
 // Domain types (mirror Rust DTOs)
 export interface OpenWorkspaceRequest {
   path: string;
@@ -192,9 +195,15 @@ export class WorkspaceService {
   }
 
   static async openFile(request: OpenFileRequest): Promise<OpenFileResponse> {
+    // Return cached version if available
+    const cached = fileCache.get(request.path);
+    if (cached) {
+      return cached;
+    }
+
     const docResponse = await this.openDocument(request.path);
     const content = docResponse.content ?? '';
-    return {
+    const response: OpenFileResponse = {
       content,
       language: undefined,
       lineCount: docResponse.lineCount,
@@ -202,9 +211,16 @@ export class WorkspaceService {
       largeFileMode: docResponse.largeFileMode,
       contentTruncated: docResponse.contentTruncated,
     };
+
+    // Store in cache
+    fileCache.set(request.path, response);
+
+    return response;
   }
 
   static async saveFile(request: SaveFileRequest): Promise<void> {
+    // Invalidate cache for this path after a save
+    fileCache.delete(request.path);
     return await bridge.invoke<void>('save_file', { request });
   }
 
