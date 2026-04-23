@@ -5,6 +5,7 @@ use std::sync::Mutex;
 use zaroxi_domain_editor::Document;
 use zaroxi_domain_editor::LargeFileMode;
 use zaroxi_ops_file::FileLoader;
+use zaroxi_ops_file::file_loader::FileLoadStrategy;
 
 /// In-memory store for open documents.
 static DOCUMENTS: once_cell::sync::Lazy<Mutex<HashMap<String, Document>>> =
@@ -66,32 +67,57 @@ pub struct EditRequest {
 /// The frontend will request visible lines separately.
 #[command]
 pub async fn open_document(path: String) -> Result<OpenDocumentResponse, String> {
-    // Load the file using the appropriate strategy
-    let (file_source, _document) = FileLoader::load_file(&path)
-        .map_err(|e| format!("Failed to load file: {}", e))?;
-
-    let size = file_source.len() as u64;
+    // 1. Get file size before loading contents (avoids reading huge files fully)
+    let metadata = std::fs::metadata(&path)
+        .map_err(|e| format!("Failed to get file metadata: {}", e))?;
+    let size = metadata.len();
     let large_file_mode = LargeFileMode::from_size(size);
     let is_read_only = large_file_mode.is_read_only();
-
-    // Extract the full file content before consuming file_source
-    let mut content = file_source.as_str().to_string();
-
-    // Determine whether content should be truncated for large files
     let content_truncated = large_file_mode == LargeFileMode::Large
         || large_file_mode == LargeFileMode::VeryLarge;
-    if content_truncated && content.chars().count() > TRUNCATE_CHARS {
-        content = content.chars().take(TRUNCATE_CHARS).collect();
-    }
 
-    // Create the editor document
-    let document = match file_source {
+    // 2. Decide loading strategy based on size
+    let strategy = if content_truncated {
+        // For large / very large files, only read the first TRUNCATE_CHARS bytes
+        FileLoadStrategy::Preview(TRUNCATE_CHARS)
+    } else {
+        FileLoadStrategy::for_size(size)
+    };
+
+    let (file_source, _) = FileLoader::load_file_with_strategy(&path, strategy)
+        .map_err(|e| format!("Failed to load file: {}", e))?;
+
+    // 3. Build the editor Document (full file, using mmap for large files)
+    //    For very large files we memory-map the full file quickly, but we never
+    //    copy the entire content into a String on this side.
+    let document = match &file_source {
         zaroxi_ops_file::file_loader::FileSource::Memory(text) => {
-            Document::from_text_with_path(&text, path.clone())
+            Document::from_text_with_path(text, path.clone())
         }
         zaroxi_ops_file::file_loader::FileSource::Mmap(mmap) => {
-            Document::from_mmap(mmap, path.clone(), size)
+            // We already have the mmap; clone the Arc? Actually we consume later.
+            // To avoid cloning we rebuild a new mmap inside from_mmap -> we pass
+            // ownership of the current mmap (can't be used later).  For clarity we
+            // re‑open the file with mmap again (second map is cheap).
+            // Since we already have the full size, create a fresh mmap:
+            let file = std::fs::File::open(&path)
+                .map_err(|e| format!("Failed to open file: {}", e))?;
+            let fresh_mmap = unsafe { memmap2::Mmap::map(&file) }
+                .map_err(|e| format!("Failed to mmap file: {}", e))?;
+            // use length from prior metadata
+            Document::from_mmap(fresh_mmap, path.clone(), size)
         }
+    };
+
+    // 4. Build the response content (only the first TRUNCATE_CHARS characters)
+    let content: String = if content_truncated {
+        file_source.as_str()
+            .chars()
+            .take(TRUNCATE_CHARS)
+            .collect()
+    } else {
+        // small file – safe to copy whole content
+        file_source.as_str().to_string()
     };
 
     let line_count = document.len_lines();
