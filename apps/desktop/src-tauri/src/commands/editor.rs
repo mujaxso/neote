@@ -190,3 +190,12 @@ pub async fn get_line_count(document_id: String) -> Result<usize, String> {
         .ok_or_else(|| "Document not found".to_string())?;
     Ok(document.len_lines())
 }
+
+/// Return the full text content of a document.
+#[command]
+pub async fn get_document_content(document_id: String) -> Result<String, String> {
+    let docs = DOCUMENTS.lock().map_err(|e| format!("Lock error: {}", e))?;
+    let document = docs.get(&document_id)
+        .ok_or_else(|| "Document not found".to_string())?;
+    Ok(document.text().to_string())
+}
