@@ -38,23 +38,24 @@ export function CodeEditor({
   const onRequestLinesRef = useRef(onRequestLines);
   onRequestLinesRef.current = onRequestLines;
 
-  // Compute visible range – stable reference to avoid infinite effect loops
-  const visibleRangeKey = useMemo(() => {
-    const startLine = Math.max(0, Math.floor(scrollTop / LINE_HEIGHT) - OVERSCAN_LINES);
-    const endLine = Math.min(
-      totalLines ?? Infinity,
-      Math.ceil((scrollTop + containerHeight) / LINE_HEIGHT) + OVERSCAN_LINES
-    );
-    return `${startLine}-${endLine}`;
-  }, [scrollTop, containerHeight, totalLines]);
-
   // Compute the actual first visible line (without overscan) for transform offsets
   const actualFirstVisibleLine = useMemo(() => {
     return Math.max(0, Math.floor(scrollTop / LINE_HEIGHT));
   }, [scrollTop]);
 
+  // Compute visible range – stable reference to avoid infinite effect loops
+  const visibleRangeKey = useMemo(() => {
+    const startLine = Math.max(0, Math.floor(scrollTop / LINE_HEIGHT) - OVERSCAN_LINES);
+    const endLine = Math.min(
+      totalLines ?? value.split('\n').length,
+      Math.ceil((scrollTop + containerHeight) / LINE_HEIGHT) + OVERSCAN_LINES
+    );
+    return `${startLine}-${endLine}`;
+  }, [scrollTop, containerHeight, totalLines, value]);
+
   // Compute visible lines for small files (no onRequestLines) directly from value
-  const computeLocalVisibleLines = useCallback(() => {
+  const localVisibleLines = useMemo(() => {
+    if (onRequestLines) return null; // not used for large files
     const lines = value.split('\n');
     const startLine = Math.max(0, Math.floor(scrollTop / LINE_HEIGHT) - OVERSCAN_LINES);
     const endLine = Math.min(
@@ -66,7 +67,7 @@ export function CodeEditor({
       result.push({ index: i, text: lines[i] ?? '' });
     }
     return result;
-  }, [value, scrollTop, containerHeight]);
+  }, [value, scrollTop, containerHeight, onRequestLines]);
 
   // Fetch visible lines when range changes OR when scrollVersion increments
   useEffect(() => {
@@ -89,11 +90,8 @@ export function CodeEditor({
       };
       
       fetchLines();
-    } else {
-      // For small files, compute visible lines directly
-      setVisibleLines(computeLocalVisibleLines());
     }
-  }, [visibleRangeKey, scrollVersion, computeLocalVisibleLines]);
+  }, [visibleRangeKey, scrollVersion]);
 
   // Handle scroll – also bump scrollVersion to force re-fetch even if range key doesn't change
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
@@ -148,20 +146,25 @@ export function CodeEditor({
     const startLine = Number(startStr);
     const endLine = Number(endStr);
     const numbers: number[] = [];
-    for (let i = startLine; i < endLine && i < (totalLines ?? Infinity); i++) {
+    const maxLine = totalLines ?? value.split('\n').length;
+    for (let i = startLine; i < endLine && i < maxLine; i++) {
       numbers.push(i + 1);
     }
     return numbers;
-  }, [visibleRangeKey, totalLines]);
+  }, [visibleRangeKey, totalLines, value]);
 
   // Determine whether we are in virtual‑scrolling mode (large file)
   const isVirtualScrolling = !!onRequestLines;
 
   // Render a read‑only line‑by‑line view for all files (both small and large)
   const renderVirtualLines = () => {
-    // Use the current scrollTop to position content, not the first fetched line index.
-    // This ensures the content always aligns with the gutter, even if visibleLines is stale.
-    const offsetY = actualFirstVisibleLine * LINE_HEIGHT;
+    // Determine which lines to render
+    const linesToRender = isVirtualScrolling ? visibleLines : (localVisibleLines ?? []);
+    
+    // Compute offset based on the first rendered line index
+    const firstLineIndex = linesToRender.length > 0 ? linesToRender[0].index : 0;
+    const offsetY = firstLineIndex * LINE_HEIGHT;
+    
     return (
       <div
         className="absolute left-8 top-0 right-0 pr-4 font-mono"
@@ -171,7 +174,7 @@ export function CodeEditor({
           transform: `translateY(${offsetY}px)`,
         }}
       >
-        {visibleLines.map((line) => (
+        {linesToRender.map((line) => (
           <div key={line.index} style={{ height: LINE_HEIGHT, lineHeight: `${LINE_HEIGHT}px` }} className="whitespace-pre overflow-hidden">
             {line.text || '\u00A0'}
           </div>
