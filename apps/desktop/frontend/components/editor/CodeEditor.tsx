@@ -29,7 +29,6 @@ export function CodeEditor({
   largeFileMode = false,
 }: CodeEditorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [value, setValue] = useState(initialValue);
   const [scrollTop, setScrollTop] = useState(0);
   const [containerHeight, setContainerHeight] = useState(600);
@@ -54,29 +53,47 @@ export function CodeEditor({
     return Math.max(0, Math.floor(scrollTop / LINE_HEIGHT));
   }, [scrollTop]);
 
+  // Compute visible lines for small files (no onRequestLines) directly from value
+  const computeLocalVisibleLines = useCallback(() => {
+    const lines = value.split('\n');
+    const startLine = Math.max(0, Math.floor(scrollTop / LINE_HEIGHT) - OVERSCAN_LINES);
+    const endLine = Math.min(
+      lines.length,
+      Math.ceil((scrollTop + containerHeight) / LINE_HEIGHT) + OVERSCAN_LINES
+    );
+    const result: { index: number; text: string }[] = [];
+    for (let i = startLine; i < endLine; i++) {
+      result.push({ index: i, text: lines[i] ?? '' });
+    }
+    return result;
+  }, [value, scrollTop, containerHeight]);
+
   // Fetch visible lines when range changes OR when scrollVersion increments
   useEffect(() => {
     const fetchFn = onRequestLinesRef.current;
-    if (!fetchFn) return;
-    
-    const [startStr, endStr] = visibleRangeKey.split('-');
-    const startLine = Number(startStr);
-    const endLine = Number(endStr);
-    
-    const fetchLines = async () => {
-      setIsLoading(true);
-      try {
-        const result = await fetchFn(startLine, endLine - startLine);
-        setVisibleLines(result.lines);
-      } catch (error) {
-        console.error('Failed to fetch visible lines:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchLines();
-  }, [visibleRangeKey, scrollVersion]);
+    if (fetchFn) {
+      const [startStr, endStr] = visibleRangeKey.split('-');
+      const startLine = Number(startStr);
+      const endLine = Number(endStr);
+      
+      const fetchLines = async () => {
+        setIsLoading(true);
+        try {
+          const result = await fetchFn(startLine, endLine - startLine);
+          setVisibleLines(result.lines);
+        } catch (error) {
+          console.error('Failed to fetch visible lines:', error);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      
+      fetchLines();
+    } else {
+      // For small files, compute visible lines directly
+      setVisibleLines(computeLocalVisibleLines());
+    }
+  }, [visibleRangeKey, scrollVersion, computeLocalVisibleLines]);
 
   // Handle scroll – also bump scrollVersion to force re-fetch even if range key doesn't change
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
@@ -109,8 +126,8 @@ export function CodeEditor({
   }, [initialValue]);
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    // Ignore changes when read‑only or when virtual scrolling is active (large file)
-    if (readOnly || isVirtualScrolling) return;
+    // Ignore changes when read‑only
+    if (readOnly) return;
     const newValue = e.target.value;
     setValue(newValue);
     onChange(newValue);
@@ -140,20 +157,8 @@ export function CodeEditor({
   // Determine whether we are in virtual‑scrolling mode (large file)
   const isVirtualScrolling = !!onRequestLines;
 
-  // Build text content for textarea
-  // For small files (no virtual scrolling) we use the full value.
-  // For large files we cannot use a textarea for editing – we show a read‑only view.
-  const visibleText = useMemo(() => {
-    if (!isVirtualScrolling) {
-      return value;
-    }
-    // In virtual‑scrolling mode we render lines individually, not a textarea.
-    return '';
-  }, [isVirtualScrolling, value]);
-
-  // Render a read‑only line‑by‑line view when virtual scrolling is active
+  // Render a read‑only line‑by‑line view for all files (both small and large)
   const renderVirtualLines = () => {
-    if (!isVirtualScrolling) return null;
     // Use the current scrollTop to position content, not the first fetched line index.
     // This ensures the content always aligns with the gutter, even if visibleLines is stale.
     const offsetY = actualFirstVisibleLine * LINE_HEIGHT;
@@ -205,29 +210,7 @@ export function CodeEditor({
               ))}
             </div>
             
-            {/* For small files: editable textarea */}
-            {!isVirtualScrolling && (
-              <textarea
-                ref={textareaRef}
-                value={visibleText}
-                onChange={handleChange}
-                readOnly={readOnly}
-                className="absolute left-8 top-0 right-0 bg-transparent text-editor-foreground resize-none outline-none pr-4 whitespace-pre overflow-hidden font-mono"
-                spellCheck="false"
-                style={{
-                  tabSize: 2,
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: '14px',
-                  lineHeight: `${LINE_HEIGHT}px`,
-                  letterSpacing: '0',
-                  height: visibleText.split('\n').length * LINE_HEIGHT,
-                  transform: `translateY(${actualFirstVisibleLine * LINE_HEIGHT}px)`,
-                }}
-                placeholder="Start typing..."
-              />
-            )}
-            
-            {/* For large files: read‑only line view */}
+            {/* For all files: read‑only line view */}
             {renderVirtualLines()}
           </div>
         </div>
