@@ -167,7 +167,9 @@ export function CodeEditor({
                 fontSize: '14px',
                 lineHeight: `${LINE_HEIGHT}px`,
                 letterSpacing: '0',
-                height: visibleLines.length * LINE_HEIGHT,
+                height: visibleLines.length > 0
+                  ? visibleLines.length * LINE_HEIGHT
+                  : visibleText.split('\n').length * LINE_HEIGHT,
                 transform: `translateY(${visibleRange.startLine * LINE_HEIGHT}px)`,
               }}
               placeholder="Start typing..."
