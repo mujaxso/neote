@@ -19,12 +19,12 @@ export const LAYOUT = {
   /** Right‑side panel (assistant, extensions etc.) */
   panelRight: {
     minWidth: 200,
-    defaultWidth: 340,
-    maxWidth: 420,
+    defaultWidth: 360,
+    maxWidth: 480,
     /** Minimum width when the window is narrow. */
-    minNarrowWidth: 250,
+    minNarrowWidth: 280,
     /** Maximum width when the window is narrow. */
-    maxNarrowWidth: 340,
+    maxNarrowWidth: 400,
   },
 
   /** Height of the compact top bar (px) */
