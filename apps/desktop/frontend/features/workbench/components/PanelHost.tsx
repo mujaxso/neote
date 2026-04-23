@@ -204,7 +204,9 @@ export function PanelHost({ className, side = 'left' }: PanelHostProps) {
               </div>
             </div>
           }>
-            <PanelComponent />
+            <div className="h-full min-h-0">
+              <PanelComponent />
+            </div>
           </Suspense>
         </div>
       </div>
