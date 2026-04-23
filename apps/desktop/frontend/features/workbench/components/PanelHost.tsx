@@ -35,44 +35,36 @@ export function PanelHost({ className, side = 'left' }: PanelHostProps) {
 
   // Compute responsive width bounds based on current layout mode
   const isNarrow = layoutMode === 'narrow';
+  // Use the same min/max for left and right so all panels behave identically
   const minPanelWidth = isNarrow
-    ? (side === 'left' ? LAYOUT.panelLeft.minNarrowWidth : LAYOUT.panelRight.minNarrowWidth)
-    : (side === 'left' ? LAYOUT.panelLeft.minWidth : LAYOUT.panelRight.minWidth);
+    ? LAYOUT.panelLeft.minNarrowWidth
+    : LAYOUT.panelLeft.minWidth;
   const maxPanelWidth = isNarrow
-    ? (side === 'left' ? LAYOUT.panelLeft.maxNarrowWidth : LAYOUT.panelRight.maxNarrowWidth)
-    : (side === 'left' ? LAYOUT.panelLeft.maxWidth : LAYOUT.panelRight.maxWidth);
-  const factor = side === 'left' ? 0.25 : 0.60;
+    ? LAYOUT.panelLeft.maxNarrowWidth
+    : LAYOUT.panelLeft.maxWidth;
+  const factor = 0.25; // all panels use the same proportional limit
 
-  // On narrow screens we let the right panel shrink far more than the declared
-  // min‑width, but we keep a proportional limit so it never becomes invisible.
   const windowWidth = typeof window !== 'undefined' ? window.innerWidth : 1024;
   const effectiveMinWidth = useMemo(() => {
-    if (side === 'right' && layoutMode === 'narrow') {
-      // Allow the panel to go down to 18 % of the window or the canonical min,
-      // whichever is smaller (the canonical min is already lowered in layoutConstants).
+    // Allow the panel to go down to a percentage of the window,
+    // but never more than the canonical min width.
+    if (isNarrow) {
       return Math.min(minPanelWidth, windowWidth * 0.18);
     }
     return minPanelWidth;
-  }, [side, layoutMode, minPanelWidth, windowWidth]);
+  }, [isNarrow, minPanelWidth, windowWidth]);
 
   const effectiveMaxWidth = useMemo(() => {
-    if (side === 'right' && layoutMode === 'narrow') {
-      return Math.min(maxPanelWidth, windowWidth * 0.30);
+    const proportional = windowWidth * factor;
+    if (isNarrow) {
+      return Math.min(maxPanelWidth, proportional, windowWidth * 0.30);
     }
-    return Math.min(maxPanelWidth, windowWidth * factor);
-  }, [side, layoutMode, maxPanelWidth, factor, windowWidth]);
+    return Math.min(maxPanelWidth, proportional);
+  }, [isNarrow, maxPanelWidth, factor, windowWidth]);
 
   // Clamp panel width when layout mode changes (e.g., window resize)
   useEffect(() => {
-    let target = panelWidth;
-    // When not actively dragging, restore a reasonable default for the right panel
-    // so it grows back to the regular width after a narrow‑mode session.
-    if (!isResizing && side === 'right' && layoutMode !== 'narrow') {
-      if (panelWidth < LAYOUT.panelRight.defaultWidth) {
-        target = LAYOUT.panelRight.defaultWidth;
-      }
-    }
-    const clamped = Math.max(minPanelWidth, Math.min(maxPanelWidth, target));
+    const clamped = Math.max(minPanelWidth, Math.min(maxPanelWidth, panelWidth));
     if (clamped !== panelWidth) {
       if (side === 'left') {
         setLeftPanelWidth(clamped);
@@ -80,9 +72,9 @@ export function PanelHost({ className, side = 'left' }: PanelHostProps) {
         setRightPanelWidth(clamped);
       }
     }
-    // We intentionally only react to layoutMode, min/max values, and resizing.
+    // We intentionally only react to layoutMode and the min/max values.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [layoutMode, minPanelWidth, maxPanelWidth, isResizing]);
+  }, [layoutMode, minPanelWidth, maxPanelWidth]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -178,7 +170,7 @@ export function PanelHost({ className, side = 'left' }: PanelHostProps) {
           width: 'auto',
           flexBasis: panelWidth,
           minWidth: `${effectiveMinWidth}px`,
-          maxWidth: `min(${effectiveMaxWidth}px, ${side === 'right' && layoutMode === 'narrow' ? '30vw' : `${(factor * 100).toFixed(0)}vw`})`,
+          maxWidth: `min(${effectiveMaxWidth}px, ${(factor * 100).toFixed(0)}vw)`,
           order: side === 'right' ? 2 : 0,
         }}
       >
