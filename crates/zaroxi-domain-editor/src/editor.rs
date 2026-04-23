@@ -135,7 +135,7 @@ impl EditorState {
     }
 
     // ---------- convenience ----------
-    pub fn text(&self) -> &str {
+    pub fn text(&self) -> String {
         self.document.text()
     }
 

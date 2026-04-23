@@ -1,8 +1,9 @@
-//! Minimal text document model backed by a plain `String`.
-//! Line start offsets are pre‑computed to allow O(1) line access.
+//! Minimal text document model backed by a Rope (ropey::Rope).
+//! No hand‑rolled line‑start caching; the rope provides O(log n) line access.
 
 use std::path::PathBuf;
 use memmap2::Mmap;
+use ropey::Rope;
 
 /// Large file mode indicator.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -29,35 +30,21 @@ impl LargeFileMode {
     }
 }
 
-/// A minimal text document.
+/// A minimal text document that uses a Rope as its backing storage.
 #[derive(Debug)]
 pub struct Document {
-    text: String,
-    /// Byte offset of the start of each line (0‑based).
-    line_starts: Vec<usize>,
+    rope: Rope,
     version: u64,
     dirty: bool,
     path: Option<PathBuf>,
     large_file_mode: LargeFileMode,
 }
 
-fn compute_line_starts(text: &str) -> Vec<usize> {
-    let mut starts = Vec::new();
-    starts.push(0);
-    for (i, ch) in text.char_indices() {
-        if ch == '\n' {
-            starts.push(i + 1);
-        }
-    }
-    starts
-}
-
 impl Document {
     /// Create a new empty document.
     pub fn new() -> Self {
         Self {
-            text: String::new(),
-            line_starts: vec![0],
+            rope: Rope::new(),
             version: 0,
             dirty: false,
             path: None,
@@ -67,10 +54,8 @@ impl Document {
 
     /// Create a document from a plain string.
     pub fn from_text(text: &str) -> Self {
-        let line_starts = compute_line_starts(text);
         Self {
-            text: text.to_owned(),
-            line_starts,
+            rope: Rope::from_str(text),
             version: 0,
             dirty: false,
             path: None,
@@ -85,102 +70,95 @@ impl Document {
         doc
     }
 
-    /// Re‑compute line start offsets (must be called after any edit).
-    fn recompute_line_starts(&mut self) {
-        self.line_starts = compute_line_starts(&self.text);
-    }
+    // ------------------------------------------------------------------
+    // Basic queries
+    // ------------------------------------------------------------------
 
     /// Number of Unicode scalar values.
     pub fn len_chars(&self) -> usize {
-        self.text.chars().count()
+        self.rope.len_chars()
     }
 
-    /// Number of lines (including a final line without trailing newline).
+    /// Number of lines (0‑based). Rope counts a final line even without a trailing '\n'.
     pub fn len_lines(&self) -> usize {
-        self.line_starts.len()
+        self.rope.len_lines()
     }
 
     /// Whether the document contains no text.
     pub fn is_empty(&self) -> bool {
-        self.text.is_empty()
+        self.rope.len_chars() == 0
     }
 
     /// Return the text content of line `idx` (0‑based), without the trailing newline.
+    /// The returned `&str` borrows from the document.
     pub fn line(&self, idx: usize) -> Option<&str> {
-        if idx >= self.line_starts.len() {
-            return None;
-        }
-        let start = self.line_starts[idx];
-        let end = if idx + 1 < self.line_starts.len() {
-            self.line_starts[idx + 1]
-        } else {
-            self.text.len()
-        };
-        let slice = &self.text[start..end];
-        // strip trailing newline (and optional carriage return)
-        Some(slice.trim_end_matches('\n').trim_end_matches('\r'))
+        self.rope.get_line(idx).map(|slice| &*slice)
     }
 
-    /// Borrow the entire document text.
-    pub fn text(&self) -> &str {
-        &self.text
+    /// Return the entire document content as an owned `String`.
+    pub fn text(&self) -> String {
+        self.rope.to_string()
     }
+
+    // ------------------------------------------------------------------
+    // Coordinate conversion
+    // ------------------------------------------------------------------
 
     /// Convert a character index to (line, column).
     pub fn char_to_line_col(&self, char_idx: usize) -> Option<(usize, usize)> {
-        let mut line = 0usize;
-        let mut col = 0usize;
-        for (i, ch) in self.text.char_indices() {
-            if i >= char_idx {
-                break;
-            }
-            if ch == '\n' {
-                line += 1;
-                col = 0;
-            } else {
-                col += 1;
-            }
+        if char_idx > self.rope.len_chars() {
+            return None;
         }
+        let line = self.rope.char_to_line(char_idx);
+        let col = self.rope.column_of_char(char_idx);
         Some((line, col))
     }
 
     /// Convert (line, column) to a character index, or `None` if out of bounds.
     pub fn line_col_to_char(&self, line: usize, col: usize) -> Option<usize> {
-        if line >= self.line_starts.len() {
+        if line >= self.rope.len_lines() {
             return None;
         }
-        let start_byte = self.line_starts[line];
-        let mut byte = start_byte;
-        let mut current_col = 0usize;
-        for ch in self.text[start_byte..].chars() {
-            if ch == '\n' {
-                break;
-            }
-            if current_col == col {
-                return Some(byte);
-            }
-            let ch_len = ch.len_utf8();
-            byte += ch_len;
-            current_col += 1;
+        let line_start = self.rope.line_to_char(line);
+        let line_slice = self.rope.get_line(line)?;
+        let line_chars = line_slice.chars().count();
+        if col > line_chars {
+            return None;
         }
-        None
+        Some(line_start + col)
     }
 
     /// Character index of the start of the given line.
     pub fn line_to_char(&self, line: usize) -> usize {
-        self.line_starts.get(line).copied().unwrap_or(self.text.len())
+        self.rope.line_to_char(line)
     }
+
+    /// Convert a byte offset to a character index.
+    pub fn byte_to_char(&self, byte: usize) -> usize {
+        self.rope.byte_to_char(byte)
+    }
+
+    /// Convert a character index to a byte offset.
+    pub fn char_to_byte(&self, char_idx: usize) -> usize {
+        self.rope.char_to_byte(char_idx)
+    }
+
+    // ------------------------------------------------------------------
+    // Editing operations
+    // ------------------------------------------------------------------
 
     /// Insert text at a given character index.
     pub fn insert(&mut self, char_idx: usize, ins: &str) -> Result<(), String> {
         if self.large_file_mode.is_read_only() {
             return Err("Read‑only large file".into());
         }
-        let byte_pos = self.char_idx_to_byte(char_idx).ok_or("Invalid char index")?;
-        self.text.insert_str(byte_pos, ins);
+        if char_idx > self.rope.len_chars() {
+            return Err("Invalid char index".into());
+        }
+        let byte_pos = self.rope.char_to_byte(char_idx);
+        self.rope.insert(byte_pos, ins);
         self.version += 1;
         self.dirty = true;
-        self.recompute_line_starts();
         Ok(())
     }
 
@@ -192,16 +170,20 @@ impl Document {
         if start > end {
             return Err("start > end".into());
         }
-        let start_byte = self.char_idx_to_byte(start).ok_or("Invalid start")?;
-        let end_byte = self.char_idx_to_byte(end).ok_or("Invalid end")?;
-        if end_byte > self.text.len() {
+        if end > self.rope.len_chars() {
             return Err("Out of bounds".into());
         }
-        self.text.drain(start_byte..end_byte);
+        let start_byte = self.rope.char_to_byte(start);
+        let end_byte = self.rope.char_to_byte(end);
+        self.rope.remove(start_byte..end_byte);
         self.version += 1;
         self.dirty = true;
-        self.recompute_line_starts();
         Ok(())
+    }
+
+    /// Delete characters in the range `start..end` (alias for `delete_range`).
+    pub fn delete(&mut self, start: usize, end: usize) -> Result<(), String> {
+        self.delete_range(start, end)
     }
 
     /// Mark the document as saved.
@@ -248,10 +230,8 @@ impl Document {
     pub fn from_mmap(mmap: Mmap, path: String, size: u64) -> Self {
         let mode = LargeFileMode::from_size(size);
         let text = unsafe { std::str::from_utf8_unchecked(&mmap) };
-        let line_starts = compute_line_starts(text);
         Self {
-            text: text.to_owned(),
-            line_starts,
+            rope: Rope::from_str(text),
             version: 0,
             dirty: false,
             path: Some(PathBuf::from(path)),
@@ -259,51 +239,14 @@ impl Document {
         }
     }
 
-    /// Convert a byte offset to a character index.
-    pub fn byte_to_char(&self, byte: usize) -> usize {
-        let mut char_idx = 0usize;
-        for (i, _) in self.text.char_indices() {
-            if i >= byte {
-                break;
-            }
-            char_idx += 1;
-        }
-        char_idx
-    }
-
-    /// Convert a character index to a byte offset.
-    pub fn char_to_byte(&self, char_idx: usize) -> usize {
-        let mut count = 0usize;
-        for (i, _) in self.text.char_indices() {
-            if count == char_idx {
-                return i;
-            }
-            count += 1;
-        }
-        self.text.len()
-    }
-
-    /// Delete characters in the range `start..end` (alias for `delete_range`).
-    pub fn delete(&mut self, start: usize, end: usize) -> Result<(), String> {
-        self.delete_range(start, end)
-    }
-
     // ------------------------------------------------------------------
-    // Internal helpers
+    // Internal helpers (no longer needed, but kept for API compatibility)
     // ------------------------------------------------------------------
-    fn char_idx_to_byte(&self, char_idx: usize) -> Option<usize> {
-        let mut count = 0usize;
-        for (i, _) in self.text.char_indices() {
-            if count == char_idx {
-                return Some(i);
-            }
-            count += 1;
+    fn _char_idx_to_byte(&self, char_idx: usize) -> Option<usize> {
+        if char_idx > self.rope.len_chars() {
+            return None;
         }
-        if count == char_idx {
-            Some(self.text.len())
-        } else {
-            None
-        }
+        Some(self.rope.char_to_byte(char_idx))
     }
 }
 
