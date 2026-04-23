@@ -213,7 +213,7 @@ export function PanelHost({ className, side = 'left' }: PanelHostProps) {
           </div>
         </div>
         
-        <div className="flex-1 overflow-auto bg-panel h-full max-h-full min-h-0 w-full">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden bg-panel h-full max-h-full min-h-0 w-full">
           <Suspense fallback={
             <div className="p-3">
               <div className="space-y-1.5">
@@ -223,7 +223,7 @@ export function PanelHost({ className, side = 'left' }: PanelHostProps) {
               </div>
             </div>
           }>
-            <div className="h-full min-h-0">
+            <div className="h-full min-h-0 break-words max-w-full">
               <PanelComponent />
             </div>
           </Suspense>
