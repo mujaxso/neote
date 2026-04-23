@@ -99,6 +99,8 @@ export function CodeEditor({
   }, [initialValue]);
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    // Ignore changes when read‑only or when virtual scrolling is active (large file)
+    if (readOnly || isVirtualScrolling) return;
     const newValue = e.target.value;
     setValue(newValue);
     onChange(newValue);

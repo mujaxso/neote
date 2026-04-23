@@ -129,6 +129,11 @@ pub async fn apply_edit(request: EditRequest) -> Result<(), String> {
     let document = docs.get_mut(&request.document_id)
         .ok_or_else(|| "Document not found".to_string())?;
 
+    // Reject edits for read‑only documents (very large files)
+    if document.large_file_mode().is_read_only() {
+        return Err("Document is read‑only (very large file)".to_string());
+    }
+
     // Convert byte positions to character positions
     let start_char = document.byte_to_char(request.start_byte);
     let old_end_char = document.byte_to_char(request.old_end_byte);

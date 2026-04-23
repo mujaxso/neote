@@ -193,20 +193,24 @@ impl Document {
     pub fn line(&self, line_idx: usize) -> Option<String> {
         if let Some(source) = &self.file_source {
             let text = source.as_str();
+            let bytes = text.as_bytes();
             let mut start = 0usize;
             let mut current_line = 0usize;
-            for (_i, ch) in text.char_indices() {
-                if ch == '\n' {
+            for (i, &b) in bytes.iter().enumerate() {
+                if b == b'\n' {
                     if current_line == line_idx {
-                        return Some(text[start.._i].to_string());
+                        // SAFETY: we know the slice is valid UTF-8
+                        let line_str = unsafe { std::str::from_utf8_unchecked(&bytes[start..i]) };
+                        return Some(line_str.to_string());
                     }
-                    start = _i + 1;
+                    start = i + 1;
                     current_line += 1;
                 }
             }
             // Handle last line without trailing newline
             if current_line == line_idx {
-                return Some(text[start..].to_string());
+                let line_str = unsafe { std::str::from_utf8_unchecked(&bytes[start..]) };
+                return Some(line_str.to_string());
             }
             None
         } else {
@@ -442,15 +446,30 @@ impl Document {
     pub fn char_to_byte(&self, char_idx: usize) -> usize {
         if let Some(source) = &self.file_source {
             let text = source.as_str();
-            // Approximate: count bytes up to char_idx
-            let mut byte_idx = 0usize;
+            // Iterate over characters, tracking byte offset
+            let mut byte_offset = 0usize;
             for (i, _) in text.char_indices() {
                 if i >= char_idx {
                     break;
                 }
-                byte_idx = i;
+                byte_offset = i;
             }
-            byte_idx
+            // After the loop, byte_offset is the byte index of the character at (char_idx-1)
+            // We need the byte index of the character at char_idx
+            // If char_idx is 0, return 0
+            if char_idx == 0 {
+                return 0;
+            }
+            // Find the byte index of the character at char_idx
+            let mut count = 0usize;
+            for (i, _) in text.char_indices() {
+                if count == char_idx {
+                    return i;
+                }
+                count += 1;
+            }
+            // If char_idx is beyond the end, return the total byte length
+            text.len()
         } else {
             self.rope.char_to_byte(char_idx)
         }
