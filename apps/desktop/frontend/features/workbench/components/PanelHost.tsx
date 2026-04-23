@@ -4,6 +4,7 @@ import { getActivityItem } from '../config/activityRegistry';
 import { cn } from '@/lib/utils';
 import { Icon } from '@/components/ui/Icon';
 import { LAYOUT } from '../config/layoutConstants';
+import { useLayoutMode } from '@/hooks/useLayoutMode';
 
 interface PanelHostProps {
   className?: string;
@@ -26,10 +27,23 @@ export function PanelHost({ className, side = 'left' }: PanelHostProps) {
   const isVisible = side === 'left' ? isLeftPanelVisible : isRightPanelVisible;
   const panelWidth = side === 'left' ? leftPanelWidth : rightPanelWidth;
   
+  const layoutMode = useLayoutMode();
   const [isResizing, setIsResizing] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const startXRef = useRef(0);
   const startWidthRef = useRef(0);
+
+  // Compute responsive width bounds based on current layout mode
+  const isNarrow = layoutMode === 'narrow';
+  const minPanelWidth = isNarrow
+    ? (side === 'left' ? LAYOUT.panelLeft.minNarrowWidth : LAYOUT.panelRight.minNarrowWidth)
+    : (side === 'left' ? LAYOUT.panelLeft.minWidth : LAYOUT.panelRight.minWidth);
+  const maxPanelWidth = isNarrow
+    ? (side === 'left' ? LAYOUT.panelLeft.maxNarrowWidth : LAYOUT.panelRight.maxNarrowWidth)
+    : (side === 'left' ? LAYOUT.panelLeft.maxWidth : LAYOUT.panelRight.maxWidth);
+  const displayWidth = Math.max(minPanelWidth, Math.min(panelWidth, maxPanelWidth));
+  const minFlexWidth = minPanelWidth;
+  const maxFlexWidth = maxPanelWidth;
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -120,7 +134,7 @@ export function PanelHost({ className, side = 'left' }: PanelHostProps) {
           side === 'left' ? 'border-r' : 'border-l',
           className
         )}
-        style={{ width: panelWidth, minWidth: side === 'left' ? LAYOUT.panelLeft.minWidth : LAYOUT.panelRight.minWidth, maxWidth: side === 'left' ? LAYOUT.panelLeft.maxWidth : LAYOUT.panelRight.maxWidth }}
+        style={{ width: displayWidth, minWidth: minFlexWidth, maxWidth: maxFlexWidth }}
       >
         {/* Resize handle */}
         <div 

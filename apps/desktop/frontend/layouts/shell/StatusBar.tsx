@@ -2,6 +2,7 @@ import { useWorkspaceStore } from '@/features/workspace/stores/useWorkspaceStore
 import { cn } from '@/lib/utils';
 import { useEffect, useState, useMemo } from 'react';
 import { WorkspaceService } from '@/features/workspace/services/workspaceService';
+import { useLayoutMode } from '@/hooks/useLayoutMode';
 
 interface StatusBarProps {
   className?: string;
@@ -239,6 +240,9 @@ export function StatusBar({ className }: StatusBarProps) {
   const activeFilePath = explorerUI?.activeFilePath ?? null;
   const [fileMeta, setFileMeta] = useState<FileMeta | null>(null);
 
+  const layoutMode = useLayoutMode();
+  const isNarrow = layoutMode === 'narrow';
+
   // Fetch lightweight file metadata when the active file changes
   useEffect(() => {
     let cancelled = false;
@@ -293,7 +297,7 @@ export function StatusBar({ className }: StatusBarProps) {
       {/* ── Left side: workspace / operational state ── */}
       <div className="flex items-center space-x-3">
         <span className="font-medium">{currentWorkspace ? currentWorkspace.name : 'No workspace'}</span>
-        {currentWorkspace && (
+        {currentWorkspace && !isNarrow && (
           <span className="text-primary/70 font-mono text-[10px]">
             {currentWorkspace.rootPath.split('/').pop()}
           </span>
@@ -311,16 +315,16 @@ export function StatusBar({ className }: StatusBarProps) {
         {activeFilePath && (
           <>
             {/* File name (no icon – text is enough) */}
-            <span className="font-medium max-w-[180px] truncate" title={activeFilePath}>
+            <span className="font-medium max-w-[120px] truncate" title={activeFilePath}>
               {fileName}
             </span>
 
             {/* Language mode */}
-            <span className="text-primary/70">{languageLabel}</span>
+            {!isNarrow && <span className="text-primary/70">{languageLabel}</span>}
 
             {/* Encoding & line endings – always useful when a file is open */}
-            <span className="text-primary/70">UTF-8</span>
-            <span className="text-primary/70">LF</span>
+            {!isNarrow && <span className="text-primary/70">UTF-8</span>}
+            {!isNarrow && <span className="text-primary/70">LF</span>}
 
             {/* Large‑file / truncation indicators – only when relevant */}
             {(largeFileIndicator != null || truncationIndicator != null) && (

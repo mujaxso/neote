@@ -6,6 +6,7 @@ import { PanelHost } from '@/features/workbench/components/PanelHost';
 import { TopBar } from '@/features/workbench/components/TopBar';
 import { useWorkbenchStore } from '@/features/workbench/store/workbenchStore';
 import { getActivityItem } from '@/features/workbench/config/activityRegistry';
+import { useLayoutMode } from '@/hooks/useLayoutMode';
 import { Suspense, lazy, useEffect, useRef } from 'react';
 import { setupWindowControls } from '@/lib/platform/windowControls';
 import { LAYOUT } from '@/features/workbench/config/layoutConstants';
@@ -74,7 +75,7 @@ export function AppShell() {
   }, []);
 
   return (
-    <div className="flex flex-col h-screen bg-app text-primary font-sans overflow-hidden" style={{ backgroundColor: 'var(--background)' }}>
+    <div className="flex flex-col h-screen bg-app text-primary font-sans overflow-hidden" style={{ backgroundColor: 'var(--background)' }} data-layout-mode={layoutMode}>
       
       {/* <CommandPalette /> */}
       

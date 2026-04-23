@@ -10,6 +10,10 @@ export const LAYOUT = {
     minWidth: 180,
     defaultWidth: 280,
     maxWidth: 400,
+    /** Minimum width when the window is narrow (< breakpoints.narrow). */
+    minNarrowWidth: 140,
+    /** Maximum width when the window is narrow. */
+    maxNarrowWidth: 240,
   },
 
   /** Right‑side panel (assistant, extensions etc.) */
@@ -17,6 +21,10 @@ export const LAYOUT = {
     minWidth: 180,
     defaultWidth: 280,
     maxWidth: 400,
+    /** Minimum width when the window is narrow. */
+    minNarrowWidth: 150,
+    /** Maximum width when the window is narrow. */
+    maxNarrowWidth: 260,
   },
 
   /** Height of the compact top bar (px) */
@@ -30,4 +38,15 @@ export const LAYOUT = {
    * to protect the editor area.
    */
   collapseThreshold: 700,
+
+  /**
+   * Width breakpoints for layout modes used by `useLayoutMode`.
+   * These are intentionally lower than typical IDE breakpoints so that
+   * the app *feels* like a desktop IDE even in a tiled half‑screen window.
+   */
+  breakpoints: {
+    wide: 1400,
+    medium: 1000,
+    narrow: 800,
+  },
 } as const;
