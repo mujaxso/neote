@@ -94,18 +94,9 @@ pub async fn open_document(path: String) -> Result<OpenDocumentResponse, String>
         zaroxi_ops_file::file_loader::FileSource::Memory(text) => {
             Document::from_text_with_path(text, path.clone())
         }
-        zaroxi_ops_file::file_loader::FileSource::Mmap(mmap) => {
-            // We already have the mmap; clone the Arc? Actually we consume later.
-            // To avoid cloning we rebuild a new mmap inside from_mmap -> we pass
-            // ownership of the current mmap (can't be used later).  For clarity we
-            // re‑open the file with mmap again (second map is cheap).
-            // Since we already have the full size, create a fresh mmap:
-            let file = std::fs::File::open(&path)
-                .map_err(|e| format!("Failed to open file: {}", e))?;
-            let fresh_mmap = unsafe { memmap2::Mmap::map(&file) }
-                .map_err(|e| format!("Failed to mmap file: {}", e))?;
-            // use length from prior metadata
-            Document::from_mmap(fresh_mmap, path.clone(), size)
+        zaroxi_ops_file::file_loader::FileSource::Mmap(_mmap) => {
+            // Reuse the existing mmap via file_source.as_str() to avoid a second mmap.
+            Document::from_text_with_path(file_source.as_str(), path.clone())
         }
     };
 
