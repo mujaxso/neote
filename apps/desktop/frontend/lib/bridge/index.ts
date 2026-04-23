@@ -36,11 +36,13 @@ export async function bridgeInvoke<T>(
   try {
     return await invoke<T>(command, args);
   } catch (error) {
-    throw new BridgeError(
-      error instanceof Error ? error.message : 'Unknown error',
-      undefined,
-      error
-    );
+    const message =
+      typeof error === 'string'
+        ? error
+        : error instanceof Error
+          ? error.message
+          : 'Unknown error';
+    throw new BridgeError(message, undefined, error);
   }
 }
 
