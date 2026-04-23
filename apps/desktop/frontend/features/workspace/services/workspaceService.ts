@@ -72,6 +72,39 @@ export interface WorkspaceEvent {
   payload: unknown;
 }
 
+// New types for the editor document system
+export interface OpenDocumentResponse {
+  documentId: string;
+  path: string;
+  lineCount: number;
+  charCount: number;
+  largeFileMode: string;
+  isReadOnly: boolean;
+}
+
+export interface VisibleLinesRequest {
+  documentId: string;
+  startLine: number;
+  count: number;
+}
+
+export interface VisibleLinesResponse {
+  lines: LineDto[];
+  totalLines: number;
+}
+
+export interface LineDto {
+  index: number;
+  text: string;
+}
+
+export interface EditRequest {
+  documentId: string;
+  startByte: number;
+  oldEndByte: number;
+  newText: string;
+}
+
 // Helper to detect Tauri environment
 function isTauriEnvironment(): boolean {
   if (typeof window === 'undefined') return false;
@@ -152,7 +185,20 @@ export class WorkspaceService {
   }
 
   static async openFile(request: OpenFileRequest): Promise<OpenFileResponse> {
-    return await bridge.invoke<OpenFileResponse>('open_file', { request });
+    // Use the new document-based approach
+    const docResponse = await this.openDocument(request.path);
+    // Fetch initial visible lines (first 100 lines)
+    const visibleLines = await this.getVisibleLines({
+      documentId: docResponse.documentId,
+      startLine: 0,
+      count: 100,
+    });
+    // Combine lines into a single string for backward compatibility
+    const content = visibleLines.lines.map(l => l.text).join('\n');
+    return {
+      content,
+      language: undefined, // Will be determined by the editor component
+    };
   }
 
   static async saveFile(request: SaveFileRequest): Promise<void> {
@@ -175,6 +221,101 @@ export class WorkspaceService {
       const selectedPath = result.selectedPath || result.selected_path;
       
       return { selectedPath };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // New document-based API
+  static async openDocument(path: string): Promise<OpenDocumentResponse> {
+    const isTauri = isTauriEnvironment();
+    
+    if (!isTauri) {
+      // Return mock document data for development
+      return {
+        documentId: 'mock-doc-' + Date.now(),
+        path,
+        lineCount: 100,
+        charCount: 5000,
+        largeFileMode: 'Normal',
+        isReadOnly: false,
+      };
+    }
+    
+    try {
+      const result = await bridge.invoke<OpenDocumentResponse>('open_document', { path });
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async getVisibleLines(request: VisibleLinesRequest): Promise<VisibleLinesResponse> {
+    const isTauri = isTauriEnvironment();
+    
+    if (!isTauri) {
+      // Return mock lines for development
+      const lines: LineDto[] = [];
+      for (let i = request.startLine; i < request.startLine + request.count && i < 100; i++) {
+        lines.push({
+          index: i,
+          text: `Line ${i + 1} - mock content for development`,
+        });
+      }
+      return {
+        lines,
+        totalLines: 100,
+      };
+    }
+    
+    try {
+      const result = await bridge.invoke<VisibleLinesResponse>('get_visible_lines', {
+        request,
+      });
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async applyEdit(request: EditRequest): Promise<void> {
+    const isTauri = isTauriEnvironment();
+    
+    if (!isTauri) {
+      // No-op for development
+      return;
+    }
+    
+    try {
+      await bridge.invoke<void>('apply_edit', { request });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async saveDocument(documentId: string): Promise<void> {
+    const isTauri = isTauriEnvironment();
+    
+    if (!isTauri) {
+      return;
+    }
+    
+    try {
+      await bridge.invoke<void>('save_document', { documentId });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async getLineCount(documentId: string): Promise<number> {
+    const isTauri = isTauriEnvironment();
+    
+    if (!isTauri) {
+      return 100;
+    }
+    
+    try {
+      return await bridge.invoke<number>('get_line_count', { documentId });
     } catch (error) {
       throw error;
     }
