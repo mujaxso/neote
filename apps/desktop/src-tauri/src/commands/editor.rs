@@ -5,7 +5,7 @@ use std::sync::Mutex;
 use zaroxi_domain_editor::Document;
 use zaroxi_domain_editor::LargeFileMode;
 use zaroxi_ops_file::FileLoader;
-use zaroxi_ops_file::FileSource;
+use zaroxi_ops_file::file_loader::FileSource;
 
 /// In-memory store for open documents.
 static DOCUMENTS: once_cell::sync::Lazy<Mutex<HashMap<String, Document>>> =
