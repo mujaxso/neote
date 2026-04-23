@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils';
 import { useWorkbenchStore } from '../store/workbenchStore';
 import { getAvailableActivities } from '../config/activityRegistry';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/Tooltip';
+import { LAYOUT } from '../config/layoutConstants';
 
 interface ActivityRailProps {
   className?: string;
@@ -25,7 +26,7 @@ export function ActivityRail({ className }: ActivityRailProps) {
 
   return (
     <TooltipProvider delayDuration={300}>
-      <div className={cn('w-12 flex flex-col items-center py-4 bg-activity-rail h-full', className)}>
+      <div className={cn('flex flex-col items-center py-4 bg-activity-rail h-full', className)} style={{ width: LAYOUT.activityRailWidth }}>
         {/* Top activity items */}
         <div className="flex flex-col items-center space-y-3">
           {topActivities.map((activity) => {

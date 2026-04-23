@@ -6,8 +6,9 @@ import { PanelHost } from '@/features/workbench/components/PanelHost';
 import { TopBar } from '@/features/workbench/components/TopBar';
 import { useWorkbenchStore } from '@/features/workbench/store/workbenchStore';
 import { getActivityItem } from '@/features/workbench/config/activityRegistry';
-import { Suspense, lazy, useEffect } from 'react';
+import { Suspense, lazy, useEffect, useRef } from 'react';
 import { setupWindowControls } from '@/lib/platform/windowControls';
+import { LAYOUT } from '@/features/workbench/config/layoutConstants';
 
 // Lazy load full-width panel components
 const SettingsPanel = lazy(() => import('@/features/settings/panel/SettingsPanel'));
@@ -22,7 +23,23 @@ export function AppShell() {
   
   // Get activity items for the active panels
   const leftActivity = activeLeftPanel ? getActivityItem(activeLeftPanel) : null;
-  
+
+  // Responsive collapse: auto‑close side panels when the window gets narrow
+  // so the editor always gets enough room.
+  const prevWidth = useRef(window.innerWidth);
+  useEffect(() => {
+    const currentWidth = window.innerWidth;
+    if (currentWidth < LAYOUT.collapseThreshold && prevWidth.current >= LAYOUT.collapseThreshold) {
+      if (isLeftPanelVisible) {
+        togglePanel(activeLeftPanel ?? 'explorer');
+      }
+      if (isRightPanelVisible) {
+        togglePanel(activeRightPanel ?? 'assistant');
+      }
+    }
+    prevWidth.current = currentWidth;
+  }, [isLeftPanelVisible, isRightPanelVisible, activeLeftPanel, activeRightPanel, togglePanel]);
+
   // Determine if we should show full-width panel (only settings)
   const isSettingsActive = leftActivity?.id === 'settings' && isLeftPanelVisible;
   

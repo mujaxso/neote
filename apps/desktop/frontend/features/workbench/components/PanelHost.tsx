@@ -3,6 +3,7 @@ import { useWorkbenchStore } from '../store/workbenchStore';
 import { getActivityItem } from '../config/activityRegistry';
 import { cn } from '@/lib/utils';
 import { Icon } from '@/components/ui/Icon';
+import { LAYOUT } from '../config/layoutConstants';
 
 interface PanelHostProps {
   className?: string;
@@ -44,7 +45,7 @@ export function PanelHost({ className, side = 'left' }: PanelHostProps) {
         ? moveEvent.clientX - startXRef.current
         : startXRef.current - moveEvent.clientX;
       
-      const newWidth = Math.max(180, Math.min(400, startWidthRef.current + delta));
+      const newWidth = Math.max(LAYOUT.panelLeft.minWidth, Math.min(LAYOUT.panelLeft.maxWidth, startWidthRef.current + delta));
       
       if (side === 'left') {
         setLeftPanelWidth(newWidth);
@@ -115,10 +116,9 @@ export function PanelHost({ className, side = 'left' }: PanelHostProps) {
         className={cn(
           'h-full bg-panel overflow-hidden flex flex-col relative',
           side === 'left' ? 'border-r' : 'border-l',
-          'min-w-[180px] max-w-[400px]',
           className
         )}
-        style={{ width: panelWidth }}
+        style={{ width: panelWidth, minWidth: LAYOUT.panelLeft.minWidth, maxWidth: LAYOUT.panelLeft.maxWidth }}
       >
         {/* Resize handle */}
         <div 
