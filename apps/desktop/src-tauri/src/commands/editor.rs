@@ -12,6 +12,7 @@ static DOCUMENTS: once_cell::sync::Lazy<Mutex<HashMap<String, Document>>> =
 
 /// Response for opening a document.
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct OpenDocumentResponse {
     pub document_id: String,
     pub path: String,
@@ -23,6 +24,7 @@ pub struct OpenDocumentResponse {
 
 /// Request for visible lines.
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct VisibleLinesRequest {
     pub document_id: String,
     pub start_line: usize,
@@ -31,6 +33,7 @@ pub struct VisibleLinesRequest {
 
 /// Response for visible lines.
 #[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct VisibleLinesResponse {
     pub lines: Vec<LineDto>,
     pub total_lines: usize,
@@ -45,6 +48,7 @@ pub struct LineDto {
 
 /// Request for an edit operation.
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct EditRequest {
     pub document_id: String,
     pub start_byte: usize,
