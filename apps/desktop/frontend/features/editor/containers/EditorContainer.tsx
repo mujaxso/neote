@@ -53,6 +53,7 @@ export function EditorContainer() {
 
   const loadFile = async (path: string) => {
     setIsLoading(true);
+    setContent('');  // Clear previous content to avoid ghosting
     try {
       const response = await WorkspaceService.openFile({ path });
       setContent(response.content);
@@ -152,6 +153,7 @@ export function EditorContainer() {
       </div>
       <div className="flex-1 overflow-hidden code-editor-font min-h-0 bg-editor">
         <CodeEditor
+          key={activeFilePath || 'editor'}
           initialValue={content}
           onChange={handleEditorChange}
           language={language}
