@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useWorkbenchStore } from '../store/workbenchStore';
+import { useWorkspaceStore } from '@/features/workspace/stores/useWorkspaceStore';
 import { invoke } from '@tauri-apps/api/core';
-import { WorkspaceService } from '@/features/workspace/services/workspaceService';
 
 interface MenuItem {
   label: string;
@@ -18,9 +18,34 @@ export function MenuBar() {
       const result: { selected_path: string | null } = await invoke('open_file_dialog');
       console.log('Dialog result:', result);
       if (result.selected_path) {
-        // Use the WorkspaceService that handles store updates and tree fetching
-        await WorkspaceService.openWorkspace({ path: result.selected_path });
-        // Open the explorer panel so the user sees the tree
+        const selectedPath = result.selected_path;
+        // 1. Open workspace via backend (emits workspace:opened event)
+        await invoke('open_workspace', { path: selectedPath });
+
+        // 2. Manually fetch the first‑level directory listing
+        const entries: {
+          name: string;
+          path: string;
+          is_dir: boolean;
+          file_type: string | null;
+          size: number | null;
+          modified: string | null;
+        }[] = await invoke('list_directory', { path: selectedPath });
+
+        // 3. Convert to the ExplorerTreeNode shape expected by the front‑end
+        const treeNodes = entries.map((e) => ({
+          name: e.name,
+          path: e.path,
+          is_dir: e.is_dir,
+          children: [],
+        }));
+
+        // 4. Update the workspace store
+        const { setRootPath, setTree } = useWorkspaceStore.getState();
+        setRootPath(selectedPath);
+        setTree(treeNodes);
+
+        // 5. Open the explorer panel
         useWorkbenchStore.getState().togglePanel('explorer');
       }
     } catch (e) {
