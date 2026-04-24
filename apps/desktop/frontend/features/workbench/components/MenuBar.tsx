@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useWorkbenchStore } from '../store/workbenchStore';
-import { useWorkspaceStore } from '@/features/workspace/stores/useWorkspaceStore';
 import { invoke } from '@tauri-apps/api/core';
+import { WorkspaceService } from '@/features/workspace/services/workspaceService';
 
 interface MenuItem {
   label: string;
@@ -17,13 +17,11 @@ export function MenuBar() {
     try {
       const result: { selected_path: string | null } = await invoke('open_file_dialog');
       console.log('Dialog result:', result);
-      if (result.selected_path) {
+      if (result?.selected_path) {
         const selectedPath = result.selected_path;
-        // Open workspace via backend (emits workspace:opened event)
-        await invoke('open_workspace', { path: selectedPath });
-
-        // The workspace:opened event listener (in AppShell) will fetch the tree.
-        // We only need to open the explorer panel.
+        // Use the WorkspaceService which handles store updates and tree fetching
+        await WorkspaceService.openWorkspace({ path: selectedPath });
+        // Open the explorer panel so the user sees the tree
         useWorkbenchStore.getState().togglePanel('explorer');
       }
     } catch (e) {
