@@ -124,33 +124,6 @@ export function EditorContainer() {
 
   return (
     <div className="h-full flex flex-col bg-editor min-h-0 w-full min-w-0">
-      <div className="border-b border-divider px-4 py-2 flex items-center justify-between bg-activity-rail h-9">
-        <div className="flex items-center space-x-3 min-w-0">
-          <div className="flex items-center space-x-2">
-            <Icon name="file" size={14} className="text-primary" />
-            <span className="text-sm font-semibold text-primary leading-none">{fileName}</span>
-            {isLoading && (
-              <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
-            )}
-          </div>
-          {activeFilePath && (
-            <span className="text-xs text-primary/80 font-mono truncate max-w-[180px] leading-none" title={activeFilePath}>
-              {activeFilePath}
-            </span>
-          )}
-        </div>
-        <div className="flex items-center space-x-2 flex-shrink-0">
-          {activeFilePath && (
-            <button
-              onClick={handleEditorSave}
-              className="save-button px-2.5 py-1 text-xs bg-accent text-on-accent rounded hover:bg-accent-hover transition-colors flex items-center space-x-1.5 font-medium leading-none"
-            >
-              <Icon name="save" size={12} />
-              <span>Save</span>
-            </button>
-          )}
-        </div>
-      </div>
       <div className="flex-1 overflow-hidden code-editor-font min-h-0 bg-editor w-full min-w-0">
         <CodeEditor
           key={activeFilePath || 'editor'}

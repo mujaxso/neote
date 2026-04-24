@@ -33,8 +33,8 @@ export function TabItem({ tab, isActive }: TabItemProps) {
       className={cn(
         'group relative flex items-center gap-1.5 px-3 py-2 text-sm font-mono cursor-default select-none border-b-2 transition-colors',
         isActive
-          ? 'bg-panel text-editor-foreground border-b-accent'
-          : 'bg-panel text-muted-foreground hover:bg-elevated-panel border-b-transparent hover:border-b-hover'
+          ? 'bg-title-bar text-title-bar-foreground border-b-accent'
+          : 'bg-title-bar text-muted-foreground hover:bg-elevated-panel border-b-transparent hover:border-b-hover'
       )}
       onClick={handleTabClick}
       onMouseDown={handleMiddleClick}

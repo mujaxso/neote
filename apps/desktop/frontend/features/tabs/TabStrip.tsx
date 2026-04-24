@@ -10,7 +10,7 @@ export function TabStrip() {
 
   return (
     <div
-      className="flex items-start h-9 overflow-x-auto overflow-y-hidden bg-panel border-b border-border"
+      className="flex items-start h-9 overflow-x-auto overflow-y-hidden bg-title-bar text-title-bar-foreground border-b border-border"
       style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       data-no-drag="true"
     >
