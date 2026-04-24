@@ -22,7 +22,6 @@ export function TopBar({ className }: TopBarProps) {
 
   const workspacePathFromHook = useWorkspaceName();
   const { rootPath } = useWorkspaceStore();
-  const { tabs } = useTabsStore();
 
   const resolvedDisplayName = (() => {
     if (workspacePathFromHook) {
