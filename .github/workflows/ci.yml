@@ -51,19 +51,6 @@ jobs:
       - name: Auto‑format Rust code
         run: cargo fmt --all
 
-      - name: Commit auto‑format changes (push only)
-        if: github.event_name == 'push'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          if git diff --quiet; then
-            echo "No formatting changes needed"
-          else
-            git add -A
-            git commit -m "style: auto‑format Rust code"
-            git push
-          fi
-
       - name: cargo clippy
         run: cargo clippy --workspace --all-targets -- -D warnings
 
