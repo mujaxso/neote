@@ -4,8 +4,8 @@ import { useWorkbenchStore } from '../store/workbenchStore';
 import { useEffect, useState } from 'react';
 import { isTauri, getWindowInstance, windowControlActions } from '@/lib/platform/windowControls';
 import { useLayoutMode } from '@/hooks/useLayoutMode';
+import { useTabsStore } from '@/features/tabs/stores/useTabsStore';
 import { useWorkspaceStore } from '@/features/workspace/stores/useWorkspaceStore';
-import { useWorkspaceName } from '@/hooks/useWorkspaceName';
 import { MenuBar } from './MenuBar';
 
 interface TopBarProps {
@@ -15,17 +15,12 @@ interface TopBarProps {
 export function TopBar({ className }: TopBarProps) {
   const layoutMode = useLayoutMode();
   const { togglePanel } = useWorkbenchStore();
-  const { rootPath } = useWorkspaceStore();
-  const workspaceName = useWorkspaceName();
+  const { tabs, activeTabId } = useTabsStore();
   const [isMaximized, setIsMaximized] = useState(false);
   const [isTauriEnv, setIsTauriEnv] = useState(false);
 
-  const resolvedDisplayName =
-    workspaceName
-      ? workspaceName.split('/').pop() ?? workspaceName
-      : rootPath
-        ? rootPath.split('/').pop() ?? rootPath
-        : 'No project open';
+  const activeTab = tabs.find(t => t.id === activeTabId);
+  const resolvedDisplayName = activeTab ? activeTab.title : 'No project open';
 
   useEffect(() => {
     const checkTauri = async () => {
