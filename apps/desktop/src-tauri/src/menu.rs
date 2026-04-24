@@ -1,19 +1,13 @@
-//! Native macOS menu bar built with Tauri’s menu API.
-//! This is only active on macOS; on other platforms the custom React menu is used.
+//! Native menu bar built with Tauri’s menu API.
+//! Works on macOS (top screen bar) and Linux/Windows (internal window menubar).
 
 use tauri::{
-    menu::{Menu, MenuBuilder, MenuItemBuilder, PredefinedMenuItem, SubmenuBuilder},
-    AppHandle, Wry,
+    menu::{MenuBuilder, MenuItemBuilder, PredefinedMenuItem, SubmenuBuilder},
+    AppHandle,
 };
 
-/// Build and set the application menu (currently only macOS).
-///
-/// On non‑macOS platforms this function does nothing.
+/// Build and set the application menu.
 pub fn build_menu(app: &AppHandle) -> tauri::Result<()> {
-    if !cfg!(target_os = "macos") {
-        return Ok(());
-    }
-
     // ---- File submenu ----
     let file_open = MenuItemBuilder::with_id("file_open", "Open Folder…")
         .accelerator("CmdOrCtrl+O")
@@ -88,7 +82,7 @@ pub fn build_menu(app: &AppHandle) -> tauri::Result<()> {
 
     app.set_menu(menu)?;
 
-    tracing::info!("Native macOS menu bar registered");
+    tracing::info!("Native menu bar registered");
 
     Ok(())
 }

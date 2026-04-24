@@ -68,11 +68,9 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
                 tracing::error!("Failed to setup window: {}", e);
             }
 
-            // Build native macOS menu (does nothing on other platforms)
-            if cfg!(target_os = "macos") {
-                if let Err(e) = menu::build_menu(app.handle()) {
-                    tracing::error!("Failed to build native menu: {}", e);
-                }
+            // Build native menu (works on all platforms via Tauri)
+            if let Err(e) = menu::build_menu(app.handle()) {
+                tracing::error!("Failed to build native menu: {}", e);
             }
 
             tracing::info!("Zaroxi Desktop app setup complete");
