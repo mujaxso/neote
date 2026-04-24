@@ -191,6 +191,28 @@ export class WorkspaceService {
   }
 
   static async listDirectory(request: ListDirectoryRequest): Promise<DirectoryEntryDto[]> {
+    const tauri = isTauriEnvironment();
+    if (!tauri) {
+      // Return mock children for development
+      return [
+        {
+          path: `${request.path}/child1.rs`,
+          name: 'child1.rs',
+          isDir: false,
+          fileType: 'rs',
+          size: 123,
+          modified: new Date().toISOString(),
+        },
+        {
+          path: `${request.path}/subdir`,
+          name: 'subdir',
+          isDir: true,
+          fileType: undefined,
+          size: undefined,
+          modified: new Date().toISOString(),
+        },
+      ];
+    }
     return await bridge.invoke<DirectoryEntryDto[]>('list_directory', { request });
   }
 

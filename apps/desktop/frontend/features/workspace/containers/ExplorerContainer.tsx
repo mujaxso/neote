@@ -130,7 +130,10 @@ export function ExplorerContainer() {
         });
       };
       
-      setWorkspaceTree(prevTree => updateTree(prevTree));
+      // Read current tree from the store synchronously and update
+      const currentTree = useWorkspaceStore.getState().workspaceTree;
+      const updatedTree = updateTree(currentTree);
+      setWorkspaceTree(updatedTree);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to load directory children');
       console.error('Failed to load directory children:', error);
