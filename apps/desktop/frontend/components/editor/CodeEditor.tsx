@@ -5,6 +5,7 @@ import { useTabsStore } from '@/features/tabs/store';
 interface CodeEditorProps {
   initialValue: string;
   onChange: (value: string) => void;
+  filePath?: string;
   language?: string;
   readOnly?: boolean;
   className?: string;

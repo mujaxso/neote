@@ -1,6 +1,6 @@
 import { useTabsStore } from './store';
 import { cn } from '@/lib/utils';
-import { useWorkspaceStore } from '@/features/workbench/store/workbenchStore';
+import { useWorkspaceStore } from '@/features/workspace/stores/useWorkspaceStore';
 import { WorkspaceService } from '@/features/workspace/services/workspaceService';
 
 interface TabItemProps {
