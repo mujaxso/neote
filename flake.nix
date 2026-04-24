@@ -137,14 +137,14 @@
           };
 
           shellHook = ''
-            echo "Neote development environment"
+            echo "Zaroxi development environment"
             echo "Run: cargo run --bin desktop"
           '';
         };
 
         packages.default = pkgs.rustPlatform.buildRustPackage {
-          pname = "neote";
-          version = "0.1.0";
+          pname = "zaroxi";
+          version = "0.2.0";
           src = ./.;
 
           cargoLock = {
