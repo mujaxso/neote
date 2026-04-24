@@ -3,6 +3,7 @@ import { CodeEditor } from '@/components/editor/CodeEditor';
 import { WorkspaceService } from '@/features/workspace/services/workspaceService';
 import { useWorkspaceStore } from '@/features/workspace/stores/useWorkspaceStore';
 import { Icon } from '@/components/ui/Icon';
+import { useTabsStore } from '@/features/tabs/store';
 
 export function EditorContainer() {
   const [content, setContent] = useState<string>('');
@@ -92,6 +93,10 @@ export function EditorContainer() {
         content: content,
       });
       // File saved successfully
+      // Mark tab as clean after successful save
+      if (activeFilePath) {
+        useTabsStore.getState().markClean(activeFilePath);
+      }
       // Show a temporary success message
       const saveBtn = document.querySelector('.save-button');
       if (saveBtn) {

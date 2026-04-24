@@ -39,6 +39,17 @@ export const useTabsStore = create<TabsState>()(
 
       closeTab: (id) => {
         const { tabs, activeTabId } = get();
+        const tab = tabs.find((t) => t.id === id);
+        if (!tab) return;
+        // prevent closing dirty tab without confirmation
+        if (tab.isDirty) {
+          const confirmed = window.confirm(
+            `${tab.title} has unsaved changes. Close anyway?`
+          );
+          if (!confirmed) {
+            return; // user cancelled closing
+          }
+        }
         const idx = tabs.findIndex((t) => t.id === id);
         if (idx === -1) return;
 
