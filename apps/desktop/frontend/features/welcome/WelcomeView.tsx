@@ -77,11 +77,11 @@ export function WelcomeView() {
   };
 
   return (
-    <div className="h-full w-full flex items-start justify-center overflow-y-auto bg-editor">
-      <div className="max-w-xl w-full px-6 py-12 space-y-10">
+    <div className="h-full w-full flex items-center justify-center overflow-hidden bg-editor">
+      <div className="max-w-xl w-full px-6 py-6 space-y-5">
         {/* Title */}
         <div className="space-y-1">
-          <h1 className="text-xl font-semibold text-primary">Zaroxi Studio</h1>
+          <h1 className="text-lg font-semibold text-primary">Zaroxi Studio</h1>
           <p className="text-sm text-muted-foreground">
             Welcome &middot; start working with your workspace
           </p>
@@ -113,7 +113,7 @@ export function WelcomeView() {
 
         {/* Getting Started */}
         <Section title="Getting Started">
-          <ul className="text-sm text-muted-foreground space-y-2 list-outside list-disc pl-5">
+          <ul className="text-sm text-muted-foreground space-y-1 list-outside list-disc pl-4">
             <li>
               <strong className="text-primary">Open a folder</strong> – use the
               &ldquo;Open Workspace&rdquo; button above or the folder icon in the
@@ -138,7 +138,7 @@ export function WelcomeView() {
 
         {/* Keyboard Shortcuts */}
         <Section title="Keyboard Shortcuts">
-          <div className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1.5 text-sm">
+          <div className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1 text-sm">
             <span className="text-muted-foreground">Open file</span>
             <kbd className="font-mono text-xs text-primary text-right">
               Ctrl+O
@@ -161,12 +161,6 @@ export function WelcomeView() {
             </kbd>
           </div>
         </Section>
-
-        {/* Footer hint */}
-        <p className="text-xs text-muted-foreground text-center pt-4 border-t border-divider">
-          You can close this tab with the <code className="font-mono">×</code>{' '}
-          button. It will re‑open automatically when all other tabs are closed.
-        </p>
       </div>
     </div>
   );
