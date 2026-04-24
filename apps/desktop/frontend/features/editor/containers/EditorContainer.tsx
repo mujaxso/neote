@@ -132,6 +132,7 @@ export function EditorContainer() {
       <div className="flex-1 overflow-hidden code-editor-font min-h-0 bg-editor w-full min-w-0">
         <CodeEditor
           key={activeFilePath || 'editor'}
+          filePath={activeFilePath || undefined}
           initialValue={content}
           onChange={handleEditorChange}
           language={language}
