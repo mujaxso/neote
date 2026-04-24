@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useWorkbenchStore } from '../store/workbenchStore';
 import { invoke } from '@tauri-apps/api/core';
-import { useWorkspaceStore } from '@/features/workspace/stores/useWorkspaceStore';
+import { WorkspaceService } from '@/features/workspace/services/workspaceService';
 
 interface MenuItem {
   label: string;
@@ -18,24 +18,10 @@ export function MenuBar() {
       const result: { selected_path: string | null } = await invoke('open_file_dialog');
       console.log('Dialog result:', result);
       if (result.selected_path) {
-        await invoke('open_workspace', { path: result.selected_path });
-        // Update the workspace store so the explorer panel knows the current root path
-        const { setRootPath, setTree } = useWorkspaceStore.getState();
-        setRootPath(result.selected_path);
-        // Fetch the workspace tree and store it
-        try {
-          const treeResult = await invoke<{ tree: any[] }>('get_workspace_tree', {
-            workspaceId: '',
-            rootPath: result.selected_path,
-          });
-          const treeData = treeResult?.tree ?? [];
-          setTree(treeData);
-          console.log('Workspace tree fetched successfully, nodes:', treeData.length);
-        } catch (e) {
-          console.error('Failed to fetch workspace tree:', e);
-        }
-        const { togglePanel } = useWorkbenchStore.getState();
-        togglePanel('explorer');
+        // Use the WorkspaceService that handles store updates and tree fetching
+        await WorkspaceService.openWorkspace({ path: result.selected_path });
+        // Open the explorer panel so the user sees the tree
+        useWorkbenchStore.getState().togglePanel('explorer');
       }
     } catch (e) {
       console.error('Failed to open workspace:', e);
