@@ -88,7 +88,7 @@ export function TopBar({ className }: TopBarProps) {
   return (
     <div 
       className={cn(
-        'h-7 flex items-center justify-between px-3',
+        'h-10 flex items-center justify-between px-4',
         'bg-title-bar text-title-bar-foreground',
         'select-none',
         isTauriEnv ? 'cursor-default' : 'cursor-auto',
@@ -105,7 +105,7 @@ export function TopBar({ className }: TopBarProps) {
         <div className="flex items-center gap-1.5" {...(isTauriEnv ? { 'data-tauri-drag-region': 'true' } : {})}>
           <Icon name="code" size={14} className="text-accent" />
           {layoutMode !== 'narrow' && (
-            <span className="font-semibold text-[11px] text-primary leading-none">Zaroxi</span>
+            <span className="font-semibold text-sm text-primary leading-tight">Zaroxi Studio</span>
           )}
         </div>
         <MenuBar />
@@ -127,37 +127,37 @@ export function TopBar({ className }: TopBarProps) {
           <>
             <button
               onClick={handleMinimize}
-              className="w-7 h-7 flex items-center justify-center rounded hover:bg-hover-bg transition-colors"
+              className="w-8 h-8 flex items-center justify-center rounded hover:bg-hover-bg transition-colors"
               aria-label="Minimize"
               data-no-drag="true"
             >
-              <Icon name="window-minimize" size={11} />
+              <Icon name="window-minimize" size={12} />
             </button>
             <button
               onClick={handleMaximize}
-              className="w-7 h-7 flex items-center justify-center rounded hover:bg-hover-bg transition-colors"
+              className="w-8 h-8 flex items-center justify-center rounded hover:bg-hover-bg transition-colors"
               aria-label={isMaximized ? 'Restore' : 'Maximize'}
               data-no-drag="true"
             >
-              <Icon name={isMaximized ? 'window-restore' : 'window-maximize'} size={11} />
+              <Icon name={isMaximized ? 'window-restore' : 'window-maximize'} size={12} />
             </button>
             <button
               onClick={handleClose}
-              className="w-7 h-7 flex items-center justify-center rounded hover:bg-destructive/10 hover:text-destructive transition-colors"
+              className="w-8 h-8 flex items-center justify-center rounded hover:bg-destructive/10 hover:text-destructive transition-colors"
               aria-label="Close"
               data-no-drag="true"
             >
-              <Icon name="window-close" size={11} />
+              <Icon name="window-close" size={12} />
             </button>
           </>
         ) : (
           <>
             <button
               onClick={() => togglePanel('settings')}
-              className="w-7 h-7 flex items-center justify-center rounded hover:bg-hover-bg transition-colors"
+              className="w-8 h-8 flex items-center justify-center rounded hover:bg-hover-bg transition-colors"
               aria-label="Settings"
             >
-              <Icon name="settings" size={12} />
+              <Icon name="settings" size={13} />
             </button>
           </>
         )}

@@ -51,7 +51,7 @@ export function MenuBar() {
   const closeAll = () => setOpenMenu(null);
 
   return (
-    <div className="flex items-center h-7 bg-title-bar text-title-bar-foreground select-none" onMouseLeave={closeAll}>
+    <div className="flex items-center h-10 bg-title-bar text-title-bar-foreground select-none" onMouseLeave={closeAll}>
       {menus.map((menu) => (
         <div key={menu.label} className="relative">
           <button
