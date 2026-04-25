@@ -45,6 +45,12 @@ impl ParserPool {
     /// If a parser is available in the pool, it is returned. Otherwise, a new
     /// parser is created and configured with the language's grammar.
     pub fn acquire(&self, language: &LanguageId) -> Option<Parser> {
+        // PlainText has no grammar – return None immediately
+        if *language == LanguageId::PlainText {
+            eprintln!("DEBUG: ParserPool::acquire: PlainText, returning None");
+            return None;
+        }
+
         let mut pool = self.parsers.lock();
 
         // Try to reuse an existing parser
@@ -134,6 +140,14 @@ impl SyntaxTree {
         language: LanguageId,
     ) -> Result<Self, SyntaxError> {
         eprintln!("DEBUG: SyntaxTree::new: language={:?}, text length={}", language, text.len());
+
+        // PlainText has no grammar – return error immediately
+        if language == LanguageId::PlainText {
+            eprintln!("DEBUG: SyntaxTree::new: PlainText, returning error");
+            return Err(SyntaxError::GrammarLoadError(
+                "PlainText has no grammar".to_string(),
+            ));
+        }
 
         let mut parser = pool
             .acquire(&language)
