@@ -3,7 +3,6 @@ import { cn } from '@/lib/utils';
 import { useTabsStore } from '@/features/tabs/store';
 import { LineNumberGutter } from './gutter/LineNumberGutter';
 import { GUTTER_CONFIG } from './gutter/GutterConfig';
-import { GutterModel } from './gutter/GutterModel';
 
 interface CodeEditorProps {
   initialValue: string;
@@ -106,20 +105,6 @@ function ReadOnlyContent({
   );
   const localLineCount = lineOffsets.length;
 
-  const gutterModel = useMemo(
-    () =>
-      new GutterModel(
-        scrollTop,
-        lineHeight,
-        displayLineCount,
-        containerHeight,
-        cursorLine,
-        5, // overscan for ReadOnlyContent
-      ),
-    [scrollTop, lineHeight, displayLineCount, containerHeight, cursorLine],
-  );
-  const gutterWidth = gutterModel.width;
-
   const overscan = 5;
   const totalHeight = localLineCount * lineHeight;
 
@@ -139,41 +124,6 @@ function ReadOnlyContent({
     return { firstLine: first, lastLine: last };
   }, [scrollTop, lineHeight, localLineCount, containerHeight]);
 
-  const lineNumbers = useMemo(() => {
-    if (firstLine < 0 || lastLine < 0) {
-      return null;
-    }
-    const ops: React.ReactNode[] = [];
-    for (let idx = firstLine; idx <= lastLine; idx++) {
-      const lineNum = idx + 1;
-      const isCurrent = lineNum === cursorLine;
-      ops.push(
-        <div
-          key={idx}
-          style={{
-            position: 'absolute',
-            top: idx * lineHeight,
-            left: 0,
-            right: 0,
-            height: lineHeight,
-            lineHeight: `${lineHeight}px`,
-            paddingRight: GUTTER_CONFIG.PADDING_RIGHT,
-            paddingLeft: GUTTER_CONFIG.PADDING_LEFT,
-            pointerEvents: 'none',
-          }}
-          className={`text-right text-sm font-mono tabular-nums select-none ${
-            isCurrent
-              ? 'text-accent font-semibold bg-accent/15'
-              : 'text-editor-foreground opacity-40'
-          }`}
-        >
-          {lineNum}
-        </div>,
-      );
-    }
-    return ops;
-  }, [firstLine, lastLine, cursorLine, lineHeight]);
-
   // Virtualised code rows – built from the offset table to avoid allocating thousands of strings.
   const codeRows = useMemo(() => {
     if (firstLine < 0 || lastLine < 0) {
@@ -191,7 +141,7 @@ function ReadOnlyContent({
           key={idx}
           style={{
             position: 'absolute',
-            left: gutterWidth,
+            left: 0,
             top: idx * lineHeight,
             right: 0,
             height: lineHeight,
@@ -208,7 +158,7 @@ function ReadOnlyContent({
       );
     }
     return rows;
-  }, [firstLine, lastLine, gutterWidth, lineHeight, displayValue, sentinel]);
+  }, [firstLine, lastLine, lineHeight, displayValue, sentinel]);
 
   const handleScroll = useCallback(() => {
     if (rafRef.current != null) {
@@ -223,7 +173,14 @@ function ReadOnlyContent({
   }, [onScroll]);
 
   return (
-    <div className="flex flex-col h-full w-full bg-editor overflow-hidden">
+    <div className="flex flex-row h-full w-full bg-editor overflow-hidden">
+      {/* Gutter – uses the modular LineNumberGutter component */}
+      <LineNumberGutter
+        lineCount={displayLineCount}
+        cursorLine={cursorLine}
+        lineHeight={lineHeight}
+        scrollTop={scrollTop}
+      />
       <div
         ref={scrollContainerRef}
         className="overflow-auto relative flex-1"
@@ -237,21 +194,6 @@ function ReadOnlyContent({
             minWidth: '100%',
           }}
         >
-          {/* Gutter area */}
-          <div
-            className="shrink-0 border-r border-[rgba(128,128,128,0.18)]"
-            style={{
-              position: 'absolute',
-              left: 0,
-              top: 0,
-              width: gutterWidth,
-              height: totalHeight,
-              pointerEvents: 'none',
-              overflow: 'hidden',
-            }}
-          >
-            {lineNumbers}
-          </div>
           {/* Virtualised code rows – only visible lines are rendered */}
           {codeRows}
         </div>

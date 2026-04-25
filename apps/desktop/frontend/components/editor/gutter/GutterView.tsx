@@ -17,11 +17,10 @@ const LineNumber: React.FC<{
   lineNum: number;
   isCurrent: boolean;
   lineHeight: number;
-  scrollTop: number;
-}> = React.memo(({ lineIndex, lineNum, isCurrent, lineHeight, scrollTop }) => {
+}> = React.memo(({ lineIndex, lineNum, isCurrent, lineHeight }) => {
   const style: React.CSSProperties = {
     position: 'absolute',
-    top: lineIndex * lineHeight - scrollTop,
+    top: lineIndex * lineHeight,
     left: 0,
     right: 0,
     height: lineHeight,
@@ -60,16 +59,15 @@ export const GutterView: React.FC<GutterViewProps> = React.memo(
           lineNum={info.lineNum}
           isCurrent={info.isCurrent}
           lineHeight={model.lineHeight}
-          scrollTop={model.scrollTop}
         />
       ));
-    }, [visibleLines, model.lineHeight, model.scrollTop]);
+    }, [visibleLines, model.lineHeight]);
 
     const containerStyle: React.CSSProperties = {
       width,
       pointerEvents: 'none',
       position: 'relative',
-      overflow: 'hidden',
+      overflow: 'visible',
       height: '100%',
     };
 
@@ -77,11 +75,12 @@ export const GutterView: React.FC<GutterViewProps> = React.memo(
       position: 'relative',
       height: totalHeight,
       width: '100%',
+      overflow: 'visible',
     };
 
     return (
       <div
-        className={`h-full overflow-hidden shrink-0 border-r border-[rgba(128,128,128,0.18)] ${className || ''}`}
+        className={`h-full shrink-0 border-r border-[rgba(128,128,128,0.18)] ${className || ''}`}
         style={containerStyle}
       >
         <div style={innerStyle}>{lineNumbers}</div>

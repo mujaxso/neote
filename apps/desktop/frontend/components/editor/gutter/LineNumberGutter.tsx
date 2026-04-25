@@ -58,11 +58,12 @@ export const LineNumberGutter: React.FC<Props> = ({
     return (
       <div
         ref={outerRef}
-        className="h-full overflow-hidden shrink-0 border-r border-[rgba(128,128,128,0.18)]"
+        className="h-full shrink-0 border-r border-[rgba(128,128,128,0.18)]"
         style={{
           width: model.width,
           pointerEvents: 'none',
           position: 'relative',
+          overflow: 'visible',
         }}
       />
     );
@@ -71,11 +72,12 @@ export const LineNumberGutter: React.FC<Props> = ({
   return (
     <div
       ref={outerRef}
-      className="h-full overflow-hidden shrink-0 border-r border-[rgba(128,128,128,0.18)]"
+      className="h-full shrink-0 border-r border-[rgba(128,128,128,0.18)]"
       style={{
         width: model.width,
         pointerEvents: 'none',
         position: 'relative',
+        overflow: 'visible',
       }}
     >
       <GutterView model={model} />
