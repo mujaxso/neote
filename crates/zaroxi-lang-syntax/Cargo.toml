@@ -13,6 +13,10 @@ rust-version = "1.85.0"
 name = "zaroxi_lang_syntax"
 path = "src/lib.rs"
 
+[[bin]]
+name = "download_grammars"
+path = "src/bin/download_grammars.rs"
+
 
 [dependencies]
 tree-sitter = { workspace = true }

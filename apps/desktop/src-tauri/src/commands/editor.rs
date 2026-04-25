@@ -119,9 +119,13 @@ pub async fn get_styled_spans(path: String) -> Result<Vec<StyledSpanResponse>, S
         .canonicalize()
         .map_err(|e| format!("Cannot canonicalize path: {}", e))?;
 
+    eprintln!("DEBUG: get_styled_spans: loading file {:?}", canonical);
+
     // Load the file content
     let file_content = std::fs::read_to_string(&canonical)
         .map_err(|e| format!("Failed to read file: {}", e))?;
+
+    eprintln!("DEBUG: get_styled_spans: file loaded, {} bytes", file_content.len());
 
     let document = Document::from_text_with_path(&file_content, canonical.to_string_lossy().to_string());
     let mut editor = EditorState::from_document(document);
@@ -130,6 +134,8 @@ pub async fn get_styled_spans(path: String) -> Result<Vec<StyledSpanResponse>, S
     let colors = SemanticColors::dark();
 
     let styled_spans = editor.styled_spans(&colors);
+
+    eprintln!("DEBUG: get_styled_spans: got {} styled spans", styled_spans.len());
 
     let response: Vec<StyledSpanResponse> = styled_spans
         .iter()

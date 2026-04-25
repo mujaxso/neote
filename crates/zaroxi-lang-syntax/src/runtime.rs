@@ -27,6 +27,7 @@ impl Runtime {
             // Fallback to a placeholder path; errors will be reported when trying to load.
             PathBuf::from("./runtime/treesitter")
         });
+        eprintln!("DEBUG: Runtime root path: {:?}", root);
         let runtime = Self { root };
 
         // Try to fix nested structure if it exists
