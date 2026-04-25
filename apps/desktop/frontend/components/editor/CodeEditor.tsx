@@ -196,17 +196,11 @@ function VirtualEditor({
   // This uses ALL available spans, not just the current viewport range
   const colorMap = useMemo(() => {
     const map = new Map<number, string>();
-    // Use the global stable state if available for this file
-    if (filePath) {
-      const stableState = stableHighlightState.get(filePath);
-      if (stableState) {
-        for (const [, spans] of stableState.rangeSpans) {
-          for (const span of spans) {
-            for (let i = span.start; i < span.end; i++) {
-              map.set(i, span.color);
-            }
-          }
-        }
+    // Use allSpansRef which contains ALL fetched spans merged together
+    const allSpans = allSpansRef.current;
+    for (const span of allSpans) {
+      for (let i = span.start; i < span.end; i++) {
+        map.set(i, span.color);
       }
     }
     // Also include current styledSpans (may overlap but that's fine)
@@ -510,6 +504,7 @@ export function CodeEditor({
         // Merge with existing allSpansRef to ensure coverage
         const mergedSpans = mergeSpanArrays(allSpansRef.current, cachedRange);
         allSpansRef.current = mergedSpans;
+        // Don't update styledSpans if they haven't changed
         if (JSON.stringify(styledSpansRef.current) !== JSON.stringify(cachedRange)) {
           setStyledSpans(cachedRange);
           styledSpansRef.current = cachedRange;
