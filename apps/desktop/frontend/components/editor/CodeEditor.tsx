@@ -1,6 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { useTabsStore } from '@/features/tabs/store';
+import { LineNumberGutter } from './gutter/LineNumberGutter';
+import { GUTTER_CONFIG } from './gutter/GutterConfig';
 
 interface CodeEditorProps {
   initialValue: string;
@@ -21,6 +23,15 @@ export function CodeEditor({
 }: CodeEditorProps) {
   const [value, setValue] = useState(initialValue);
   const initialRef = useRef(initialValue);
+
+  // Refs for scroll synchronisation
+  const textAreaRef = useRef<HTMLTextAreaElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Editor state we need to expose to the gutter
+  const [scrollTop, setScrollTop] = useState(0);
+  const [containerHeight, setContainerHeight] = useState(0);
+  const [cursorLine, setCursorLine] = useState(1);
 
   // Sync when the parent supplies a new `initialValue`
   useEffect(() => {
@@ -44,6 +55,44 @@ export function CodeEditor({
     };
   }, []);
 
+  // Re‑measure container height and update gutter on mount / resize
+  const measureContainer = useCallback(() => {
+    if (containerRef.current) {
+      setContainerHeight(containerRef.current.clientHeight);
+    }
+  }, []);
+
+  useEffect(() => {
+    measureContainer();
+    const observer = new ResizeObserver(measureContainer);
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+    return () => observer.disconnect();
+  }, [measureContainer]);
+
+  // Compute logical line count and current cursor line
+  const lineCount = useMemo(
+    () => (value.match(/\n/g) || []).length + 1,
+    [value],
+  );
+
+  const handleScroll = useCallback(() => {
+    const ta = textAreaRef.current;
+    if (ta) {
+      setScrollTop(ta.scrollTop);
+    }
+  }, []);
+
+  const handleSelectionChange = useCallback(() => {
+    const ta = textAreaRef.current;
+    if (!ta) return;
+    const selStart = ta.selectionStart;
+    const beforeNewlines = value.slice(0, selStart).match(/\n/g);
+    const line = beforeNewlines ? beforeNewlines.length + 1 : 1;
+    setCursorLine(line);
+  }, [value]);
+
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     if (readOnly) return;
     const newValue = e.target.value;
@@ -52,52 +101,89 @@ export function CodeEditor({
     if (filePath) {
       useTabsStore.getState().markDirty(filePath);
     }
+    // Update cursor line after a change (will be refined on selection change)
+    handleSelectionChange();
   };
 
-  // Common class and style for both read‑only (pre) and editable (textarea)
-  const commonClass = cn(
-    'relative font-mono text-sm leading-[22px] p-0 hide-scrollbar',
-    'text-editor-foreground',
-    className,
+  // Common class for the code area (textarea and pre)
+  const codeClass = cn(
+    'font-mono text-sm leading-[22px] p-0 hide-scrollbar text-editor-foreground',
   );
 
-  const commonStyle: React.CSSProperties = {
+  const codeStyle: React.CSSProperties = {
     height: '100%',
     width: '100%',
-    overflow: 'auto',
     margin: 0,
     border: 0,
     padding: 0,
+    overflow: 'auto',
     scrollbarWidth: 'none',
     msOverflowStyle: 'none',
-    wordBreak: 'break-all',
-    whiteSpace: 'pre-wrap',
+    whiteSpace: 'pre',
+    wordBreak: 'normal',
   };
+
+  // Shared gutter props
+  const lineHeight = GUTTER_CONFIG.LINE_HEIGHT;
+
+  const gutter = (
+    <LineNumberGutter
+      lineCount={lineCount}
+      cursorLine={cursorLine}
+      scrollTop={scrollTop}
+      containerHeight={containerHeight}
+      lineHeight={lineHeight}
+    />
+  );
 
   if (readOnly) {
     return (
-      <pre
-        className={cn(commonClass, 'bg-editor')}
-        style={commonStyle}
+      <div
+        ref={containerRef}
+        className={cn('flex flex-row h-full w-full bg-editor', className)}
+        onScroll={handleScroll}
       >
-        {value}
-      </pre>
+        {gutter}
+        <pre
+          ref={textAreaRef as unknown as React.RefObject<HTMLPreElement>}
+          className={cn(codeClass, 'bg-editor flex-1')}
+          style={{
+            ...codeStyle,
+            overflow: 'auto',
+          }}
+        >
+          {value}
+        </pre>
+      </div>
     );
   }
 
   return (
-    <textarea
-      className={cn(
-        commonClass,
-        'bg-transparent caret-foreground outline-none resize-none',
-      )}
-      style={{ ...commonStyle, border: 'none' }}
-      value={value}
-      onChange={handleChange}
-      spellCheck={false}
-      autoComplete="off"
-      autoCorrect="off"
-      wrap="on"
-    />
+    <div
+      ref={containerRef}
+      className={cn('flex flex-row h-full w-full', className)}
+      onScroll={handleScroll}
+    >
+      {gutter}
+      <textarea
+        ref={textAreaRef}
+        className={cn(
+          codeClass,
+          'bg-transparent caret-foreground outline-none resize-none flex-1',
+        )}
+        style={{
+          ...codeStyle,
+          border: 'none',
+        }}
+        value={value}
+        onChange={handleChange}
+        onScroll={handleScroll}
+        onSelect={handleSelectionChange}
+        spellCheck={false}
+        autoComplete="off"
+        autoCorrect="off"
+        wrap="off"
+      />
+    </div>
   );
 }
