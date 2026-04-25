@@ -114,9 +114,9 @@ export function CodeEditor({
 
   const lineHeight = GUTTER_CONFIG.LINE_HEIGHT;
 
-  // Use a passive scroll listener to sync the gutter's native scroll position.
-  // The gutter outer container now has `overflow-y: auto`, so setting its
-  // `scrollTop` to match the textarea scrollTop keeps the line numbers aligned.
+  // Use a passive scroll listener to apply a CSS transform to the gutter's inner container.
+  // The outer wrapper has `overflow: hidden`, so the transform creates a perfect
+  // scroll‑synchronisation without causing React re‑renders or layout thrashing.
   useEffect(() => {
     const el = textAreaRef.current;
     if (!el) return;
@@ -124,7 +124,10 @@ export function CodeEditor({
     const sync = () => {
       const gutterEl = gutterInnerRef.current;
       if (!gutterEl) return;
-      gutterEl.scrollTop = el.scrollTop;
+      const inner = gutterEl.firstChild as HTMLElement | null;
+      if (inner) {
+        inner.style.transform = `translateY(-${el.scrollTop}px)`;
+      }
     };
 
     sync();
