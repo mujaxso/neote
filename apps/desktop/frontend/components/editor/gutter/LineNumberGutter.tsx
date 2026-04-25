@@ -78,6 +78,7 @@ export function LineNumberGutter({
       className="h-full overflow-hidden shrink-0 border-r border-[rgba(128,128,128,0.18)]"
       style={{
         width: gutterWidth,
+        pointerEvents: 'none',
       }}
     >
       <div
@@ -85,7 +86,6 @@ export function LineNumberGutter({
         style={{
           height: lineCount * lineHeight,
           transform: `translateY(-${scrollTop}px)`,
-          willChange: 'transform',
         }}
       >
         {numbers}
