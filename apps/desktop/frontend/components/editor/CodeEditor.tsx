@@ -77,16 +77,12 @@ export function CodeEditor({
 
   const scrollTopRafId = useRef<number | null>(null);
 
-  // lineCount is computed once from the *full* file (used for gutter width)
-  const [lineCount, setLineCount] = useState(() => countLines(initialValue));
-
   // Update displayValue when initialValue changes from the outside
   useEffect(() => {
     if (initialRef.current !== initialValue) {
       initialRef.current = initialValue;
       fullValueRef.current = initialValue;
       const newLineCount = countLines(initialValue);
-      setLineCount(newLineCount);
       if (newLineCount > MAX_VISIBLE_LINES) {
         setIsLarge(true);
         setDisplayValue(truncateToNLines(initialValue, MAX_VISIBLE_LINES));
@@ -180,6 +176,9 @@ export function CodeEditor({
     handleSelectionChange();
   };
 
+  // Compute the line count of the *displayed* content (used for gutter)
+  const displayLineCount = useMemo(() => countLines(displayValue), [displayValue]);
+
   // Common class for the code area (textarea and pre)
   const codeClass = cn(
     'font-mono text-sm leading-[22px] p-0 hide-scrollbar text-editor-foreground',
@@ -200,7 +199,7 @@ export function CodeEditor({
 
   const gutter = (
     <LineNumberGutter
-      lineCount={lineCount}
+      lineCount={displayLineCount}
       cursorLine={cursorLine}
       lineHeight={lineHeight}
       scrollTop={scrollTop}
