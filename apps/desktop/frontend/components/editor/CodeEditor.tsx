@@ -418,6 +418,7 @@ export function CodeEditor({
   const [highlightVersion, setHighlightVersion] = useState(0);
 
   const lastValidSpansRef = useRef<Array<{start: number; end: number; color: string}>>([]);
+  const styledSpansRef = useRef<Array<{start: number; end: number; color: string}>>([]);
   const lastFetchedRangeRef = useRef<{firstLine: number; lastLine: number} | null>(null);
   const containerHeightRef = useRef(600);
   const rafRef = useRef<number | null>(null);
@@ -463,7 +464,13 @@ export function CodeEditor({
         if (firstKey) { styledSpansCache.delete(firstKey); }
       }
 
-      setStyledSpans(newSpans);
+      // Only update state if the spans actually changed (avoid flash)
+      const currentJson = JSON.stringify(styledSpansRef.current);
+      const newJson = JSON.stringify(newSpans);
+      if (currentJson !== newJson) {
+        setStyledSpans(newSpans);
+        styledSpansRef.current = newSpans;
+      }
       lastValidSpansRef.current = newSpans;
       lastFetchedRangeRef.current = { firstLine, lastLine };
     } catch (err: any) {
@@ -498,7 +505,12 @@ export function CodeEditor({
       const firstLine = Math.max(0, Math.floor(effectiveScrollTop / lineHeight) - overscan);
       const lastLine = Math.ceil((effectiveScrollTop + containerHeight) / lineHeight) + overscan - 1;
 
-      // Always fetch (remove early return)
+      // Skip fetch if the visible range hasn't changed significantly
+      const lastRange = lastFetchedRangeRef.current;
+      if (lastRange && Math.abs(lastRange.firstLine - firstLine) <= 2 && Math.abs(lastRange.lastLine - lastLine) <= 2) {
+        return;
+      }
+
       fetchStyledSpans(filePath, firstLine, lastLine, versionRef.current);
     });
 
