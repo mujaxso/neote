@@ -114,7 +114,7 @@ export function CodeEditor({
       const st = el.scrollTop;
       const gutter = gutterInnerRef.current;
       if (gutter) {
-        gutter.style.transform = `translateY(-${st}px)`;
+        gutter.scrollTop = st;
       }
     };
     // sync initial state
