@@ -2,8 +2,11 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tauri::command;
 use zaroxi_domain_editor::document_cache::BufferManager;
+use zaroxi_domain_editor::editor::EditorState;
+use zaroxi_domain_editor::document::Document;
 use zaroxi_domain_editor::LargeFileMode;
 use zaroxi_ops_file::FileLoader;
+use zaroxi_theme::theme::SemanticColors;
 
 /// Global buffer manager instance shared across all commands.
 static BUFFER_MANAGER: once_cell::sync::Lazy<Arc<BufferManager>> =
@@ -74,6 +77,32 @@ pub async fn open_document(path: String) -> Result<OpenDocumentResponse, String>
         .map_err(|e| format!("Failed to open document: {}", e))?;
 
     let document = &cached.document;
+    let line_count = document.len_lines();
+    let char_count = document.len_chars();
+    let large_file_mode = document.large_file_mode();
+    let is_read_only = large_file_mode.is_read_only();
+    let content_truncated = large_file_mode == LargeFileMode::Large
+        || large_file_mode == LargeFileMode::VeryLarge;
+
+    // Build the response content (only the first TRUNCATE_CHARS characters for large files)
+    let content: String = if content_truncated {
+        document.text().chars().take(TRUNCATE_CHARS).collect()
+    } else {
+        document.text()
+    };
+
+    let document_id = uuid::Uuid::new_v4().to_string();
+
+    Ok(OpenDocumentResponse {
+        document_id,
+        path,
+        line_count,
+        char_count,
+        large_file_mode: format!("{:?}", large_file_mode),
+        is_read_only,
+        content,
+        content_truncated,
+    })
 }
 
 #[derive(Serialize)]
@@ -112,33 +141,6 @@ pub async fn get_styled_spans(path: String) -> Result<Vec<StyledSpanResponse>, S
         .collect();
 
     Ok(response)
-}
-    let line_count = document.len_lines();
-    let char_count = document.len_chars();
-    let large_file_mode = document.large_file_mode();
-    let is_read_only = large_file_mode.is_read_only();
-    let content_truncated = large_file_mode == LargeFileMode::Large
-        || large_file_mode == LargeFileMode::VeryLarge;
-
-    // Build the response content (only the first TRUNCATE_CHARS characters for large files)
-    let content: String = if content_truncated {
-        document.text().chars().take(TRUNCATE_CHARS).collect()
-    } else {
-        document.text()
-    };
-
-    let document_id = uuid::Uuid::new_v4().to_string();
-
-    Ok(OpenDocumentResponse {
-        document_id,
-        path,
-        line_count,
-        char_count,
-        large_file_mode: format!("{:?}", large_file_mode),
-        is_read_only,
-        content,
-        content_truncated,
-    })
 }
 
 /// Get visible lines for a document.
