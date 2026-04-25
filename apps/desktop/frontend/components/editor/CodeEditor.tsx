@@ -400,14 +400,14 @@ export function CodeEditor({
       .then((spans: any) => {
         console.log('[CodeEditor] Received styled spans:', spans?.length);
         setStyledSpans(spans || []);
-        setHighlightVersion(v => v + 1);
+        // Do NOT update highlightVersion here to avoid infinite loop
       })
       .catch((err: any) => {
         console.error('[CodeEditor] Failed to get styled spans:', err);
         // Fallback: clear spans so plain text is shown
         setStyledSpans([]);
       });
-  }, [filePath, scrollTop, highlightVersion]);
+  }, [filePath, scrollTop]);
 
   useEffect(() => {
     if (initialRef.current !== initialValue) {
