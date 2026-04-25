@@ -142,6 +142,17 @@ function VirtualEditor({
     return { firstLine: first, lastLine: last };
   }, [scrollTop, lineHeight, localLineCount, containerHeight]);
 
+  // Build a map from character offset to color for fast lookup
+  const colorMap = useMemo(() => {
+    const map = new Map<number, string>();
+    for (const span of styledSpans) {
+      for (let i = span.start; i < span.end; i++) {
+        map.set(i, span.color);
+      }
+    }
+    return map;
+  }, [styledSpans]);
+
   const codeRows = useMemo(() => {
     if (firstLine < 0 || lastLine < 0) {
       return null;
@@ -156,49 +167,28 @@ function VirtualEditor({
       const lineStart = start;
       const lineEnd = start + text.length; // character offset after stripping newline
 
-      // Filter spans that overlap with this line
-      const lineSpans = styledSpans.filter(
-        (s) => s.start < lineEnd && s.end > lineStart
-      );
-
-      // Build React elements for this line
+      // Build segments for this line using the color map
       const segments: React.ReactNode[] = [];
       let currentPos = lineStart;
-      for (const span of lineSpans) {
-        if (span.start > currentPos) {
-          // Unstyled text before this span
-          const plainText = text.slice(currentPos - lineStart, span.start - lineStart);
-          if (plainText.length > 0) {
-            segments.push(
-              <span key={`${currentPos}-plain`}>{plainText}</span>
-            );
-          }
+      while (currentPos < lineEnd) {
+        const color = colorMap.get(currentPos);
+        // Find the end of this color run
+        let runEnd = currentPos + 1;
+        while (runEnd < lineEnd && colorMap.get(runEnd) === color) {
+          runEnd++;
         }
-        // Styled text for this span (clamped to line boundaries)
-        const spanStart = Math.max(span.start, lineStart);
-        const spanEnd = Math.min(span.end, lineEnd);
-        if (spanStart < spanEnd) {
-          const styledText = text.slice(spanStart - lineStart, spanEnd - lineStart);
-          if (styledText.length > 0) {
-            segments.push(
-              <span
-                key={`${spanStart}-styled`}
-                style={{ color: span.color }}
-              >
-                {styledText}
-              </span>
-            );
-          }
-        }
-        currentPos = Math.max(currentPos, spanEnd);
-      }
-      if (currentPos < lineEnd) {
-        const remaining = text.slice(currentPos - lineStart);
-        if (remaining.length > 0) {
+        const segmentText = text.slice(currentPos - lineStart, runEnd - lineStart);
+        if (segmentText.length > 0) {
           segments.push(
-            <span key={`${currentPos}-plain-end`}>{remaining}</span>
+            <span
+              key={`${currentPos}-${runEnd}`}
+              style={{ color: color ?? undefined }}
+            >
+              {segmentText}
+            </span>
           );
         }
+        currentPos = runEnd;
       }
 
       rows.push(
@@ -224,7 +214,7 @@ function VirtualEditor({
       );
     }
     return rows;
-  }, [firstLine, lastLine, lineHeight, displayValue, sentinel, styledSpans]);
+  }, [firstLine, lastLine, lineHeight, displayValue, sentinel, colorMap]);
 
   const handleScroll = useCallback(() => {
     if (rafRef.current != null) {
@@ -303,7 +293,7 @@ function VirtualEditor({
             containerHeight={containerHeight}
           />
         </div>
-        {/* Styled overlay */}
+        {/* Styled overlay – this is the single source of visible text */}
         <div
           style={{
             position: 'absolute',
@@ -323,7 +313,7 @@ function VirtualEditor({
         >
           {codeRows}
         </div>
-        {/* Textarea for editing */}
+        {/* Textarea for editing – transparent, only captures input */}
         <textarea
           ref={textAreaRef}
           style={{

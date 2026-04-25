@@ -234,6 +234,11 @@ impl EditorState {
     /// This is optimized for rendering only visible lines.
     /// All returned spans use **character offsets** (not byte offsets) so they
     /// can be used directly by the frontend for text slicing.
+    ///
+    /// The returned spans are guaranteed to cover the entire requested character
+    /// range: any gap between spans will be filled with a plain-text span using
+    /// `colors.text_primary`. This ensures the frontend never has to fall back
+    /// to a separate plain‑text rendering path.
     pub fn styled_spans_for_lines(
         &mut self,
         colors: &SemanticColors,
@@ -244,7 +249,6 @@ impl EditorState {
         let highlights = self.highlights();
 
         // Now we can borrow self.document immutably because highlights is owned
-        let text = self.document.text();
         let total_lines = self.document.len_lines();
 
         // Convert line range to character range (not byte range)
@@ -279,7 +283,36 @@ impl EditorState {
             }
         }
 
-        result
+        // Sort by start position
+        result.sort_by_key(|s| s.start);
+
+        // Fill gaps with plain-text spans
+        let mut filled = Vec::new();
+        let mut cursor = start_char;
+        for span in &result {
+            if span.start > cursor {
+                // There is a gap before this span
+                filled.push(zaroxi_lang_syntax::theme_map::StyledSpan {
+                    start: cursor,
+                    end: span.start,
+                    token_type: zaroxi_lang_syntax::theme_map::SemanticTokenType::Plain,
+                    color: colors.text_primary,
+                });
+            }
+            filled.push(span.clone());
+            cursor = span.end;
+        }
+        // Fill any remaining gap after the last span
+        if cursor < end_char {
+            filled.push(zaroxi_lang_syntax::theme_map::StyledSpan {
+                start: cursor,
+                end: end_char,
+                token_type: zaroxi_lang_syntax::theme_map::SemanticTokenType::Plain,
+                color: colors.text_primary,
+            });
+        }
+
+        filled
     }
 
     /// Invalidate the highlight cache (e.g., after a large edit).
