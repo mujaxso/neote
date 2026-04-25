@@ -37,26 +37,41 @@ impl Runtime {
     }
 
     fn locate_root() -> Option<PathBuf> {
-        // 0. First priority: runtime directory relative to the crate source directory
+        // 0. First priority: runtime directory relative to the zaroxi-lang-syntax crate source directory
         // This is the most reliable location for development
+        // We need to find the crate's Cargo.toml, not the desktop app's
         if let Ok(manifest_dir) = env::var("CARGO_MANIFEST_DIR") {
             let manifest_path = PathBuf::from(manifest_dir);
-            // Check if runtime/treesitter exists directly in the crate directory
-            let candidate = manifest_path.join("runtime/treesitter");
-            if candidate.is_dir() {
-                eprintln!("DEBUG: locate_root: found via crate dir: {:?}", candidate);
-                return Some(candidate);
-            }
-            // Check if runtime exists directly in the crate directory
-            let runtime_dir = manifest_path.join("runtime");
-            if runtime_dir.is_dir() {
-                let ts_dir = runtime_dir.join("treesitter");
-                if ts_dir.is_dir() {
-                    eprintln!("DEBUG: locate_root: found via crate dir/runtime/treesitter: {:?}", ts_dir);
-                    return Some(ts_dir);
+            // Walk up to find the zaroxi-lang-syntax crate's Cargo.toml
+            let mut current = manifest_path.clone();
+            while current.parent().is_some() {
+                let cargo_toml = current.join("Cargo.toml");
+                if cargo_toml.exists() {
+                    // Check if this is the zaroxi-lang-syntax crate by looking for its name
+                    if let Ok(content) = std::fs::read_to_string(&cargo_toml) {
+                        if content.contains("name = \"zaroxi-lang-syntax\"") {
+                            // Found the crate directory, look for runtime/treesitter relative to it
+                            let candidate = current.join("runtime/treesitter");
+                            if candidate.is_dir() {
+                                eprintln!("DEBUG: locate_root: found via zaroxi-lang-syntax crate dir: {:?}", candidate);
+                                return Some(candidate);
+                            }
+                            let runtime_dir = current.join("runtime");
+                            if runtime_dir.is_dir() {
+                                let ts_dir = runtime_dir.join("treesitter");
+                                if ts_dir.is_dir() {
+                                    eprintln!("DEBUG: locate_root: found via zaroxi-lang-syntax crate dir/runtime/treesitter: {:?}", ts_dir);
+                                    return Some(ts_dir);
+                                }
+                                eprintln!("DEBUG: locate_root: found via zaroxi-lang-syntax crate dir/runtime: {:?}", runtime_dir);
+                                return Some(runtime_dir);
+                            }
+                            break;
+                        }
+                    }
+                    break;
                 }
-                eprintln!("DEBUG: locate_root: found via crate dir/runtime: {:?}", runtime_dir);
-                return Some(runtime_dir);
+                current = current.parent().unwrap().to_path_buf();
             }
         }
 
