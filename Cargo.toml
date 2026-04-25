@@ -70,3 +70,5 @@ zaroxi-service-ai = { path = "crates/zaroxi-service-ai" }
 zaroxi-service-workspace = { path = "crates/zaroxi-service-workspace" }
 zaroxi-lang-lsp = { path = "crates/zaroxi-lang-lsp" }
 zaroxi-core-ids = { path = "crates/zaroxi-core-ids" }
+zaroxi-ops-file = { path = "crates/zaroxi-ops-file" }
+zaroxi-ops-file = { path = "crates/zaroxi-ops-file" }
