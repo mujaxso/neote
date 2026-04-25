@@ -27,11 +27,14 @@ export function CodeEditor({
   // Refs for scroll synchronisation
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const gutterInnerRef = useRef<HTMLDivElement>(null);
 
   // Editor state we need to expose to the gutter
-  const [scrollTop, setScrollTop] = useState(0);
   const [containerHeight, setContainerHeight] = useState(0);
   const [cursorLine, setCursorLine] = useState(1);
+  const [scrollLine, setScrollLine] = useState(0); // integer line index for virtualisation
+
+  const scrollLineRef = useRef(0); // previous line index to avoid unnecessary re‑renders
 
   // Sync when the parent supplies a new `initialValue`
   useEffect(() => {
@@ -52,15 +55,6 @@ export function CodeEditor({
     document.head.appendChild(style);
     return () => {
       document.head.removeChild(style);
-    };
-  }, []);
-
-  // Cancel any pending rAF on unmount
-  useEffect(() => {
-    return () => {
-      if (rafIdRef.current !== null) {
-        cancelAnimationFrame(rafIdRef.current);
-      }
     };
   }, []);
 
@@ -86,20 +80,25 @@ export function CodeEditor({
     [value],
   );
 
-  const rafIdRef = useRef<number | null>(null);
+  const lineHeight = GUTTER_CONFIG.LINE_HEIGHT;
 
   const handleScroll = useCallback(() => {
     const ta = textAreaRef.current;
     if (!ta) return;
-    const currentScroll = ta.scrollTop;
-    if (rafIdRef.current !== null) {
-      cancelAnimationFrame(rafIdRef.current);
+    const st = ta.scrollTop;
+
+    // Apply pixel‑perfect transform to the gutter’s inner container
+    if (gutterInnerRef.current) {
+      gutterInnerRef.current.style.transform = `translateY(-${st}px)`;
     }
-    rafIdRef.current = requestAnimationFrame(() => {
-      setScrollTop(currentScroll);
-      rafIdRef.current = null;
-    });
-  }, []);
+
+    // Compute which line index we are at for virtualisation
+    const lineIdx = Math.floor(st / lineHeight);
+    if (lineIdx !== scrollLineRef.current) {
+      scrollLineRef.current = lineIdx;
+      setScrollLine(lineIdx);
+    }
+  }, [lineHeight]);
 
   const handleSelectionChange = useCallback(() => {
     const ta = textAreaRef.current;
@@ -140,16 +139,14 @@ export function CodeEditor({
     wordBreak: 'normal',
   };
 
-  // Shared gutter props
-  const lineHeight = GUTTER_CONFIG.LINE_HEIGHT;
-
   const gutter = (
     <LineNumberGutter
       lineCount={lineCount}
       cursorLine={cursorLine}
-      scrollTop={scrollTop}
+      scrollLine={scrollLine}
       containerHeight={containerHeight}
       lineHeight={lineHeight}
+      innerRef={gutterInnerRef}
     />
   );
 

@@ -4,33 +4,35 @@ import { GUTTER_CONFIG } from './GutterConfig';
 interface Props {
   lineCount: number;
   cursorLine: number;
-  scrollTop: number;
+  scrollLine: number;
   containerHeight: number;
   lineHeight: number;
+  innerRef?: React.RefObject<HTMLDivElement>;
 }
 
 export function LineNumberGutter({
   lineCount,
   cursorLine,
-  scrollTop,
+  scrollLine,
   containerHeight,
   lineHeight,
+  innerRef,
 }: Props) {
   const ref = useRef<HTMLDivElement>(null);
 
   // Virtualized visible line range (using a small overscan buffer)
   const start = useMemo(() => {
     if (containerHeight <= 0) return 0;
-    const scrollLine = Math.floor(scrollTop / lineHeight);
-    return Math.max(0, scrollLine - 1);
-  }, [scrollTop, containerHeight, lineHeight]);
+    const scLine = Math.max(0, scrollLine - 1);
+    return scLine;
+  }, [scrollLine, containerHeight, lineHeight]);
 
   const end = useMemo(() => {
     if (containerHeight <= 0 || lineCount === 0) return 0;
     const visibleLines = Math.ceil(containerHeight / lineHeight);
-    const scrollLine = Math.floor(scrollTop / lineHeight);
+    const scLine = Math.floor((scrollLine * lineHeight) / lineHeight); // same as scrollLine
     return Math.min(lineCount, start + visibleLines + 3);
-  }, [start, scrollTop, containerHeight, lineHeight, lineCount]);
+  }, [start, scrollLine, containerHeight, lineHeight, lineCount]);
 
   // Gutter width based on number of digits of the last line
   const gutterWidth = useMemo(() => {
@@ -82,10 +84,10 @@ export function LineNumberGutter({
       }}
     >
       <div
+        ref={innerRef}
         className="min-w-full relative"
         style={{
           height: lineCount * lineHeight,
-          transform: `translateY(-${scrollTop}px)`,
         }}
       >
         {numbers}
