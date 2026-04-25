@@ -39,7 +39,7 @@ impl EditorState {
 
     /// Create editor state from an existing document.
     pub fn from_document(document: Document) -> Self {
-        Self {
+        let mut state = Self {
             document,
             cursor: Cursor::new(),
             viewport: Viewport::new(),
@@ -47,7 +47,10 @@ impl EditorState {
             highlight_engine: HighlightEngine::new(),
             cached_highlights: Vec::new(),
             cached_version: 0,
-        }
+        };
+        // Trigger initial syntax highlighting
+        state.highlights();
+        state
     }
 
     // ---------- document ----------
