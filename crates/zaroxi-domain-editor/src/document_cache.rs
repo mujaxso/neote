@@ -7,7 +7,7 @@
 
 use crate::document::Document;
 use crate::thresholds::FileClass;
-use zaroxi_ops_file::FileLoader;
+use zaroxi_ops_file::file_loader::FileLoader;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
@@ -232,11 +232,11 @@ impl BufferManager {
         }
 
         // Load from disk.
-        let (file_source, size): (zaroxi_ops_file::file_loader::FileSource, u64) = FileLoader::load_file(path.to_str().unwrap_or(""))
+        let (file_source, size) = FileLoader::load_file(path.to_str().unwrap_or(""))
             .map_err(|e| format!("Failed to load file: {}", e))?;
 
-        let text: &str = file_source.as_str();
-        let document = Document::from_text_with_path(text, canonical.to_string_lossy().to_string());
+        let text = file_source.as_str().to_string();
+        let document = Document::from_text_with_path(&text, canonical.to_string_lossy().to_string());
 
         let mtime = std::fs::metadata(&canonical)
             .ok()
@@ -248,7 +248,7 @@ impl BufferManager {
         // Store in cache.
         {
             let mut cache: tokio::sync::MutexGuard<'_, DocumentCache> = self.cache.lock().await;
-            cache.insert(canonical.clone(), cached.clone_deep());
+            cache.insert(canonical.clone(), cached.clone());
         }
 
         Ok(cached)
@@ -259,7 +259,7 @@ impl BufferManager {
     pub async fn get_cached(&self, path: &Path) -> Option<CachedDocument> {
         let canonical = path.canonicalize().ok()?;
         let mut cache: tokio::sync::MutexGuard<'_, DocumentCache> = self.cache.lock().await;
-        cache.get(&canonical).map(|c: &mut CachedDocument| c.clone_deep())
+        cache.get(&canonical).map(|c: &mut CachedDocument| c.clone())
     }
 
     /// Mark a document as dirty (unsaved changes).
@@ -327,8 +327,3 @@ impl Clone for CachedDocument {
     }
 }
 
-impl CachedDocument {
-    fn clone_deep(&self) -> Self {
-        self.clone()
-    }
-}

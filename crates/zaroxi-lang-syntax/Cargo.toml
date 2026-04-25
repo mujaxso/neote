@@ -21,7 +21,12 @@ libloading = { workspace = true }
 serde_json = { workspace = true }
 tempfile = { workspace = true }
 memmap2 = "0.9"
+ropey = "1.6"
+parking_lot = { workspace = true }
+cc = { workspace = true }
+toml = "0.8"
+zaroxi-theme = { workspace = true }
 
 [features]
-default = []
-dynamic-loading = []
+default = ["dynamic-loading"]
+dynamic-loading = ["libloading"]
