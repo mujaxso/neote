@@ -297,12 +297,12 @@ impl Document {
     /// one if the document has been edited. Returns `true` if a syntax tree is
     /// available after this call.
     ///
-    /// For large files (Medium or Large), this method returns `false` to avoid
-    /// expensive parsing operations.
+    /// For very large files (Large), this method returns `false` to avoid
+    /// expensive parsing operations. Medium files still get syntax trees.
     pub fn ensure_syntax_tree(&mut self) -> bool {
-        // Skip syntax tree for large files
-        if self.file_class != FileClass::Normal {
-            eprintln!("DEBUG: ensure_syntax_tree: file_class={:?}, skipping", self.file_class);
+        // Skip syntax tree for very large files only
+        if self.file_class == FileClass::Large {
+            eprintln!("DEBUG: ensure_syntax_tree: file_class=Large, skipping");
             self.syntax_tree = None;
             return false;
         }

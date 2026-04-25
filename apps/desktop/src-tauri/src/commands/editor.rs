@@ -138,14 +138,25 @@ pub async fn get_styled_spans(
 
     eprintln!("DEBUG: get_styled_spans: loading file {:?}", canonical);
 
-    // Load the file content
-    let file_content = std::fs::read_to_string(&canonical)
-        .map_err(|e| format!("Failed to read file: {}", e))?;
+    // Try to use the buffer manager's cached document first
+    let cached = BUFFER_MANAGER
+        .get_cached(&canonical)
+        .await;
 
-    eprintln!("DEBUG: get_styled_spans: file loaded, {} bytes", file_content.len());
+    let mut editor = if let Some(cached) = cached {
+        eprintln!("DEBUG: get_styled_spans: using cached document");
+        EditorState::from_document(cached.document)
+    } else {
+        eprintln!("DEBUG: get_styled_spans: loading file from disk");
+        // Load the file content
+        let file_content = std::fs::read_to_string(&canonical)
+            .map_err(|e| format!("Failed to read file: {}", e))?;
 
-    let document = Document::from_text_with_path(&file_content, canonical.to_string_lossy().to_string());
-    let mut editor = EditorState::from_document(document);
+        eprintln!("DEBUG: get_styled_spans: file loaded, {} bytes", file_content.len());
+
+        let document = Document::from_text_with_path(&file_content, canonical.to_string_lossy().to_string());
+        EditorState::from_document(document)
+    };
 
     // Use dark theme for now (could be made configurable)
     let colors = SemanticColors::dark();

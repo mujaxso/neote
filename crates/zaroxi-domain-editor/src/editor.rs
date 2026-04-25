@@ -159,8 +159,8 @@ impl EditorState {
     /// This method caches the highlights and only recomputes them when the
     /// document version changes. For large files, it returns an empty vector.
     pub fn highlights(&mut self) -> Vec<HighlightSpan> {
-        // For large files, return empty highlights
-        if self.document.file_class() != FileClass::Normal {
+        // For very large files, return empty highlights
+        if self.document.file_class() == FileClass::Large {
             self.cached_highlights.clear();
             return Vec::new();
         }

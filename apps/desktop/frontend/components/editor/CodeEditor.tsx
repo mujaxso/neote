@@ -125,14 +125,16 @@ function VirtualEditor({
   const gutterWidth = computeGutterWidth(displayLineCount);
 
   const { firstLine, lastLine } = useMemo(() => {
-    if (containerHeight === 0 || lineHeight <= 0) {
+    // Use a default container height if not yet measured
+    const effectiveContainerHeight = containerHeight > 0 ? containerHeight : 600;
+    if (lineHeight <= 0) {
       return { firstLine: -1, lastLine: -1 };
     }
     const effectiveScrollTop = Math.max(0, scrollTop);
     const first = Math.max(0, Math.floor(effectiveScrollTop / lineHeight) - overscan);
     const last = Math.min(
       localLineCount - 1,
-      Math.ceil((effectiveScrollTop + containerHeight) / lineHeight) + overscan - 1,
+      Math.ceil((effectiveScrollTop + effectiveContainerHeight) / lineHeight) + overscan - 1,
     );
     if (!Number.isFinite(first) || !Number.isFinite(last)) {
       return { firstLine: -1, lastLine: -1 };
