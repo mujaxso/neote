@@ -416,13 +416,14 @@ export function CodeEditor({
   const [scrollTop, setScrollTop] = useState(0);
   const [styledSpans, setStyledSpans] = useState<Array<{start: number; end: number; color: string}>>([]);
   const [highlightVersion, setHighlightVersion] = useState(0);
-  const [documentVersion, setDocumentVersion] = useState(0);
 
   const lastValidSpansRef = useRef<Array<{start: number; end: number; color: string}>>([]);
   const lastFetchedRangeRef = useRef<{firstLine: number; lastLine: number} | null>(null);
   const containerHeightRef = useRef(600);
   const rafRef = useRef<number | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const versionRef = useRef<number>(0);
+  const versionRef = useRef<number>(0);
 
   const scrollRef = useRef(scrollTop);
   scrollRef.current = scrollTop;
@@ -473,6 +474,19 @@ export function CodeEditor({
     }
   }, []);
 
+  // Fetch the actual document version from the backend on mount
+  useEffect(() => {
+    if (!filePath) return;
+    (async () => {
+      try {
+        const response: any = await invoke('open_document', { path: filePath });
+        versionRef.current = response.version;
+      } catch (err) {
+        console.error('[CodeEditor] Failed to get document version:', err);
+      }
+    })();
+  }, [filePath]);
+
   useEffect(() => {
     if (!filePath) return;
     if (rafRef.current) { cancelAnimationFrame(rafRef.current); }
@@ -486,11 +500,11 @@ export function CodeEditor({
       const lastLine = Math.ceil((effectiveScrollTop + containerHeight) / lineHeight) + overscan - 1;
 
       // Always fetch (remove early return)
-      fetchStyledSpans(filePath, firstLine, lastLine, documentVersion);
+      fetchStyledSpans(filePath, firstLine, lastLine, versionRef.current);
     });
 
     return () => { if (rafRef.current) { cancelAnimationFrame(rafRef.current); } };
-  }, [filePath, scrollTop, documentVersion, fetchStyledSpans]);
+  }, [filePath, scrollTop, fetchStyledSpans]);
 
   useEffect(() => {
     if (!filePath) return;
@@ -499,8 +513,8 @@ export function CodeEditor({
     const overscan = 5;
     const firstLine = 0;
     const lastLine = Math.ceil(containerHeight / lineHeight) + overscan - 1;
-    fetchStyledSpans(filePath, firstLine, lastLine, documentVersion);
-  }, [filePath, documentVersion, fetchStyledSpans]);
+    fetchStyledSpans(filePath, firstLine, lastLine, versionRef.current);
+  }, [filePath, fetchStyledSpans]);
 
   useEffect(() => {
     if (initialRef.current !== initialValue) {
@@ -515,7 +529,6 @@ export function CodeEditor({
         setDisplayValue(initialValue);
       }
       setHighlightVersion(v => v + 1);
-      setDocumentVersion(v => v + 1);
     }
   }, [initialValue]);
 
@@ -537,7 +550,6 @@ export function CodeEditor({
       onChange(newValue);
       if (filePath) { useTabsStore.getState().markDirty(filePath); }
       setHighlightVersion(v => v + 1);
-      setDocumentVersion(v => v + 1);
     },
     [onChange, filePath],
   );
