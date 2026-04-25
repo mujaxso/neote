@@ -114,7 +114,7 @@ export function CodeEditor({
 
   const lineHeight = GUTTER_CONFIG.LINE_HEIGHT;
 
-  // Use a passive scroll listener to translate the gutter's inner container directly.
+  // Use a passive scroll listener to sync the gutter's native scroll position.
   // This guarantees pixel‑perfect synchronisation without causing React re‑renders.
   useEffect(() => {
     const el = textAreaRef.current;
@@ -123,13 +123,7 @@ export function CodeEditor({
     const sync = () => {
       const gutterEl = gutterInnerRef.current;
       if (!gutterEl) return;
-      const st = el.scrollTop;
-      // Apply the transform directly to the inner container so that the overflow‑hidden
-      // outer wrapper clips the numbers correctly.
-      const inner = gutterEl.firstChild as HTMLElement | null;
-      if (inner) {
-        inner.style.transform = `translateY(-${st}px)`;
-      }
+      gutterEl.scrollTop = el.scrollTop;
     };
 
     sync();
