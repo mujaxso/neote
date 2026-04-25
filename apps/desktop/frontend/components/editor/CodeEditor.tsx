@@ -424,6 +424,7 @@ export function CodeEditor({
   const rafRef = useRef<number | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const versionRef = useRef<number>(0);
+  const lastFetchTimeRef = useRef<number>(0);
 
   const scrollRef = useRef(scrollTop);
   scrollRef.current = scrollTop;
@@ -498,6 +499,12 @@ export function CodeEditor({
     if (rafRef.current) { cancelAnimationFrame(rafRef.current); }
 
     rafRef.current = requestAnimationFrame(() => {
+      const now = Date.now();
+      const THROTTLE_MS = 100; // only fetch at most once per 100ms
+      if (now - lastFetchTimeRef.current < THROTTLE_MS) {
+        return;
+      }
+
       const lineHeight = GUTTER_CONFIG.LINE_HEIGHT;
       const containerHeight = containerHeightRef.current;
       const overscan = 5;
@@ -511,6 +518,7 @@ export function CodeEditor({
         return;
       }
 
+      lastFetchTimeRef.current = now;
       fetchStyledSpans(filePath, firstLine, lastLine, versionRef.current);
     });
 
