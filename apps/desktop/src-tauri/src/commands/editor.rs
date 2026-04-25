@@ -107,13 +107,30 @@ pub async fn open_document(path: String) -> Result<OpenDocumentResponse, String>
 
 #[derive(Serialize)]
 pub struct StyledSpanResponse {
+    /// Character offset (not byte offset) – safe for frontend text slicing.
     pub start: usize,
+    /// Character offset (not byte offset).
     pub end: usize,
     pub color: String,
 }
 
+/// Request for styled spans within a specific viewport range.
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StyledSpansRequest {
+    pub path: String,
+    /// First visible line (0‑based).
+    pub start_line: usize,
+    /// Last visible line (exclusive, 0‑based).
+    pub end_line: usize,
+}
+
 #[tauri::command]
-pub async fn get_styled_spans(path: String) -> Result<Vec<StyledSpanResponse>, String> {
+pub async fn get_styled_spans(
+    path: String,
+    start_line: Option<usize>,
+    end_line: Option<usize>,
+) -> Result<Vec<StyledSpanResponse>, String> {
     let path_buf = std::path::PathBuf::from(&path);
     let canonical = path_buf
         .canonicalize()
@@ -133,7 +150,13 @@ pub async fn get_styled_spans(path: String) -> Result<Vec<StyledSpanResponse>, S
     // Use dark theme for now (could be made configurable)
     let colors = SemanticColors::dark();
 
-    let styled_spans = editor.styled_spans(&colors);
+    let styled_spans = if let (Some(sl), Some(el)) = (start_line, end_line) {
+        // Only compute highlights for the visible range (plus small overscan)
+        editor.styled_spans_for_lines(&colors, sl, el)
+    } else {
+        // Full‑document highlights (fallback)
+        editor.styled_spans(&colors)
+    };
 
     eprintln!("DEBUG: get_styled_spans: got {} styled spans", styled_spans.len());
 

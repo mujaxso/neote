@@ -144,10 +144,6 @@ function VirtualEditor({
     if (firstLine < 0 || lastLine < 0) {
       return null;
     }
-    console.log('[VirtualEditor] codeRows recompute, styledSpans count:', styledSpans.length);
-    if (styledSpans.length > 0) {
-      console.log('[VirtualEditor] First 3 styledSpans:', styledSpans.slice(0, 3));
-    }
     const rows: React.ReactNode[] = [];
     for (let idx = firstLine; idx <= lastLine; idx++) {
       const start = sentinel[idx];
@@ -156,42 +152,51 @@ function VirtualEditor({
       const text = raw.replace(/\r?\n$/, '');
 
       const lineStart = start;
-      const lineEnd = end;
-      const lineSpans = styledSpans.filter(
-        (s) => s.start >= lineStart && s.end <= lineEnd
-      );
+      const lineEnd = start + text.length; // character offset after stripping newline
 
-      if (idx === firstLine && lineSpans.length > 0) {
-        console.log('[VirtualEditor] First line spans:', lineSpans);
-      }
+      // Filter spans that overlap with this line
+      const lineSpans = styledSpans.filter(
+        (s) => s.start < lineEnd && s.end > lineStart
+      );
 
       // Build React elements for this line
       const segments: React.ReactNode[] = [];
       let currentPos = lineStart;
       for (const span of lineSpans) {
         if (span.start > currentPos) {
-          // Unstyled text
+          // Unstyled text before this span
           const plainText = text.slice(currentPos - lineStart, span.start - lineStart);
-          segments.push(
-            <span key={`${currentPos}-plain`}>{plainText}</span>
-          );
+          if (plainText.length > 0) {
+            segments.push(
+              <span key={`${currentPos}-plain`}>{plainText}</span>
+            );
+          }
         }
-        const styledText = text.slice(span.start - lineStart, span.end - lineStart);
-        segments.push(
-          <span
-            key={`${span.start}-styled`}
-            style={{ color: span.color }}
-          >
-            {styledText}
-          </span>
-        );
-        currentPos = span.end;
+        // Styled text for this span (clamped to line boundaries)
+        const spanStart = Math.max(span.start, lineStart);
+        const spanEnd = Math.min(span.end, lineEnd);
+        if (spanStart < spanEnd) {
+          const styledText = text.slice(spanStart - lineStart, spanEnd - lineStart);
+          if (styledText.length > 0) {
+            segments.push(
+              <span
+                key={`${spanStart}-styled`}
+                style={{ color: span.color }}
+              >
+                {styledText}
+              </span>
+            );
+          }
+        }
+        currentPos = Math.max(currentPos, spanEnd);
       }
       if (currentPos < lineEnd) {
         const remaining = text.slice(currentPos - lineStart);
-        segments.push(
-          <span key={`${currentPos}-plain-end`}>{remaining}</span>
-        );
+        if (remaining.length > 0) {
+          segments.push(
+            <span key={`${currentPos}-plain-end`}>{remaining}</span>
+          );
+        }
       }
 
       rows.push(
@@ -376,6 +381,41 @@ export function CodeEditor({
   });
 
   const [scrollTop, setScrollTop] = useState(0);
+  const [styledSpans, setStyledSpans] = useState<Array<{start: number; end: number; color: string}>>([]);
+  const [highlightVersion, setHighlightVersion] = useState(0);
+
+  // Re-fetch highlights when scroll position changes (debounced)
+  const scrollRef = useRef(scrollTop);
+  scrollRef.current = scrollTop;
+
+  useEffect(() => {
+    if (!filePath) return;
+
+    // Compute visible line range for the current scroll position
+    const lineHeight = GUTTER_CONFIG.LINE_HEIGHT;
+    const containerHeight = 600; // approximate; will be refined
+    const overscan = 5;
+    const effectiveScrollTop = Math.max(0, scrollTop);
+    const firstLine = Math.max(0, Math.floor(effectiveScrollTop / lineHeight) - overscan);
+    const lastLine = Math.ceil((effectiveScrollTop + containerHeight) / lineHeight) + overscan - 1;
+
+    console.log('[CodeEditor] Fetching styled spans for:', filePath, 'lines', firstLine, '-', lastLine);
+    invoke('get_styled_spans', {
+      path: filePath,
+      startLine: firstLine,
+      endLine: lastLine,
+    })
+      .then((spans: any) => {
+        console.log('[CodeEditor] Received styled spans:', spans?.length);
+        setStyledSpans(spans || []);
+        setHighlightVersion(v => v + 1);
+      })
+      .catch((err: any) => {
+        console.error('[CodeEditor] Failed to get styled spans:', err);
+        // Fallback: clear spans so plain text is shown
+        setStyledSpans([]);
+      });
+  }, [filePath, scrollTop, highlightVersion]);
 
   useEffect(() => {
     if (initialRef.current !== initialValue) {
@@ -389,6 +429,8 @@ export function CodeEditor({
         setIsLarge(false);
         setDisplayValue(initialValue);
       }
+      // Invalidate highlights when content changes
+      setHighlightVersion(v => v + 1);
     }
   }, [initialValue]);
 
@@ -407,21 +449,6 @@ export function CodeEditor({
     return () => {};
   }, []);
 
-  const [styledSpans, setStyledSpans] = useState<Array<{start: number; end: number; color: string}>>([]);
-
-  useEffect(() => {
-    if (!filePath) return;
-    console.log('[CodeEditor] Fetching styled spans for:', filePath);
-    invoke('get_styled_spans', { path: filePath })
-      .then((spans: any) => {
-        console.log('[CodeEditor] Received styled spans:', spans);
-        setStyledSpans(spans);
-      })
-      .catch((err: any) => {
-        console.error('[CodeEditor] Failed to get styled spans:', err);
-      });
-  }, [filePath]);
-
   const lineHeight = GUTTER_CONFIG.LINE_HEIGHT;
 
   const handleValueChange = useCallback(
@@ -432,6 +459,8 @@ export function CodeEditor({
       if (filePath) {
         useTabsStore.getState().markDirty(filePath);
       }
+      // Invalidate highlights when content changes
+      setHighlightVersion(v => v + 1);
     },
     [onChange, filePath],
   );
