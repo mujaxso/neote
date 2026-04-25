@@ -237,7 +237,9 @@ impl Runtime {
             _ => language_id,
         };
         let lib_name = format!("{}tree-sitter-{}{}", prefix, lib_name, extension);
-        self.grammar_dir().join(lib_name)
+        let path = self.grammar_dir().join(lib_name);
+        eprintln!("DEBUG: grammar_library_path for {} -> {}", language_id, path.display());
+        path
     }
 
     /// Load a Tree-sitter language from a shared library in the runtime directory.

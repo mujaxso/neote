@@ -123,23 +123,14 @@ impl HighlightEngine {
             .join("queries")
             .join("highlights.scm");
 
-        eprintln!("DEBUG: Looking for query at: {}", query_path.display());
-
         let query_text = match std::fs::read_to_string(&query_path) {
-            Ok(text) => {
-                eprintln!("DEBUG: Found query file for {} ({} bytes)", language_id, text.len());
-                text
-            }
+            Ok(text) => text,
             Err(e) => {
                 eprintln!("DEBUG: Query file not found for {}: {} (path: {})", language_id, e, query_path.display());
                 // Try alternative path: look for queries directly in language directory
                 let alt_path = self.runtime.language_dir(language_id).join("highlights.scm");
-                eprintln!("DEBUG: Trying alternative path: {}", alt_path.display());
                 match std::fs::read_to_string(&alt_path) {
-                    Ok(text) => {
-                        eprintln!("DEBUG: Found query at alternative path for {}", language_id);
-                        text
-                    }
+                    Ok(text) => text,
                     Err(e2) => {
                         eprintln!("DEBUG: Alternative path also failed: {}", e2);
                         return None;
