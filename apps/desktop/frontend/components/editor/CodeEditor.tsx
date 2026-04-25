@@ -4,6 +4,7 @@ import { useTabsStore } from '@/features/tabs/store';
 import { LineNumberGutter } from './gutter/LineNumberGutter';
 import { GUTTER_CONFIG } from './gutter/GutterConfig';
 import { computeGutterWidth } from './gutter/GutterLayout';
+import { FONT_TOKENS } from '@/lib/theme/font-tokens';
 
 interface CodeEditorProps {
   initialValue: string;
@@ -159,10 +160,10 @@ function ReadOnlyContent({
             lineHeight: `${lineHeight}px`,
             whiteSpace: 'pre',
             overflow: 'hidden',
-            fontFamily: 'inherit',
+            fontFamily: FONT_TOKENS.editor,
             fontSize: 'inherit',
           }}
-          className="font-mono text-sm p-0 text-editor-foreground"
+          className="text-sm p-0 text-editor-foreground"
         >
           {text}
         </div>,
@@ -352,7 +353,7 @@ export function CodeEditor({
 
   // Common class for the code area (textarea and pre)
   const codeClass = cn(
-    'font-mono text-sm leading-[22px] p-0 hide-scrollbar text-editor-foreground',
+    'text-sm leading-[22px] p-0 hide-scrollbar text-editor-foreground',
   );
 
   const codeStyle: React.CSSProperties = {
@@ -366,6 +367,7 @@ export function CodeEditor({
     msOverflowStyle: 'none',
     whiteSpace: 'pre',
     wordBreak: 'normal',
+    fontFamily: FONT_TOKENS.editor,
   };
 
   const [textareaHeight, setTextareaHeight] = useState(0);

@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils';
 import { ReactNode } from 'react';
+import { FONT_TOKENS } from '@/lib/theme/font-tokens';
 
 interface TextProps {
   children: ReactNode;
@@ -35,10 +36,10 @@ export function Text({
     bold: 'font-bold',
   };
 
-  const familyClasses = {
-    sans: 'font-sans',
-    mono: 'font-mono',
-    icon: 'font-icon',
+  const familyStyles: Record<string, React.CSSProperties> = {
+    sans: { fontFamily: FONT_TOKENS.ui },
+    mono: { fontFamily: FONT_TOKENS.mono },
+    icon: { fontFamily: FONT_TOKENS.icon },
   };
 
   const alignClasses = {
@@ -48,13 +49,15 @@ export function Text({
   };
 
   return (
-    <div className={cn(
-      sizeClasses[size],
-      weightClasses[weight],
-      familyClasses[family],
-      alignClasses[align],
-      className
-    )}>
+    <div
+      className={cn(
+        sizeClasses[size],
+        weightClasses[weight],
+        alignClasses[align],
+        className
+      )}
+      style={familyStyles[family]}
+    >
       {children}
     </div>
   );
