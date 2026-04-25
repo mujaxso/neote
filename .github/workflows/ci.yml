@@ -59,7 +59,7 @@ jobs:
           key: ${{ runner.os }}-lint-target-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Auto‑format Rust code
-        run: cargo fmt --all
+        run: cargo fmt --all -- --check
 
       - name: cargo clippy
         run: cargo clippy --workspace --all-targets -- -D warnings

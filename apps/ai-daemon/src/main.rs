@@ -6,7 +6,7 @@ use tracing::info;
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
     // Initialize tracing
-    tracing_subscriber::fmt::init();
+    // tracing_subscriber::fmt::init();
 
     info!("Starting AI daemon");
 
