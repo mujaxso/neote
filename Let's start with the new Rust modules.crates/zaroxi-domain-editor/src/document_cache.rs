@@ -7,6 +7,7 @@
 
 use crate::document::Document;
 use crate::thresholds::{self, FileClass};
+use zaroxi_ops_file::FileLoader;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -201,7 +202,7 @@ impl BufferManager {
     pub async fn open_document(
         &self,
         path: &Path,
-        file_loader: &crate::file_loader::FileLoader,
+        file_loader: &FileLoader,
     ) -> Result<CachedDocument, String> {
         let canonical = path
             .canonicalize()

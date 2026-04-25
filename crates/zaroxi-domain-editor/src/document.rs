@@ -33,7 +33,7 @@ impl LargeFileMode {
 }
 
 /// A minimal text document that uses a Rope as its backing storage.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Document {
     rope: Rope,
     version: u64,

@@ -58,6 +58,23 @@ export function EditorContainer() {
     setIsLoading(true);
     setContent('');  // Clear previous content to avoid ghosting
     try {
+      // First try to get from frontend cache (no IPC call)
+      const cached = WorkspaceService.getCachedDocument(path);
+      if (cached) {
+        setContent(cached.content);
+        setLanguage(cached.language || 'plaintext');
+        setFileName(path.split(/[\\/]/).pop() || 'file');
+        setFileInfo({
+          lineCount: cached.lineCount,
+          charCount: cached.charCount,
+          largeFileMode: cached.largeFileMode,
+          contentTruncated: cached.contentTruncated,
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      // Not in cache, fetch from backend (which will use the Rust cache)
       const response = await WorkspaceService.openFile({ path });
       setContent(response.content);
       setLanguage(response.language || 'plaintext');
@@ -81,6 +98,12 @@ export function EditorContainer() {
 
   const handleEditorChange = (value: string) => {
     setContent(value);
+    // Update the frontend cache so that switching away and back doesn't lose edits
+    if (activeFilePath) {
+      WorkspaceService.updateCachedContent(activeFilePath, value);
+      // Mark the tab as dirty
+      useTabsStore.getState().markDirty(activeFilePath);
+    }
   };
 
   const handleEditorSave = async () => {
@@ -98,6 +121,7 @@ export function EditorContainer() {
       // Mark tab as clean after successful save
       if (activeFilePath) {
         useTabsStore.getState().markClean(activeFilePath);
+        WorkspaceService.markDocumentClean(activeFilePath);
       }
       // Show a temporary success message
       const saveBtn = document.querySelector('.save-button');

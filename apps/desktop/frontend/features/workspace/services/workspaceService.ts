@@ -478,4 +478,52 @@ export class WorkspaceService {
   static async openFileInEditor(path: string): Promise<OpenFileResponse> {
     return await this.openFile({ path });
   }
+
+  /**
+   * Get a cached document from the frontend cache without any IPC call.
+   * Returns null if the document is not in the cache.
+   */
+  static getCachedDocument(path: string): OpenFileResponse | null {
+    const cached = documentCache.get(path);
+    if (!cached) return null;
+    return {
+      content: cached.content,
+      language: cached.language,
+      lineCount: cached.lineCount,
+      charCount: cached.charCount,
+      largeFileMode: cached.largeFileMode,
+      contentTruncated: cached.contentTruncated,
+    };
+  }
+
+  /**
+   * Mark a document as dirty in the frontend cache.
+   */
+  static markDocumentDirty(path: string): void {
+    const cached = documentCache.get(path);
+    if (cached) {
+      cached.isDirty = true;
+    }
+  }
+
+  /**
+   * Mark a document as clean in the frontend cache.
+   */
+  static markDocumentClean(path: string): void {
+    const cached = documentCache.get(path);
+    if (cached) {
+      cached.isDirty = false;
+    }
+  }
+
+  /**
+   * Update the content of a cached document (after an edit).
+   */
+  static updateCachedContent(path: string, content: string): void {
+    const cached = documentCache.get(path);
+    if (cached) {
+      cached.content = content;
+      cached.isDirty = true;
+    }
+  }
 }

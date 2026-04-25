@@ -5,6 +5,7 @@
 
 pub mod cursor;
 pub mod document;
+pub mod document_cache;
 pub mod editor;
 pub mod events;
 pub mod selection;
@@ -15,6 +16,8 @@ pub mod viewport;
 pub use cursor::{Cursor, CursorMovement};
 pub use document::Document;
 pub use document::LargeFileMode;
+pub use document_cache::BufferManager;
+pub use document_cache::CachedDocument;
 pub use editor::EditorState;
 pub use events::EditorEvent;
 pub use selection::Selection;
