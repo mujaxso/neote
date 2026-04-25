@@ -198,7 +198,7 @@ function ReadOnlyContent({
               width: gutterWidth,
               height: totalHeight,
               pointerEvents: 'none',
-              overflow: 'visible',
+              overflow: 'hidden',
             }}
           >
             <LineNumberGutter

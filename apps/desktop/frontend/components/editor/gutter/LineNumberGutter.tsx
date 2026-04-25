@@ -49,7 +49,7 @@ export const LineNumberGutter: React.FC<Props> = ({
           width: model.width,
           pointerEvents: 'none',
           position: 'relative',
-          overflow: 'visible',
+          overflow: 'hidden',
         }}
       />
     );
@@ -61,7 +61,7 @@ export const LineNumberGutter: React.FC<Props> = ({
         width: model.width,
         pointerEvents: 'none',
         position: 'relative',
-        overflow: 'visible',
+        overflow: 'hidden',
       }}
     >
       <GutterView viewport={viewport} cursorLine={cursorLine} />
