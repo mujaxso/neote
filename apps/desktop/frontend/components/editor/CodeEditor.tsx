@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { useTabsStore } from '@/features/tabs/store';
 import { LineNumberGutter } from './gutter/LineNumberGutter';
@@ -11,6 +11,15 @@ interface CodeEditorProps {
   language?: string;
   readOnly?: boolean;
   className?: string;
+}
+
+function countLines(text: string): number {
+  // Count linefeed occurrences, add one for the last line (even if empty)
+  let lines = 1;
+  for (let i = 0; i < text.length; i++) {
+    if (text.charCodeAt(i) === 10) lines++;
+  }
+  return lines;
 }
 
 export function CodeEditor({
@@ -30,17 +39,34 @@ export function CodeEditor({
   const gutterInnerRef = useRef<HTMLDivElement>(null);
 
   // Editor state we need to expose to the gutter (virtualisation)
-  const [cursorLine, setCursorLine] = useState(1);
+  const [cursorLine, setCursorLine] = useState(() => {
+    // compute initial cursor line from text (starts at position 0)
+    const beforeNewlines = initialValue.slice(0, 0).match(/\n/g);
+    return beforeNewlines ? beforeNewlines.length + 1 : 1;
+  });
   const [containerHeight, setContainerHeight] = useState(0);
   const [scrollTop, setScrollTop] = useState(0);
 
   const scrollTopRafId = useRef<number | null>(null);
+
+  // lineCount is stored in state so it is **not** recomputed on every render
+  const [lineCount, setLineCount] = useState(() => countLines(initialValue));
+
+  // Update lineCount only when the text value changes
+  const valueRef = useRef(value);
+  useEffect(() => {
+    if (valueRef.current !== value) {
+      valueRef.current = value;
+      setLineCount(countLines(value));
+    }
+  }, [value]);
 
   // Sync when the parent supplies a new `initialValue`
   useEffect(() => {
     if (initialRef.current !== initialValue) {
       initialRef.current = initialValue;
       setValue(initialValue);
+      setLineCount(countLines(initialValue));
     }
   }, [initialValue]);
 
@@ -73,12 +99,6 @@ export function CodeEditor({
     }
     return () => observer.disconnect();
   }, [measureContainer]);
-
-  // Compute logical line count and current cursor line
-  const lineCount = useMemo(
-    () => (value.match(/\n/g) || []).length + 1,
-    [value],
-  );
 
   const lineHeight = GUTTER_CONFIG.LINE_HEIGHT;
 
