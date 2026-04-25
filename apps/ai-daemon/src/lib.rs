@@ -6,8 +6,8 @@ use tracing::info;
 
 pub struct AiDaemon {
     // TODO: Add actual AI agent
-    task_queue: mpsc::Receiver<()>,
-    task_results: mpsc::Sender<()>,
+    _task_queue: mpsc::Receiver<()>,
+    _task_results: mpsc::Sender<()>,
 }
 
 impl AiDaemon {
