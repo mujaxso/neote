@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { GUTTER_CONFIG } from './GutterConfig';
 import { GUTTER_STYLE } from './GutterStyle';
-import { computeVisibleRange, computeGutterWidth, computeTotalHeight, ViewportState } from './GutterLayout';
+import { computeVisibleRange, computeGutterWidth, ViewportState } from './GutterLayout';
 
 interface GutterViewProps {
   viewport: ViewportState;
@@ -26,11 +26,6 @@ export const GutterView: React.FC<GutterViewProps> = React.memo(({ viewport, cur
     [totalLines],
   );
 
-  const totalHeight = useMemo(
-    () => computeTotalHeight(totalLines, lineHeight),
-    [totalLines, lineHeight],
-  );
-
   // Build visible line elements
   const lineElements = useMemo(() => {
     if (!visibleRange) return null;
@@ -41,13 +36,15 @@ export const GutterView: React.FC<GutterViewProps> = React.memo(({ viewport, cur
     for (let lineIndex = firstLine; lineIndex <= lastLine; lineIndex++) {
       const lineNum = lineIndex + 1;
       const isCurrent = lineNum === cursorLine;
+      // Position relative to scroll offset so line numbers align with code
+      const top = lineIndex * lineHeight - scrollTop;
 
       elements.push(
         <div
           key={lineIndex}
           style={{
             position: 'absolute',
-            top: lineIndex * lineHeight,
+            top,
             left: 0,
             right: 0,
             height: lineHeight,
@@ -73,14 +70,14 @@ export const GutterView: React.FC<GutterViewProps> = React.memo(({ viewport, cur
       );
     }
     return elements;
-  }, [visibleRange, lineHeight, cursorLine]);
+  }, [visibleRange, lineHeight, cursorLine, scrollTop]);
 
   return (
     <div
       style={{
         position: 'relative',
         width: gutterWidth,
-        height: totalHeight,
+        height: containerHeight,
         backgroundColor: GUTTER_STYLE.BACKGROUND,
         overflow: 'hidden',
         userSelect: 'none',
