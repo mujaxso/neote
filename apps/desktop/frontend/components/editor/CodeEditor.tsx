@@ -32,9 +32,10 @@ export function CodeEditor({
   // Editor state we need to expose to the gutter
   const [containerHeight, setContainerHeight] = useState(0);
   const [cursorLine, setCursorLine] = useState(1);
-  const [scrollLine, setScrollLine] = useState(0); // integer line index for virtualisation
+  const [scrollTop, setScrollTop] = useState(0);
 
-  const scrollLineRef = useRef(0); // previous line index to avoid unnecessary re‑renders
+  const scrollTopRef = useRef(0);
+  const scrollTopRafId = useRef<number | null>(null);
 
   // Sync when the parent supplies a new `initialValue`
   useEffect(() => {
@@ -87,18 +88,24 @@ export function CodeEditor({
     if (!ta) return;
     const st = ta.scrollTop;
 
-    // Apply pixel‑perfect transform to the gutter’s inner container
+    // Apply pixel‑perfect transform to the gutter’s inner container (no React re‑render)
     if (gutterInnerRef.current) {
       gutterInnerRef.current.style.transform = `translateY(-${st}px)`;
     }
 
-    // Compute which line index we are at for virtualisation
-    const lineIdx = Math.floor(st / lineHeight);
-    if (lineIdx !== scrollLineRef.current) {
-      scrollLineRef.current = lineIdx;
-      setScrollLine(lineIdx);
+    // Store scrollTop for virtualisation; throttle via requestAnimationFrame
+    if (scrollTopRafId.current !== null) {
+      cancelAnimationFrame(scrollTopRafId.current);
     }
-  }, [lineHeight]);
+    scrollTopRafId.current = requestAnimationFrame(() => {
+      const newVal = ta.scrollTop; // read again inside rAF for accuracy
+      if (newVal !== scrollTopRef.current) {
+        scrollTopRef.current = newVal;
+        setScrollTop(newVal);
+      }
+      scrollTopRafId.current = null;
+    });
+  }, []);
 
   const handleSelectionChange = useCallback(() => {
     const ta = textAreaRef.current;
@@ -143,7 +150,7 @@ export function CodeEditor({
     <LineNumberGutter
       lineCount={lineCount}
       cursorLine={cursorLine}
-      scrollLine={scrollLine}
+      scrollTop={scrollTop}
       containerHeight={containerHeight}
       lineHeight={lineHeight}
       innerRef={gutterInnerRef}
