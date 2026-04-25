@@ -18,10 +18,17 @@ use crate::SyntaxError;
 /// Parsers are expensive to create, so we reuse them across highlight operations.
 /// Each parser is associated with a specific language and can be reused for
 /// incremental parsing.
-#[derive(Debug)]
 pub struct ParserPool {
     /// Map of language ID to a pool of parsers for that language.
     parsers: Mutex<std::collections::HashMap<LanguageId, Vec<Parser>>>,
+}
+
+impl std::fmt::Debug for ParserPool {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ParserPool")
+            .field("parsers", &self.parsers)
+            .finish()
+    }
 }
 
 impl ParserPool {
@@ -73,7 +80,6 @@ impl Default for ParserPool {
 ///
 /// This struct manages the lifecycle of a Tree-sitter parse tree and supports
 /// incremental re-parsing after text edits.
-#[derive(Debug)]
 pub struct SyntaxTree {
     /// The Tree-sitter parse tree.
     tree: Tree,
@@ -83,6 +89,16 @@ pub struct SyntaxTree {
     language: LanguageId,
     /// Parser pool for acquiring parsers.
     pool: Arc<ParserPool>,
+}
+
+impl std::fmt::Debug for SyntaxTree {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("SyntaxTree")
+            .field("text", &self.text)
+            .field("language", &self.language)
+            .field("pool", &self.pool)
+            .finish()
+    }
 }
 
 impl SyntaxTree {
