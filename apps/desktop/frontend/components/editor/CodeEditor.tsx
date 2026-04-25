@@ -89,6 +89,50 @@ const stableHighlightState = new Map<string, {
   rangeSpans: Map<string, Array<{start: number; end: number; color: string}>>;
 }>();
 
+// Helper to merge two arrays of spans, keeping the most recent for overlapping ranges
+function mergeSpanArrays(
+  existing: Array<{start: number; end: number; color: string}>,
+  incoming: Array<{start: number; end: number; color: string}>
+): Array<{start: number; end: number; color: string}> {
+  // Build a map from start position to span for quick lookup
+  const spanMap = new Map<number, {start: number; end: number; color: string}>();
+  
+  // Add existing spans
+  for (const span of existing) {
+    spanMap.set(span.start, span);
+  }
+  
+  // Override with incoming spans (they are more recent)
+  for (const span of incoming) {
+    spanMap.set(span.start, span);
+  }
+  
+  // Convert back to array and sort by start position
+  return Array.from(spanMap.values()).sort((a, b) => a.start - b.start);
+}
+
+// Helper to merge two arrays of spans, keeping the most recent for overlapping ranges
+function mergeSpanArrays(
+  existing: Array<{start: number; end: number; color: string}>,
+  incoming: Array<{start: number; end: number; color: string}>
+): Array<{start: number; end: number; color: string}> {
+  // Build a map from start position to span for quick lookup
+  const spanMap = new Map<number, {start: number; end: number; color: string}>();
+  
+  // Add existing spans
+  for (const span of existing) {
+    spanMap.set(span.start, span);
+  }
+  
+  // Override with incoming spans (they are more recent)
+  for (const span of incoming) {
+    spanMap.set(span.start, span);
+  }
+  
+  // Convert back to array and sort by start position
+  return Array.from(spanMap.values()).sort((a, b) => a.start - b.start);
+}
+
 function VirtualEditor({
   displayValue,
   cursorLine,
@@ -101,6 +145,7 @@ function VirtualEditor({
   editable,
   onValueChange,
   containerHeightRef,
+  filePath,
 }: {
   displayValue: string;
   cursorLine: number;
@@ -113,6 +158,7 @@ function VirtualEditor({
   editable: boolean;
   onValueChange?: (newValue: string) => void;
   containerHeightRef: React.MutableRefObject<number>;
+  filePath?: string;
 }) {
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -169,15 +215,30 @@ function VirtualEditor({
   }, [scrollTop, lineHeight, localLineCount, containerHeight]);
 
   // Build a map from character offset to color for fast lookup
+  // This uses ALL available spans, not just the current viewport range
   const colorMap = useMemo(() => {
     const map = new Map<number, string>();
+    // Use the global stable state if available for this file
+    if (filePath) {
+      const stableState = stableHighlightState.get(filePath);
+      if (stableState) {
+        for (const [, spans] of stableState.rangeSpans) {
+          for (const span of spans) {
+            for (let i = span.start; i < span.end; i++) {
+              map.set(i, span.color);
+            }
+          }
+        }
+      }
+    }
+    // Also include current styledSpans (may overlap but that's fine)
     for (const span of styledSpans) {
       for (let i = span.start; i < span.end; i++) {
         map.set(i, span.color);
       }
     }
     return map;
-  }, [styledSpans]);
+  }, [styledSpans, filePath]);
 
   // Render rows for the computed visible range
   const codeRows = useMemo(() => {
@@ -428,6 +489,8 @@ export function CodeEditor({
 
   const lastValidSpansRef = useRef<Array<{start: number; end: number; color: string}>>([]);
   const styledSpansRef = useRef<Array<{start: number; end: number; color: string}>>([]);
+  const allSpansRef = useRef<Array<{start: number; end: number; color: string}>>([]);
+  const allSpansRef = useRef<Array<{start: number; end: number; color: string}>>([]);
   const lastFetchedRangeRef = useRef<{firstLine: number; lastLine: number} | null>(null);
   const containerHeightRef = useRef(600);
   const rafRef = useRef<number | null>(null);
@@ -451,6 +514,9 @@ export function CodeEditor({
       const cachedRange = stableState.rangeSpans.get(rangeKey);
       if (cachedRange) {
         // Use stable cached spans without any visual change
+        // Merge with existing allSpansRef to ensure coverage
+        const mergedSpans = mergeSpanArrays(allSpansRef.current, cachedRange);
+        allSpansRef.current = mergedSpans;
         if (JSON.stringify(styledSpansRef.current) !== JSON.stringify(cachedRange)) {
           setStyledSpans(cachedRange);
           styledSpansRef.current = cachedRange;
@@ -470,6 +536,10 @@ export function CodeEditor({
       }
       const state = stableHighlightState.get(filePath)!;
       state.rangeSpans.set(`${firstLine}:${lastLine}`, cached.spans);
+
+      // Merge with allSpansRef
+      const mergedSpans = mergeSpanArrays(allSpansRef.current, cached.spans);
+      allSpansRef.current = mergedSpans;
 
       // Only update if spans actually changed
       if (JSON.stringify(styledSpansRef.current) !== JSON.stringify(cached.spans)) {
@@ -509,6 +579,10 @@ export function CodeEditor({
       const state = stableHighlightState.get(filePath)!;
       state.rangeSpans.set(`${firstLine}:${lastLine}`, newSpans);
 
+      // Merge with allSpansRef
+      const mergedSpans = mergeSpanArrays(allSpansRef.current, newSpans);
+      allSpansRef.current = mergedSpans;
+
       // Only update state if the spans actually changed (avoid flash)
       const currentJson = JSON.stringify(styledSpansRef.current);
       const newJson = JSON.stringify(newSpans);
@@ -532,6 +606,10 @@ export function CodeEditor({
   // Fetch the actual document version from the backend on mount
   useEffect(() => {
     if (!filePath) return;
+    // Reset allSpansRef when file changes
+    allSpansRef.current = [];
+    // Clear stable state for this file to force fresh fetch
+    stableHighlightState.delete(filePath);
     (async () => {
       try {
         const response: any = await invoke('open_document', { path: filePath });
@@ -676,6 +754,7 @@ export function CodeEditor({
       editable={!effectiveReadOnly}
       onValueChange={effectiveReadOnly ? undefined : handleValueChange}
       containerHeightRef={containerHeightRef}
+      filePath={filePath}
     />
   );
 }
