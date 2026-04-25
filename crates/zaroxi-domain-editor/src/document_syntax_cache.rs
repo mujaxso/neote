@@ -29,6 +29,11 @@ pub struct DocumentSyntaxState {
     pub cached_version: u64,
     /// The language ID for syntax highlighting.
     pub language: LanguageId,
+    /// Cached styled spans keyed by (start_line, end_line) for the current version.
+    /// This allows reusing previously computed styled spans across viewport changes.
+    pub styled_spans_cache: std::collections::HashMap<(usize, usize), Vec<StyledSpan>>,
+    /// The version for which styled_spans_cache is valid.
+    pub styled_spans_cache_version: u64,
 }
 
 impl DocumentSyntaxState {
@@ -40,6 +45,8 @@ impl DocumentSyntaxState {
             cached_highlights: Vec::new(),
             cached_version: u64::MAX,
             language,
+            styled_spans_cache: std::collections::HashMap::new(),
+            styled_spans_cache_version: u64::MAX,
         }
     }
 
@@ -109,6 +116,8 @@ impl DocumentSyntaxState {
     }
 
     /// Get styled spans for a specific line range, applying the given theme.
+    /// Uses a two-level cache: first checks the styled_spans_cache for the exact range,
+    /// then falls back to computing from the full highlights.
     pub fn styled_spans_for_lines(
         &mut self,
         text: &str,
@@ -121,6 +130,19 @@ impl DocumentSyntaxState {
         len_chars: usize,
         total_lines: usize,
     ) -> Vec<StyledSpan> {
+        // Check if the styled spans cache is still valid for this version
+        if version != self.styled_spans_cache_version {
+            self.styled_spans_cache.clear();
+            self.styled_spans_cache_version = version;
+        }
+
+        // Try to find the exact range in cache
+        let cache_key = (start_line, end_line);
+        if let Some(cached) = self.styled_spans_cache.get(&cache_key) {
+            return cached.clone();
+        }
+
+        // Compute highlights if needed
         let highlights = self.get_highlights(text, version);
 
         // Clamp line range to document bounds
@@ -138,7 +160,7 @@ impl DocumentSyntaxState {
         let mut result = Vec::new();
 
         // Filter spans to the requested range, converting byte offsets to char offsets
-        for span in highlights {
+        for span in &highlights {
             let span_start_char = byte_to_char(span.start);
             let span_end_char = byte_to_char(span.end);
 
@@ -184,6 +206,9 @@ impl DocumentSyntaxState {
                 color: colors.text_primary,
             });
         }
+
+        // Cache the result for this exact range
+        self.styled_spans_cache.insert(cache_key, filled.clone());
 
         filled
     }

@@ -69,6 +69,7 @@ function computeLineOffsets(s: string): number[] {
 }
 
 // Cache for styled spans keyed by (filePath, version, firstLine, lastLine)
+// This cache persists across renders and scrolls, preventing re-fetching
 const styledSpansCache = new Map<string, {
   spans: Array<{start: number; end: number; color: string}>;
   version: number;
@@ -79,6 +80,14 @@ const styledSpansCache = new Map<string, {
 function getCachedSpansKey(filePath: string, version: number, firstLine: number, lastLine: number): string {
   return `${filePath}:${version}:${firstLine}:${lastLine}`;
 }
+
+// Global stable highlight state that persists across scrolls
+// Keyed by filePath, stores the most recent valid spans for each line range
+const stableHighlightState = new Map<string, {
+  version: number;
+  // Map from line range key to spans
+  rangeSpans: Map<string, Array<{start: number; end: number; color: string}>>;
+}>();
 
 function VirtualEditor({
   displayValue,
@@ -435,10 +444,38 @@ export function CodeEditor({
     lastLine: number,
     version: number,
   ) => {
+    // Check the global stable state first - this persists across scrolls
+    const stableState = stableHighlightState.get(filePath);
+    if (stableState && stableState.version === version) {
+      const rangeKey = `${firstLine}:${lastLine}`;
+      const cachedRange = stableState.rangeSpans.get(rangeKey);
+      if (cachedRange) {
+        // Use stable cached spans without any visual change
+        if (JSON.stringify(styledSpansRef.current) !== JSON.stringify(cachedRange)) {
+          setStyledSpans(cachedRange);
+          styledSpansRef.current = cachedRange;
+        }
+        lastValidSpansRef.current = cachedRange;
+        lastFetchedRangeRef.current = { firstLine, lastLine };
+        return;
+      }
+    }
+
     const cacheKey = getCachedSpansKey(filePath, version, firstLine, lastLine);
     const cached = styledSpansCache.get(cacheKey);
     if (cached) {
-      setStyledSpans(cached.spans);
+      // Update stable state
+      if (!stableHighlightState.has(filePath)) {
+        stableHighlightState.set(filePath, { version, rangeSpans: new Map() });
+      }
+      const state = stableHighlightState.get(filePath)!;
+      state.rangeSpans.set(`${firstLine}:${lastLine}`, cached.spans);
+
+      // Only update if spans actually changed
+      if (JSON.stringify(styledSpansRef.current) !== JSON.stringify(cached.spans)) {
+        setStyledSpans(cached.spans);
+        styledSpansRef.current = cached.spans;
+      }
       lastValidSpansRef.current = cached.spans;
       lastFetchedRangeRef.current = { firstLine, lastLine };
       return;
@@ -460,10 +497,17 @@ export function CodeEditor({
 
       const newSpans = spans || [];
       styledSpansCache.set(cacheKey, { spans: newSpans, version, firstLine, lastLine });
-      if (styledSpansCache.size > 100) {
+      if (styledSpansCache.size > 200) {
         const firstKey = styledSpansCache.keys().next().value;
         if (firstKey) { styledSpansCache.delete(firstKey); }
       }
+
+      // Update stable state
+      if (!stableHighlightState.has(filePath)) {
+        stableHighlightState.set(filePath, { version, rangeSpans: new Map() });
+      }
+      const state = stableHighlightState.get(filePath)!;
+      state.rangeSpans.set(`${firstLine}:${lastLine}`, newSpans);
 
       // Only update state if the spans actually changed (avoid flash)
       const currentJson = JSON.stringify(styledSpansRef.current);
@@ -477,7 +521,11 @@ export function CodeEditor({
     } catch (err: any) {
       if (err?.message?.includes('abort') || err?.name === 'AbortError') { return; }
       console.error('[CodeEditor] Failed to get styled spans:', err);
-      if (lastValidSpansRef.current.length === 0) { setStyledSpans([]); }
+      // Keep last valid spans instead of clearing
+      if (lastValidSpansRef.current.length > 0) {
+        setStyledSpans(lastValidSpansRef.current);
+        styledSpansRef.current = lastValidSpansRef.current;
+      }
     }
   }, []);
 
@@ -500,17 +548,27 @@ export function CodeEditor({
 
     rafRef.current = requestAnimationFrame(() => {
       const now = Date.now();
-      const THROTTLE_MS = 100; // only fetch at most once per 100ms
+      const THROTTLE_MS = 50; // reduced throttle for smoother updates
       if (now - lastFetchTimeRef.current < THROTTLE_MS) {
         return;
       }
 
       const lineHeight = GUTTER_CONFIG.LINE_HEIGHT;
       const containerHeight = containerHeightRef.current;
-      const overscan = 5;
+      const overscan = 10; // increased overscan to pre-fetch more lines
       const effectiveScrollTop = Math.max(0, scrollTop);
       const firstLine = Math.max(0, Math.floor(effectiveScrollTop / lineHeight) - overscan);
       const lastLine = Math.ceil((effectiveScrollTop + containerHeight) / lineHeight) + overscan - 1;
+
+      // Check if we already have stable state for this range
+      const stableState = stableHighlightState.get(filePath);
+      if (stableState && stableState.version === versionRef.current) {
+        const rangeKey = `${firstLine}:${lastLine}`;
+        if (stableState.rangeSpans.has(rangeKey)) {
+          // Already have this range cached, no need to fetch
+          return;
+        }
+      }
 
       // Skip fetch if the visible range hasn't changed significantly
       const lastRange = lastFetchedRangeRef.current;
@@ -529,9 +587,27 @@ export function CodeEditor({
     if (!filePath) return;
     const lineHeight = GUTTER_CONFIG.LINE_HEIGHT;
     const containerHeight = containerHeightRef.current;
-    const overscan = 5;
+    const overscan = 10;
     const firstLine = 0;
     const lastLine = Math.ceil(containerHeight / lineHeight) + overscan - 1;
+    
+    // Check stable state first
+    const stableState = stableHighlightState.get(filePath);
+    if (stableState && stableState.version === versionRef.current) {
+      const rangeKey = `${firstLine}:${lastLine}`;
+      if (stableState.rangeSpans.has(rangeKey)) {
+        // Already have this range cached
+        const cachedSpans = stableState.rangeSpans.get(rangeKey)!;
+        if (JSON.stringify(styledSpansRef.current) !== JSON.stringify(cachedSpans)) {
+          setStyledSpans(cachedSpans);
+          styledSpansRef.current = cachedSpans;
+        }
+        lastValidSpansRef.current = cachedSpans;
+        lastFetchedRangeRef.current = { firstLine, lastLine };
+        return;
+      }
+    }
+    
     fetchStyledSpans(filePath, firstLine, lastLine, versionRef.current);
   }, [filePath, fetchStyledSpans]);
 

@@ -239,6 +239,8 @@ impl EditorState {
     /// range: any gap between spans will be filled with a plain-text span using
     /// `colors.text_primary`. This ensures the frontend never has to fall back
     /// to a separate plain‑text rendering path.
+    ///
+    /// This method caches results per line range to avoid recomputation on scroll.
     pub fn styled_spans_for_lines(
         &mut self,
         colors: &SemanticColors,
