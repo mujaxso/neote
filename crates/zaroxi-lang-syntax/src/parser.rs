@@ -25,9 +25,9 @@ pub struct ParserPool {
 
 impl std::fmt::Debug for ParserPool {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let num_parsers = self.parsers.lock().len();
         f.debug_struct("ParserPool")
-            .field("parsers", &self.parsers)
-            .field("num_parsers", &self.parsers.lock().len())
+            .field("num_parsers", &num_parsers)
             .finish()
     }
 }
