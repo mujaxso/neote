@@ -72,6 +72,11 @@ export const GutterView: React.FC<GutterViewProps> = React.memo(({ viewport, cur
     return elements;
   }, [visibleRange, lineHeight, cursorLine, scrollTop]);
 
+  // If containerHeight is 0, render nothing to avoid layout issues
+  if (containerHeight <= 0) {
+    return null;
+  }
+
   return (
     <div
       style={{

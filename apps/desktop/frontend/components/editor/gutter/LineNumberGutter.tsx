@@ -41,6 +41,11 @@ export const LineNumberGutter: React.FC<Props> = ({
     [viewport, cursorLine],
   );
 
+  // If containerHeight is 0, render nothing to avoid layout issues
+  if (containerHeight <= 0) {
+    return null;
+  }
+
   // Early return for empty document
   if (lineCount === 0) {
     return (
