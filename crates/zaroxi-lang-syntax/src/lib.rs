@@ -32,6 +32,7 @@ pub use grammar_registry::{
 };
 pub use highlight::{Highlight, HighlightSpan};
 pub use language::LanguageId;
+pub use parser::{SyntaxTree, ParserPool};
 // Note: QueryCache::get returns Option<&'static Query>
 pub use query_cache::QueryCache;
 

@@ -214,7 +214,7 @@ impl BufferManager {
                 // If the cached document is dirty, we must NOT replace it with
                 // stale disk content.  Return the dirty version.
                 if cached.meta.is_dirty {
-                    return Ok(cached.clone_deep());
+                    return Ok(cached.clone());
                 }
 
                 // Check if the file on disk has changed.

@@ -2,7 +2,6 @@
 
 use crate::cursor::{Cursor, CursorMovement};
 use crate::document::Document;
-use crate::document::LargeFileMode;
 use crate::thresholds::FileClass;
 use crate::viewport::Viewport;
 use zaroxi_lang_syntax::highlight::{HighlightEngine, HighlightSpan};

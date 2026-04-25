@@ -6,7 +6,8 @@ use memmap2::Mmap;
 use ropey::Rope;
 use std::path::PathBuf;
 use std::sync::Arc;
-use zaroxi_lang_syntax::parser::{SyntaxTree, ParserPool};
+use zaroxi_lang_syntax::SyntaxTree;
+use zaroxi_lang_syntax::ParserPool;
 use zaroxi_lang_syntax::language::LanguageId;
 
 /// Large file mode indicator (kept for backward compatibility, but classification
