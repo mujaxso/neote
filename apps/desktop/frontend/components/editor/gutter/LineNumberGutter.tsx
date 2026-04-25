@@ -1,4 +1,4 @@
-import { useRef, useMemo, useLayoutEffect } from 'react';
+import { useRef, useMemo } from 'react';
 import { GUTTER_CONFIG } from './GutterConfig';
 
 interface Props {
@@ -43,13 +43,6 @@ export function LineNumberGutter({
     );
   }, [lineCount]);
 
-  // Mirror the editor scroll position onto the gutter DOM element
-  useLayoutEffect(() => {
-    if (ref.current) {
-      ref.current.scrollTop = scrollTop;
-    }
-  }, [scrollTop]);
-
   // Build the virtualized line‑number list using absolute positioning
   const numbers = [];
   for (let i = start; i < end; i++) {
@@ -82,16 +75,17 @@ export function LineNumberGutter({
   return (
     <div
       ref={ref}
-      className="h-full overflow-y-auto overflow-x-hidden shrink-0 border-r border-[rgba(128,128,128,0.18)]"
+      className="h-full overflow-hidden shrink-0 border-r border-[rgba(128,128,128,0.18)]"
       style={{
         width: gutterWidth,
-        scrollbarWidth: 'none',
-        msOverflowStyle: 'none',
       }}
     >
       <div
         className="min-w-full relative"
-        style={{ height: lineCount * lineHeight }}
+        style={{
+          height: lineCount * lineHeight,
+          marginTop: -scrollTop,
+        }}
       >
         {numbers}
       </div>
