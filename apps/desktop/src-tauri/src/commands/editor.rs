@@ -1,16 +1,22 @@
 use serde::{Deserialize, Serialize};
+use std::path::PathBuf;
 use std::sync::Arc;
 use tauri::command;
 use zaroxi_domain_editor::document_cache::BufferManager;
-use zaroxi_domain_editor::editor::EditorState;
+use zaroxi_domain_editor::document_syntax_cache::{DocumentSyntaxCache, DocumentSyntaxState};
 use zaroxi_domain_editor::document::Document;
 use zaroxi_domain_editor::LargeFileMode;
+use zaroxi_lang_syntax::language::LanguageId;
 use zaroxi_ops_file::FileLoader;
 use zaroxi_theme::theme::SemanticColors;
 
 /// Global buffer manager instance shared across all commands.
 static BUFFER_MANAGER: once_cell::sync::Lazy<Arc<BufferManager>> =
     once_cell::sync::Lazy::new(|| Arc::new(BufferManager::new()));
+
+/// Global document syntax cache shared across all commands.
+static SYNTAX_CACHE: once_cell::sync::Lazy<DocumentSyntaxCache> =
+    once_cell::sync::Lazy::new(|| DocumentSyntaxCache::new());
 
 /// Response for opening a document.
 #[derive(Debug, Serialize, Deserialize)]
@@ -25,6 +31,8 @@ pub struct OpenDocumentResponse {
     pub content: String,
     /// Indicates whether the returned `content` was truncated (file was large).
     pub content_truncated: bool,
+    /// The document version for cache invalidation.
+    pub version: u64,
 }
 
 /// Maximum characters returned in the `content` field for large files.
@@ -92,6 +100,14 @@ pub async fn open_document(path: String) -> Result<OpenDocumentResponse, String>
     };
 
     let document_id = uuid::Uuid::new_v4().to_string();
+    let version = document.version();
+
+    // Pre-warm syntax cache for this document
+    let canonical = path_buf.canonicalize().unwrap_or(path_buf.clone());
+    let language = LanguageId::from_path(&canonical);
+    let mut state = SYNTAX_CACHE.get_or_create_state(&canonical, language);
+    state.ensure_syntax_tree(&document.text(), language);
+    SYNTAX_CACHE.update_state(&canonical, state);
 
     Ok(OpenDocumentResponse {
         document_id,
@@ -102,6 +118,7 @@ pub async fn open_document(path: String) -> Result<OpenDocumentResponse, String>
         is_read_only,
         content,
         content_truncated,
+        version,
     })
 }
 
@@ -112,6 +129,8 @@ pub struct StyledSpanResponse {
     /// Character offset (not byte offset).
     pub end: usize,
     pub color: String,
+    /// The document version for which these spans are valid.
+    pub version: u64,
 }
 
 /// Request for styled spans within a specific viewport range.
@@ -123,6 +142,8 @@ pub struct StyledSpansRequest {
     pub start_line: usize,
     /// Last visible line (exclusive, 0‑based).
     pub end_line: usize,
+    /// The document version the frontend currently has.
+    pub version: u64,
 }
 
 #[tauri::command(rename_all = "camelCase")]
@@ -130,46 +151,60 @@ pub async fn get_styled_spans(
     path: String,
     start_line: Option<usize>,
     end_line: Option<usize>,
+    version: Option<u64>,
 ) -> Result<Vec<StyledSpanResponse>, String> {
     let path_buf = std::path::PathBuf::from(&path);
     let canonical = path_buf
         .canonicalize()
         .map_err(|e| format!("Cannot canonicalize path: {}", e))?;
 
-    eprintln!("DEBUG: get_styled_spans: loading file {:?}", canonical);
-
-    // Try to use the buffer manager's cached document first
+    // Get the document text and version from the buffer manager
     let cached = BUFFER_MANAGER
         .get_cached(&canonical)
-        .await;
+        .await
+        .ok_or_else(|| "Document not found in cache".to_string())?;
 
-    let mut editor = if let Some(cached) = cached {
-        eprintln!("DEBUG: get_styled_spans: using cached document");
-        EditorState::from_document(cached.document)
-    } else {
-        eprintln!("DEBUG: get_styled_spans: loading file from disk");
-        // Load the file content
-        let file_content = std::fs::read_to_string(&canonical)
-            .map_err(|e| format!("Failed to read file: {}", e))?;
+    let document = &cached.document;
+    let current_version = document.version();
 
-        eprintln!("DEBUG: get_styled_spans: file loaded, {} bytes", file_content.len());
+    let text = document.text();
+    let language = LanguageId::from_path(&canonical);
 
-        let document = Document::from_text_with_path(&file_content, canonical.to_string_lossy().to_string());
-        EditorState::from_document(document)
-    };
+    // Get or create syntax state from the cache
+    let mut state = SYNTAX_CACHE.get_or_create_state(&canonical, language);
 
     // Use dark theme for now (could be made configurable)
     let colors = SemanticColors::dark();
 
     let styled_spans = if let (Some(sl), Some(el)) = (start_line, end_line) {
         // Only compute highlights for the visible range (plus small overscan)
-        editor.styled_spans_for_lines(&colors, sl, el)
+        state.styled_spans_for_lines(
+            &text,
+            current_version,
+            &colors,
+            sl,
+            el,
+            |line| document.line_to_char(line),
+            |byte| document.byte_to_char(byte),
+            document.len_chars(),
+            document.len_lines(),
+        )
     } else {
         // Full‑document highlights (fallback)
-        editor.styled_spans(&colors)
+        let highlights = state.get_highlights(&text, current_version);
+        let mut spans = zaroxi_lang_syntax::theme_map::apply_theme(highlights, &colors);
+        // Convert byte offsets to character offsets
+        for span in &mut spans {
+            let start_char = document.byte_to_char(span.start);
+            let end_char = document.byte_to_char(span.end);
+            span.start = start_char;
+            span.end = end_char;
+        }
+        spans
     };
 
-    eprintln!("DEBUG: get_styled_spans: got {} styled spans", styled_spans.len());
+    // Update the cache with the new state
+    SYNTAX_CACHE.update_state(&canonical, state);
 
     let response: Vec<StyledSpanResponse> = styled_spans
         .iter()
@@ -177,6 +212,7 @@ pub async fn get_styled_spans(
             start: span.start,
             end: span.end,
             color: span.color.to_hex(),
+            version: current_version,
         })
         .collect();
 
