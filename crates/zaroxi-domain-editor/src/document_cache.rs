@@ -201,7 +201,7 @@ impl BufferManager {
     pub async fn open_document(
         &self,
         path: &Path,
-        file_loader: &FileLoader,
+        _file_loader: &FileLoader,
     ) -> Result<CachedDocument, String> {
         let canonical = path
             .canonicalize()
@@ -232,8 +232,7 @@ impl BufferManager {
         }
 
         // Load from disk.
-        let (file_source, size) = file_loader
-            .load_file(path.to_str().unwrap_or(""))
+        let (file_source, size): (zaroxi_ops_file::file_loader::FileSource, u64) = FileLoader::load_file(path.to_str().unwrap_or(""))
             .map_err(|e| format!("Failed to load file: {}", e))?;
 
         let text: &str = file_source.as_str();
