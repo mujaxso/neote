@@ -124,16 +124,23 @@ impl SyntaxManager {
     pub fn highlight_spans(&self, doc_id: &str) -> Result<Vec<HighlightSpan>, SyntaxError> {
         // If in large file mode, return empty highlights
         if self.large_file_mode {
+            eprintln!("DEBUG: highlight_spans: large file mode, returning empty");
             return Ok(Vec::new());
         }
 
-        let doc = self.documents.get(doc_id).ok_or(SyntaxError::DocumentNotFound)?;
+        let doc = self.documents.get(doc_id).ok_or_else(|| {
+            eprintln!("DEBUG: highlight_spans: document '{}' not found", doc_id);
+            SyntaxError::DocumentNotFound
+        })?;
         match &doc.tree {
             Some(tree) => {
-                // Use the highlighting engine
+                eprintln!("DEBUG: highlight_spans: tree exists for doc '{}', language {:?}", doc_id, doc.language);
                 self.highlight_engine.highlight(doc.language, &doc.text, tree)
             }
-            None => Ok(Vec::new()),
+            None => {
+                eprintln!("DEBUG: highlight_spans: tree is None for doc '{}'", doc_id);
+                Ok(Vec::new())
+            }
         }
     }
 

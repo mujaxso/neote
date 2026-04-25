@@ -302,6 +302,7 @@ impl Document {
     pub fn ensure_syntax_tree(&mut self) -> bool {
         // Skip syntax tree for large files
         if self.file_class != FileClass::Normal {
+            eprintln!("DEBUG: ensure_syntax_tree: file_class={:?}, skipping", self.file_class);
             self.syntax_tree = None;
             return false;
         }
@@ -310,22 +311,26 @@ impl Document {
         if let Some(ref mut tree) = self.syntax_tree {
             // Reparse incrementally
             if tree.reparse().is_ok() {
+                eprintln!("DEBUG: ensure_syntax_tree: reparse succeeded");
                 return true;
             }
-            // If reparse fails, fall through to create a new tree
+            eprintln!("DEBUG: ensure_syntax_tree: reparse failed, will create new tree");
         }
 
         // Extract needed values before mutable borrow of self.parser_pool
         let text = self.text();
         let lang = self.language;
+        eprintln!("DEBUG: ensure_syntax_tree: creating new tree for language {:?}", lang);
 
         // Create a new syntax tree
         let pool = self.parser_pool.get_or_insert_with(|| {
+            eprintln!("DEBUG: ensure_syntax_tree: creating new ParserPool");
             Arc::new(ParserPool::new())
         });
 
         match SyntaxTree::new(pool.clone(), &text, lang) {
             Ok(tree) => {
+                eprintln!("DEBUG: ensure_syntax_tree: new tree created successfully");
                 self.syntax_tree = Some(tree);
                 true
             }

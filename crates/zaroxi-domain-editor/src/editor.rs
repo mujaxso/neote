@@ -179,23 +179,31 @@ impl EditorState {
         self.cached_highlights.clear();
         self.cached_version = self.document.version();
 
+        eprintln!("DEBUG: recompute_highlights: version={}", self.cached_version);
+
         // Ensure we have a syntax tree
         if !self.document.ensure_syntax_tree() {
+            eprintln!("DEBUG: recompute_highlights: ensure_syntax_tree returned false");
             return;
         }
 
         // Get the syntax tree and language
         let tree = match self.document.syntax_tree() {
             Some(t) => t,
-            None => return,
+            None => {
+                eprintln!("DEBUG: recompute_highlights: syntax_tree is None after ensure");
+                return;
+            }
         };
 
         let language = self.document.language();
+        eprintln!("DEBUG: recompute_highlights: language={:?}", language);
 
         // Run the highlighting engine
         let text = self.document.text();
         match self.highlight_engine.highlight(language, &text, tree.tree()) {
             Ok(spans) => {
+                eprintln!("DEBUG: recompute_highlights: got {} spans", spans.len());
                 self.cached_highlights = spans;
             }
             Err(e) => {
