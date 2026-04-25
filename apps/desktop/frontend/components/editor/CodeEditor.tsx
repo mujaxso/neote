@@ -91,20 +91,21 @@ function VirtualEditor({
   editable: boolean;
   onValueChange?: (newValue: string) => void;
 }) {
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const textAreaRef = useRef<HTMLTextAreaElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [containerHeight, setContainerHeight] = useState(0);
   const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
     const update = () => {
-      if (scrollContainerRef.current) {
-        setContainerHeight(scrollContainerRef.current.clientHeight);
+      if (containerRef.current) {
+        setContainerHeight(containerRef.current.clientHeight);
       }
     };
     update();
     const observer = new ResizeObserver(update);
-    if (scrollContainerRef.current) {
-      observer.observe(scrollContainerRef.current);
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
     }
     return () => observer.disconnect();
   }, []);
@@ -139,15 +140,15 @@ function VirtualEditor({
     return { firstLine: first, lastLine: last };
   }, [scrollTop, lineHeight, localLineCount, containerHeight]);
 
-  const codeHtml = useMemo(() => {
+  const codeRows = useMemo(() => {
     if (firstLine < 0 || lastLine < 0) {
-      return '';
+      return null;
     }
-    console.log('[VirtualEditor] codeHtml recompute, styledSpans count:', styledSpans.length);
+    console.log('[VirtualEditor] codeRows recompute, styledSpans count:', styledSpans.length);
     if (styledSpans.length > 0) {
       console.log('[VirtualEditor] First 3 styledSpans:', styledSpans.slice(0, 3));
     }
-    const lines: string[] = [];
+    const rows: React.ReactNode[] = [];
     for (let idx = firstLine; idx <= lastLine; idx++) {
       const start = sentinel[idx];
       const end = sentinel[idx + 1];
@@ -164,125 +165,180 @@ function VirtualEditor({
         console.log('[VirtualEditor] First line spans:', lineSpans);
       }
 
-      // Build HTML for this line
-      let html = '';
+      // Build React elements for this line
+      const segments: React.ReactNode[] = [];
       let currentPos = lineStart;
       for (const span of lineSpans) {
         if (span.start > currentPos) {
           // Unstyled text
           const plainText = text.slice(currentPos - lineStart, span.start - lineStart);
-          html += escapeHtml(plainText);
+          segments.push(
+            <span key={`${currentPos}-plain`}>{plainText}</span>
+          );
         }
         const styledText = text.slice(span.start - lineStart, span.end - lineStart);
-        html += `<span style="color:${span.color}">${escapeHtml(styledText)}</span>`;
+        segments.push(
+          <span
+            key={`${span.start}-styled`}
+            style={{ color: span.color }}
+          >
+            {styledText}
+          </span>
+        );
         currentPos = span.end;
       }
       if (currentPos < lineEnd) {
         const remaining = text.slice(currentPos - lineStart);
-        html += escapeHtml(remaining);
+        segments.push(
+          <span key={`${currentPos}-plain-end`}>{remaining}</span>
+        );
       }
 
-      // Wrap each line in a div with absolute positioning
-      lines.push(
-        `<div style="position:absolute;left:${gutterWidth}px;top:${idx * lineHeight}px;right:0;height:${lineHeight}px;line-height:${lineHeight}px;white-space:pre;overflow:hidden;font-family:${FONT_TOKENS.editor};font-size:inherit;" class="text-sm p-0 text-editor-foreground">${html}</div>`
+      rows.push(
+        <div
+          key={idx}
+          style={{
+            position: 'absolute',
+            left: 0,
+            top: idx * lineHeight,
+            right: 0,
+            height: lineHeight,
+            lineHeight: `${lineHeight}px`,
+            whiteSpace: 'pre',
+            overflow: 'hidden',
+            fontFamily: FONT_TOKENS.editor,
+            fontSize: 'inherit',
+            pointerEvents: 'none',
+          }}
+          className="text-sm p-0 text-editor-foreground"
+        >
+          {segments.length > 0 ? segments : text}
+        </div>
       );
     }
-    const result = lines.join('\n');
-    if (styledSpans.length > 0) {
-      console.log('[VirtualEditor] codeHtml first 500 chars:', result.substring(0, 500));
-    }
-    return result;
+    return rows;
   }, [firstLine, lastLine, lineHeight, displayValue, sentinel, styledSpans]);
-
-  // Helper to escape HTML special characters
-  function escapeHtml(str: string): string {
-    return str
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;');
-  }
 
   const handleScroll = useCallback(() => {
     if (rafRef.current != null) {
       cancelAnimationFrame(rafRef.current);
     }
     rafRef.current = requestAnimationFrame(() => {
-      if (scrollContainerRef.current) {
-        onScroll(scrollContainerRef.current.scrollTop);
+      if (textAreaRef.current) {
+        onScroll(textAreaRef.current.scrollTop);
       }
       rafRef.current = null;
     });
   }, [onScroll]);
 
-  // Handle input events for editable mode
-  const handleInput = useCallback(
-    (e: React.FormEvent<HTMLDivElement>) => {
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       if (!editable || !onValueChange) return;
-      const newText = (e.target as HTMLElement).innerText;
-      onValueChange(newText);
+      onValueChange(e.target.value);
     },
     [editable, onValueChange],
   );
 
+  const handleSelectionChange = useCallback(() => {
+    const ta = textAreaRef.current;
+    if (!ta) return;
+    const selStart = ta.selectionStart;
+    const beforeNewlines = displayValue.slice(0, selStart).match(/\n/g);
+    const line = beforeNewlines ? beforeNewlines.length + 1 : 1;
+    // cursorLine is passed from parent, but we don't update it here for now
+  }, [displayValue]);
+
+  const codeStyle: React.CSSProperties = {
+    height: '100%',
+    width: '100%',
+    margin: 0,
+    border: 0,
+    padding: 0,
+    overflow: 'auto',
+    scrollbarWidth: 'none',
+    msOverflowStyle: 'none',
+    whiteSpace: 'pre',
+    wordBreak: 'normal',
+    fontFamily: FONT_TOKENS.editor,
+    fontSize: 'inherit',
+    lineHeight: `${lineHeight}px`,
+    resize: 'none',
+    outline: 'none',
+    background: 'transparent',
+    caretColor: 'inherit',
+    color: 'transparent',
+  };
+
   return (
     <div className="flex flex-col h-full w-full bg-editor overflow-hidden">
       <div
-        ref={scrollContainerRef}
-        className="overflow-auto relative flex-1"
-        onScroll={handleScroll}
+        ref={containerRef}
+        className="relative flex-1 overflow-hidden"
       >
+        {/* Gutter */}
         <div
           style={{
-            position: 'relative',
-            height: totalHeight,
-            width: '100%',
-            minWidth: '100%',
+            position: 'absolute',
+            left: 0,
+            top: 0,
+            width: gutterWidth,
+            height: '100%',
+            pointerEvents: 'none',
+            overflow: 'hidden',
+            zIndex: 2,
           }}
         >
-          {/* Gutter */}
-          <div
-            style={{
-              position: 'absolute',
-              left: 0,
-              top: 0,
-              width: gutterWidth,
-              height: totalHeight,
-              pointerEvents: 'none',
-              overflow: 'hidden',
-            }}
-          >
-            <LineNumberGutter
-              lineCount={displayLineCount}
-              cursorLine={cursorLine}
-              lineHeight={lineHeight}
-              scrollTop={scrollTop}
-              containerHeight={containerHeight}
-            />
-          </div>
-          {/* Virtualised code rows */}
-          <div
-            contentEditable={editable}
-            suppressContentEditableWarning
-            onInput={handleInput}
-            style={{
-              position: 'absolute',
-              left: gutterWidth,
-              top: 0,
-              right: 0,
-              height: totalHeight,
-              outline: 'none',
-              whiteSpace: 'pre',
-              overflow: 'hidden',
-              fontFamily: FONT_TOKENS.editor,
-              fontSize: 'inherit',
-              lineHeight: `${lineHeight}px`,
-            }}
-            className="text-sm p-0 text-editor-foreground"
-            dangerouslySetInnerHTML={{ __html: codeHtml }}
+          <LineNumberGutter
+            lineCount={displayLineCount}
+            cursorLine={cursorLine}
+            lineHeight={lineHeight}
+            scrollTop={scrollTop}
+            containerHeight={containerHeight}
           />
         </div>
+        {/* Styled overlay */}
+        <div
+          style={{
+            position: 'absolute',
+            left: gutterWidth,
+            top: 0,
+            right: 0,
+            height: totalHeight,
+            pointerEvents: 'none',
+            overflow: 'hidden',
+            fontFamily: FONT_TOKENS.editor,
+            fontSize: 'inherit',
+            lineHeight: `${lineHeight}px`,
+            whiteSpace: 'pre',
+            zIndex: 1,
+          }}
+          className="text-sm p-0 text-editor-foreground"
+        >
+          {codeRows}
+        </div>
+        {/* Textarea for editing */}
+        <textarea
+          ref={textAreaRef}
+          style={{
+            ...codeStyle,
+            position: 'absolute',
+            left: gutterWidth,
+            top: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 0,
+          }}
+          className="text-sm p-0"
+          value={displayValue}
+          onChange={handleChange}
+          onScroll={handleScroll}
+          onSelect={handleSelectionChange}
+          spellCheck={false}
+          autoComplete="off"
+          autoCorrect="off"
+          wrap="off"
+          readOnly={!editable}
+        />
       </div>
       {largeFileBanner}
     </div>
