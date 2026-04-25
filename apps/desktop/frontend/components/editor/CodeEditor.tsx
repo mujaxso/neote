@@ -324,12 +324,14 @@ function VirtualEditor({
               top: 0,
               height: totalHeight,
               pointerEvents: 'none',
-              overflow: 'hidden',
+              overflow: 'visible',
               fontFamily: FONT_TOKENS.editor,
               fontSize: 'inherit',
               lineHeight: `${lineHeight}px`,
               whiteSpace: 'pre',
               zIndex: 1,
+              width: 'auto',
+              minWidth: '100%',
             }}
             className="text-sm p-0 text-editor-foreground"
           >
@@ -346,6 +348,8 @@ function VirtualEditor({
               right: 0,
               height: totalHeight,
               zIndex: 0,
+              width: 'auto',
+              minWidth: '100%',
             }}
             className="text-sm p-0"
             value={displayValue}
@@ -466,7 +470,7 @@ export function CodeEditor({
             setStyledSpans([]);
           }
         });
-    }, 150);
+    }, 50);
 
     // Cleanup timer on unmount or when dependencies change
     return () => {
