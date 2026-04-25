@@ -537,3 +537,145 @@ pub fn for_language(language_id: &str) -> Option<GrammarInfo> {
 pub fn available_languages() -> Vec<String> {
     GrammarRegistry::global().language_ids().iter().map(|s| s.to_string()).collect()
 }
+
+/// Check if a grammar is installed in the runtime directory.
+pub fn is_grammar_installed(language_id: &str) -> bool {
+    let runtime = crate::runtime::Runtime::new();
+    let lib_path = runtime.grammar_library_path(language_id);
+    lib_path.exists()
+}
+
+/// Download and compile a missing grammar into the runtime directory.
+///
+/// This function:
+/// 1. Clones the grammar repository
+/// 2. Compiles the grammar using the C compiler
+/// 3. Copies the resulting shared library to the runtime directory
+/// 4. Copies query files to the runtime directory
+///
+/// Returns an error if the grammar cannot be downloaded or compiled.
+pub fn download_and_install_grammar(language_id: &str) -> Result<(), String> {
+    let info = GrammarRegistry::global()
+        .get(language_id)
+        .ok_or_else(|| format!("Unknown language: {}", language_id))?;
+
+    let runtime = crate::runtime::Runtime::new();
+    let grammars_dir = runtime.grammar_dir();
+    let languages_dir = runtime.language_dir(language_id);
+
+    // Create directories if they don't exist
+    std::fs::create_dir_all(&grammars_dir)
+        .map_err(|e| format!("Failed to create grammars dir: {}", e))?;
+    std::fs::create_dir_all(&languages_dir)
+        .map_err(|e| format!("Failed to create languages dir: {}", e))?;
+
+    // Create a temporary directory for cloning and compiling
+    let temp_dir = std::env::temp_dir().join(format!("zaroxi-grammar-{}", language_id));
+    if temp_dir.exists() {
+        std::fs::remove_dir_all(&temp_dir)
+            .map_err(|e| format!("Failed to clean temp dir: {}", e))?;
+    }
+
+    // Clone the repository
+    let repo_url = &info.repo_url;
+    let revision = &info.revision;
+
+    let status = std::process::Command::new("git")
+        .args(["clone", "--depth", "1", "--branch", revision, repo_url, temp_dir.to_str().unwrap()])
+        .status()
+        .map_err(|e| format!("Failed to run git clone: {}", e))?;
+
+    if !status.success() {
+        return Err(format!("git clone failed for {}", language_id));
+    }
+
+    // Determine the source directory (handle subdirectories)
+    let source_dir = if let Some(subdir) = &info.subdirectory {
+        temp_dir.join(subdir)
+    } else {
+        temp_dir.clone()
+    };
+
+    // Compile the grammar
+    let output_lib = if cfg!(windows) {
+        grammars_dir.join(format!("tree-sitter-{}.dll", language_id))
+    } else if cfg!(target_os = "macos") {
+        grammars_dir.join(format!("libtree-sitter-{}.dylib", language_id))
+    } else {
+        grammars_dir.join(format!("libtree-sitter-{}.so", language_id))
+    };
+
+    // Build the C source files into a shared library
+    let mut cc = cc::Build::new();
+    cc.shared_flag(true);
+    cc.opt_level(2);
+    cc.target(std::env::consts::ARCH);
+
+    for src_file in &info.source_files {
+        let src_path = source_dir.join(src_file);
+        if src_path.exists() {
+            cc.file(&src_path);
+        }
+    }
+
+    cc.compile(format!("tree-sitter-{}", language_id));
+
+    // The cc crate outputs to OUT_DIR, we need to copy the library
+    let out_dir = std::env::var("OUT_DIR").unwrap_or_else(|_| "/tmp".to_string());
+    let built_lib = std::path::PathBuf::from(&out_dir).join(format!(
+        "{}{}tree-sitter-{}{}",
+        if cfg!(windows) { "" } else { "lib" },
+        if cfg!(windows) { "" } else { "lib" },
+        language_id,
+        if cfg!(windows) { ".dll" } else if cfg!(target_os = "macos") { ".dylib" } else { ".so" }
+    ));
+
+    if built_lib.exists() {
+        std::fs::copy(&built_lib, &output_lib)
+            .map_err(|e| format!("Failed to copy library: {}", e))?;
+    }
+
+    // Copy query files
+    let queries_dir = languages_dir.join("queries");
+    std::fs::create_dir_all(&queries_dir)
+        .map_err(|e| format!("Failed to create queries dir: {}", e))?;
+
+    for query_file in &info.query_files {
+        let src_path = source_dir.join("queries").join(query_file);
+        if src_path.exists() {
+            let dst_path = queries_dir.join(query_file);
+            std::fs::copy(&src_path, &dst_path)
+                .map_err(|e| format!("Failed to copy query file {}: {}", query_file, e))?;
+        }
+    }
+
+    // Clean up temp directory
+    let _ = std::fs::remove_dir_all(&temp_dir);
+
+    Ok(())
+}
+
+/// Install all missing grammars.
+///
+/// This function checks which grammars are not yet installed in the runtime
+/// directory and downloads/compiles them.
+pub fn install_missing_grammars() -> Vec<String> {
+    let mut installed = Vec::new();
+    let registry = GrammarRegistry::global();
+
+    for language_id in registry.language_ids() {
+        if !is_grammar_installed(language_id) {
+            match download_and_install_grammar(language_id) {
+                Ok(()) => {
+                    eprintln!("Installed grammar for {}", language_id);
+                    installed.push(language_id.to_string());
+                }
+                Err(e) => {
+                    eprintln!("Failed to install grammar for {}: {}", language_id, e);
+                }
+            }
+        }
+    }
+
+    installed
+}
