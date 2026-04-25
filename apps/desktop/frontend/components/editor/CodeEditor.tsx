@@ -391,7 +391,7 @@ export function CodeEditor({
 
     // Compute visible line range for the current scroll position
     const lineHeight = GUTTER_CONFIG.LINE_HEIGHT;
-    const containerHeight = 600; // approximate; will be refined
+    const containerHeight = containerHeightRef.current; // use the actual measured height
     const overscan = 5;
     const effectiveScrollTop = Math.max(0, scrollTop);
     const firstLine = Math.max(0, Math.floor(effectiveScrollTop / lineHeight) - overscan);

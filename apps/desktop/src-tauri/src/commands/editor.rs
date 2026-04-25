@@ -125,7 +125,7 @@ pub struct StyledSpansRequest {
     pub end_line: usize,
 }
 
-#[tauri::command]
+#[tauri::command(rename_all = "camelCase")]
 pub async fn get_styled_spans(
     path: String,
     start_line: Option<usize>,
