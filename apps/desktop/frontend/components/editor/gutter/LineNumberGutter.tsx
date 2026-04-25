@@ -5,37 +5,15 @@ interface Props {
   lineCount: number;
   cursorLine: number;
   lineHeight: number;
-  scrollTop: number;
-  containerHeight: number;
-  innerRef?: React.RefObject<HTMLDivElement>;
+  outerRef?: React.RefObject<HTMLDivElement>;
 }
 
 export function LineNumberGutter({
   lineCount,
   cursorLine,
   lineHeight,
-  scrollTop,
-  containerHeight,
-  innerRef,
+  outerRef,
 }: Props) {
-  // Effective container height (fallback to 500px until measured)
-  const effectiveHeight = containerHeight > 0 ? containerHeight : 500;
-
-  // Virtualised visible line range
-  const start = useMemo(() => {
-    const scrollLine = Math.floor(scrollTop / lineHeight);
-    return Math.max(0, scrollLine - 1);
-  }, [scrollTop, lineHeight]);
-
-  const visibleLines = useMemo(() => {
-    return Math.ceil(effectiveHeight / lineHeight);
-  }, [effectiveHeight, lineHeight]);
-
-  const end = useMemo(() => {
-    if (lineCount === 0) return 0;
-    return Math.min(lineCount, start + visibleLines + 3);
-  }, [start, visibleLines, lineCount]);
-
   // Gutter width based on number of digits of the last line
   const gutterWidth = useMemo(() => {
     const digits = String(lineCount).length;
@@ -47,19 +25,15 @@ export function LineNumberGutter({
     );
   }, [lineCount]);
 
-  // Build the virtualised line‑number list using absolute positioning
+  // Build all line numbers using static block layout (no absolute positioning)
   const numbers = [];
-  for (let i = start; i < end; i++) {
+  for (let i = 0; i < lineCount; i++) {
     const lineNum = i + 1;
     const isCurrent = lineNum === cursorLine;
     numbers.push(
       <div
         key={i}
         style={{
-          position: 'absolute',
-          top: i * lineHeight,
-          left: 0,
-          right: 0,
           height: lineHeight,
           lineHeight: `${lineHeight}px`,
           paddingRight: GUTTER_CONFIG.PADDING_RIGHT,
@@ -78,18 +52,18 @@ export function LineNumberGutter({
 
   return (
     <div
-      className="h-full overflow-hidden shrink-0 border-r border-[rgba(128,128,128,0.18)]"
+      ref={outerRef}
+      className="h-full overflow-y-auto overflow-x-hidden shrink-0 border-r border-[rgba(128,128,128,0.18)]"
       style={{
         width: gutterWidth,
         pointerEvents: 'none',
+        scrollbarWidth: 'none',
       }}
     >
       <div
-        ref={innerRef}
-        className="min-w-full relative"
+        className="min-w-full"
         style={{
           height: lineCount * lineHeight,
-          willChange: 'transform',
         }}
       >
         {numbers}
