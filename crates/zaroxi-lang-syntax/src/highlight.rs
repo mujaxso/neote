@@ -1,7 +1,6 @@
 //! Syntax highlighting using Tree-sitter queries.
 
 use crate::error::SyntaxError;
-use crate::grammar_registry::install_missing_grammars;
 use crate::language::LanguageId;
 use tree_sitter::{Query, QueryCursor, StreamingIterator, Tree};
 
@@ -47,8 +46,6 @@ pub struct HighlightEngine {
 impl HighlightEngine {
     /// Create a new highlighting engine.
     pub fn new() -> Self {
-        // Ensure grammars are installed so that syntax highlighting can work.
-        install_missing_grammars();
         Self {
             runtime: crate::runtime::Runtime::new(),
         }

@@ -572,6 +572,7 @@ pub fn download_and_install_grammar(language_id: &str) -> Result<(), String> {
     // Create a unique temporary directory for cloning and compiling
     let temp_dir = std::env::temp_dir().join(format!("zaroxi-grammar-{}-{}", language_id, std::process::id()));
     if temp_dir.exists() {
+        // Remove the entire directory to ensure a clean clone
         std::fs::remove_dir_all(&temp_dir)
             .map_err(|e| format!("Failed to clean temp dir: {}", e))?;
     }
@@ -580,8 +581,9 @@ pub fn download_and_install_grammar(language_id: &str) -> Result<(), String> {
     let repo_url = &info.repo_url;
     let revision = &info.revision;
 
+    // Use git clone with --force to overwrite existing directory
     let status = std::process::Command::new("git")
-        .args(["clone", "--depth", "1", "--branch", revision, repo_url, temp_dir.to_str().unwrap()])
+        .args(["clone", "--depth", "1", "--branch", revision, "--force", repo_url, temp_dir.to_str().unwrap()])
         .status()
         .map_err(|e| format!("Failed to run git clone: {}", e))?;
 

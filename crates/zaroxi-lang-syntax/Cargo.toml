@@ -13,6 +13,9 @@ rust-version = "1.85.0"
 name = "zaroxi_lang_syntax"
 path = "src/lib.rs"
 
+[build-dependencies]
+zaroxi-lang-syntax = { path = ".", features = ["dynamic-loading"] }
+
 [dependencies]
 tree-sitter = { workspace = true }
 serde = { workspace = true }
