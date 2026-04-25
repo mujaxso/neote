@@ -114,25 +114,15 @@ export function CodeEditor({
 
   const lineHeight = GUTTER_CONFIG.LINE_HEIGHT;
 
-  // Use a passive scroll listener to apply a CSS transform to the gutter's inner container.
-  // The outer wrapper has `overflow: hidden`, so the transform creates a perfect
-  // scroll‑synchronisation without causing React re‑renders or layout thrashing.
-  useEffect(() => {
+  const handleScroll = useCallback(() => {
     const el = textAreaRef.current;
     if (!el) return;
-
-    const sync = () => {
-      const gutterEl = gutterInnerRef.current;
-      if (!gutterEl) return;
-      const inner = gutterEl.firstChild as HTMLElement | null;
-      if (inner) {
-        inner.style.transform = `translateY(-${el.scrollTop}px)`;
-      }
-    };
-
-    sync();
-    el.addEventListener('scroll', sync, { passive: true });
-    return () => el.removeEventListener('scroll', sync);
+    const gutterEl = gutterInnerRef.current;
+    if (!gutterEl) return;
+    const inner = gutterEl.firstElementChild as HTMLElement | null;
+    if (inner) {
+      inner.style.transform = `translateY(-${el.scrollTop}px)`;
+    }
   }, []);
 
   const handleSelectionChange = useCallback(() => {
@@ -218,6 +208,7 @@ export function CodeEditor({
             ...codeStyle,
             overflow: 'auto',
           }}
+          onScroll={handleScroll}
         >
           {displayValue}
         </pre>
@@ -250,6 +241,7 @@ export function CodeEditor({
         }}
         value={displayValue}
         onChange={handleChange}
+        onScroll={handleScroll}
         onSelect={handleSelectionChange}
         spellCheck={false}
         autoComplete="off"
