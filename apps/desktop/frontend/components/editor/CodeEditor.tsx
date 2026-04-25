@@ -4,7 +4,6 @@ import { useTabsStore } from '@/features/tabs/store';
 import { LineNumberGutter } from './gutter/LineNumberGutter';
 import { GUTTER_CONFIG } from './gutter/GutterConfig';
 import { GutterModel } from './gutter/GutterModel';
-import { GutterModel } from './gutter/GutterModel';
 
 interface CodeEditorProps {
   initialValue: string;
