@@ -511,6 +511,7 @@ export function CodeEditor({
     firstLine: number,
     lastLine: number,
     version: number,
+    scrollLeft: number,
   ) => {
     // Check the global stable state first - this persists across scrolls
     const stableState = stableHighlightState.get(filePath);
