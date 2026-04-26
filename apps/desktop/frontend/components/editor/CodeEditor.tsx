@@ -116,6 +116,7 @@ function VirtualEditor({
   cursorLine,
   lineHeight,
   scrollTop,
+  scrollLeft,
   displayLineCount,
   largeFileBanner,
   onScroll,
@@ -123,6 +124,7 @@ function VirtualEditor({
   editable,
   onValueChange,
   containerHeightRef,
+  containerWidthRef,
   filePath,
   allSpansRef,
 }: {
@@ -130,13 +132,15 @@ function VirtualEditor({
   cursorLine: number;
   lineHeight: number;
   scrollTop: number;
+  scrollLeft: number;
   displayLineCount: number;
   largeFileBanner: React.ReactNode;
-  onScroll: (st: number) => void;
+  onScroll: (st: number, sl: number) => void;
   styledSpans: Array<{start: number; end: number; color: string}>;
   editable: boolean;
   onValueChange?: (newValue: string) => void;
   containerHeightRef: React.MutableRefObject<number>;
+  containerWidthRef: React.MutableRefObject<number>;
   filePath?: string;
   allSpansRef: React.MutableRefObject<Array<{start: number; end: number; color: string}>>;
 }) {
@@ -152,6 +156,11 @@ function VirtualEditor({
           containerHeightRef.current = h;
           setContainerHeight(h);
         }
+        const w = containerRef.current.clientWidth;
+        if (w > 0 && w !== containerWidthRef.current) {
+          containerWidthRef.current = w;
+          setContainerWidth(w);
+        }
       }
     };
     update();
@@ -160,7 +169,7 @@ function VirtualEditor({
       observer.observe(containerRef.current);
     }
     return () => observer.disconnect();
-  }, [containerHeightRef]);
+  }, [containerHeightRef, containerWidthRef]);
 
   const lineOffsets = useMemo(() => computeLineOffsets(displayValue), [displayValue]);
   const sentinel = useMemo(
@@ -283,7 +292,7 @@ function VirtualEditor({
   const handleScroll = useCallback(() => {
     if (textAreaRef.current) {
       const ta = textAreaRef.current;
-      onScroll(ta.scrollTop);
+      onScroll(ta.scrollTop, ta.scrollLeft);
       // Sync horizontal scroll to the parent container
       const parent = ta.parentElement;
       if (parent) {
@@ -388,7 +397,7 @@ function VirtualEditor({
             if (textAreaRef.current && textAreaRef.current.scrollLeft !== sl) {
               textAreaRef.current.scrollLeft = sl;
             }
-            onScroll(st);
+            onScroll(st, sl);
           }}
         >
           {/* Styled overlay – positioned relative to this scrollable container */}
@@ -476,6 +485,7 @@ export function CodeEditor({
   });
 
   const [scrollTop, setScrollTop] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
   const [styledSpans, setStyledSpans] = useState<Array<{start: number; end: number; color: string}>>([]);
   const [highlightVersion, setHighlightVersion] = useState(0);
 
@@ -484,6 +494,7 @@ export function CodeEditor({
   const allSpansRef = useRef<Array<{start: number; end: number; color: string}>>([]);
   const lastFetchedRangeRef = useRef<{firstLine: number; lastLine: number} | null>(null);
   const containerHeightRef = useRef(600);
+  const containerWidthRef = useRef(800);
   const rafRef = useRef<number | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const versionRef = useRef<number>(0);
@@ -491,6 +502,8 @@ export function CodeEditor({
 
   const scrollRef = useRef(scrollTop);
   scrollRef.current = scrollTop;
+  const scrollLeftRef = useRef(scrollLeft);
+  scrollLeftRef.current = scrollLeft;
 
   const fetchStyledSpans = useCallback(async (
     filePath: string,
@@ -553,6 +566,7 @@ export function CodeEditor({
         startLine: firstLine,
         endLine: lastLine,
         version: version,
+        scrollLeft: scrollLeft,
       });
 
       if (controller.signal.aborted) { return; }
@@ -654,7 +668,7 @@ export function CodeEditor({
       }
 
       lastFetchTimeRef.current = now;
-      fetchStyledSpans(filePath, firstLine, lastLine, versionRef.current);
+      fetchStyledSpans(filePath, firstLine, lastLine, versionRef.current, scrollLeftRef.current);
     });
 
     return () => { if (rafRef.current) { cancelAnimationFrame(rafRef.current); } };
@@ -699,7 +713,7 @@ export function CodeEditor({
       }
     }
     
-    fetchStyledSpans(filePath, firstLine, lastLine, versionRef.current);
+    fetchStyledSpans(filePath, firstLine, lastLine, versionRef.current, scrollLeftRef.current);
   }, [filePath, fetchStyledSpans]);
 
   useEffect(() => {
@@ -762,11 +776,15 @@ export function CodeEditor({
       scrollTop={scrollTop}
       displayLineCount={displayLineCount}
       largeFileBanner={largeFileBanner}
-      onScroll={setScrollTop}
+      onScroll={(st, sl) => {
+        setScrollTop(st);
+        setScrollLeft(sl);
+      }}
       styledSpans={styledSpans}
       editable={!effectiveReadOnly}
       onValueChange={effectiveReadOnly ? undefined : handleValueChange}
       containerHeightRef={containerHeightRef}
+      containerWidthRef={containerWidthRef}
       filePath={filePath}
       allSpansRef={allSpansRef}
     />

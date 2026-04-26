@@ -16,6 +16,7 @@ pub struct EditorState {
     cursor: Cursor,
     viewport: Viewport,
     scroll_offset_y: f32, // vertical scroll offset in pixels
+    scroll_offset_x: f32, // horizontal scroll offset in pixels
     /// The syntax highlighting engine.
     highlight_engine: HighlightEngine,
     /// Cached highlight spans for the current document content.
@@ -32,6 +33,7 @@ impl EditorState {
             cursor: Cursor::new(),
             viewport: Viewport::new(),
             scroll_offset_y: 0.0,
+            scroll_offset_x: 0.0,
             highlight_engine: HighlightEngine::new(),
             cached_highlights: Vec::new(),
             cached_version: u64::MAX,
@@ -45,6 +47,7 @@ impl EditorState {
             cursor: Cursor::new(),
             viewport: Viewport::new(),
             scroll_offset_y: 0.0,
+            scroll_offset_x: 0.0,
             highlight_engine: HighlightEngine::new(),
             cached_highlights: Vec::new(),
             cached_version: u64::MAX,
@@ -127,6 +130,15 @@ impl EditorState {
 
     pub fn set_scroll_offset_y(&mut self, offset: f32) {
         self.scroll_offset_y = offset;
+    }
+
+    /// Horizontal scroll offset (pixels).
+    pub fn scroll_offset_x(&self) -> f32 {
+        self.scroll_offset_x
+    }
+
+    pub fn set_scroll_offset_x(&mut self, offset: f32) {
+        self.scroll_offset_x = offset;
     }
 
     /// Compute the visible lines for the current viewport state.

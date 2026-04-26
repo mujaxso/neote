@@ -138,6 +138,7 @@ pub async fn get_styled_spans(
     start_line: Option<usize>,
     end_line: Option<usize>,
     _version: Option<u64>,
+    scroll_left: Option<usize>,
 ) -> Result<Vec<StyledSpanResponse>, String> {
     let path_buf = std::path::PathBuf::from(&path);
     let canonical = path_buf
