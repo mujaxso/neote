@@ -46,12 +46,14 @@ function useHighlight(
 
     async function fetch() {
       try {
-        // IMPORTANT: Tauri command expects snake_case argument names.
+        // IMPORTANT: Tauri command expects a single `request` struct with camelCase keys
         const res: HighlightResponse = await invoke('highlight_document', {
-          document_id: documentId,
-          start_line: startLine,
-          count,
-          theme: theme ?? 'dark',
+          request: {
+            documentId,
+            startLine,
+            count,
+            theme: theme ?? 'dark',
+          },
         });
         if (!cancelled) {
           setLines(res.lines);

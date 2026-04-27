@@ -73,7 +73,17 @@ pub struct EditRequest {
     pub new_text: String,
 }
 
-// ── Highlight response DTOs ───────────────────────────────────────
+// ── Highlight request / response DTOs ─────────────────────────────
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HighlightRequest {
+    pub document_id: String,
+    pub start_line: usize,
+    pub count: usize,
+    /// Optional theme name: "dark" or "light".  If omitted, dark is used.
+    pub theme: Option<String>,
+}
 
 #[derive(Debug, Serialize)]
 pub struct HighlightResponse {
@@ -251,20 +261,15 @@ pub async fn get_document_content(document_id: String) -> Result<String, String>
 }
 
 // ── highlight_document ────────────────────────────────────────────
-// Delegates to the zaroxi_lang_syntax cache for tree/spans.
-// Now accepts flattened arguments to match the front‑end invoke call.
+// Accepts a single `HighlightRequest` struct, just like `get_visible_lines`.
 
 #[command]
 pub async fn highlight_document(
-    document_id: String,
-    start_line: usize,
-    count: usize,
-    theme: Option<String>,
+    request: HighlightRequest,
 ) -> Result<HighlightResponse, String> {
-    eprintln!("[highlight_document] called: doc_id={}, start_line={}, count={}, theme={:?}",
-              document_id, start_line, count, theme);
+    eprintln!("[highlight_document] request: {:?}", request);
 
-    let path = std::path::PathBuf::from(&document_id);
+    let path = std::path::PathBuf::from(&request.document_id);
     let cached_arc = BUFFER_MANAGER
         .get_cached(&path)
         .await
@@ -279,7 +284,8 @@ pub async fn highlight_document(
         return Ok(HighlightResponse { lines: vec![] });
     }
 
-    let lang = LanguageId::from_path(document.path().unwrap_or(std::path::Path::new("")));
+    let lang =
+        LanguageId::from_path(document.path().unwrap_or(std::path::Path::new("")));
     eprintln!("[highlight_document] detected language: {:?}", lang);
 
     if lang == LanguageId::PlainText {
@@ -294,7 +300,7 @@ pub async fn highlight_document(
     let engine = HighlightEngine::new();
 
     // ── Resolve theme colours ────────────────────────────────────
-    let theme_colors = match theme.as_deref() {
+    let theme_colors = match request.theme.as_deref() {
         Some("light") => SemanticColors::light(),
         _ => SemanticColors::dark(),
     };
@@ -315,8 +321,8 @@ pub async fn highlight_document(
     // ── Map spans to requested line range ──
     use std::borrow::Cow;
     let line_count = full_text.lines().count();
-    let end_line = start_line.saturating_add(count).min(line_count);
-    let mut response_lines = Vec::with_capacity(end_line - start_line);
+    let end_line = request.start_line.saturating_add(request.count).min(line_count);
+    let mut response_lines = Vec::with_capacity(end_line - request.start_line);
 
     let mut line_offsets = Vec::with_capacity(line_count + 1);
     line_offsets.push(0usize);
@@ -326,7 +332,7 @@ pub async fn highlight_document(
         }
     }
 
-    for idx in start_line..end_line {
+    for idx in request.start_line..end_line {
         let line_start = *line_offsets.get(idx).unwrap_or(&full_text.len());
         let line_end = *line_offsets.get(idx + 1).unwrap_or(&full_text.len());
         let raw = &full_text[line_start..line_end];
