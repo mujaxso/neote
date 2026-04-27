@@ -436,7 +436,6 @@ fn highlight_tag_to_string(tag: Highlight) -> String {
         Highlight::Constant => "constant".to_string(),
         Highlight::Number => "number".to_string(),
         Highlight::Operator => "operator".to_string(),
-        Highlight::Punctuation => "punctuation".to_string(),
         other => format!("{:?}", other),
     }
 }
