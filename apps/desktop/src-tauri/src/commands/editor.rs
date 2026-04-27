@@ -322,7 +322,9 @@ pub async fn highlight_document(
     use std::borrow::Cow;
     let line_count = full_text.lines().count();
     let end_line = request.start_line.saturating_add(request.count).min(line_count);
-    let mut response_lines = Vec::with_capacity(end_line - request.start_line);
+    // Prevent underflow when start_line > end_line (e.g. scrolling past EOF)
+    let desired_capacity = end_line.saturating_sub(request.start_line);
+    let mut response_lines = Vec::with_capacity(desired_capacity);
 
     let mut line_offsets = Vec::with_capacity(line_count + 1);
     line_offsets.push(0usize);
@@ -335,7 +337,15 @@ pub async fn highlight_document(
     for idx in request.start_line..end_line {
         let line_start = *line_offsets.get(idx).unwrap_or(&full_text.len());
         let line_end = *line_offsets.get(idx + 1).unwrap_or(&full_text.len());
-        let raw = &full_text[line_start..line_end];
+
+        // Guard against degenerate offsets.
+        let line_len = line_end.saturating_sub(line_start);
+        let raw = if line_start <= full_text.len() && line_end <= full_text.len() {
+            &full_text[line_start..line_end]
+        } else {
+            ""
+        };
+
         let display = if raw.ends_with('\n') {
             Cow::Owned(raw[..raw.len() - 1].to_owned())
         } else {
@@ -350,7 +360,7 @@ pub async fn highlight_document(
             // Use saturating operations to avoid overflows when the span starts/ends
             // outside the current line (i.e., spans that cross line boundaries).
             let rel_start = sp.start.saturating_sub(line_start);
-            let rel_end = sp.end.saturating_sub(line_start).min(line_end - line_start);
+            let rel_end = sp.end.saturating_sub(line_start).min(line_len);
             let token_type = highlight_tag_to_string(sp.highlight);
             let color = tag_to_color(sp.highlight, &theme_colors).map(color_to_hex);
             line_spans.push(HighlightSpanDto {
