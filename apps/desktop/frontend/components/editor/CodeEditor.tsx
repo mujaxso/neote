@@ -1,4 +1,11 @@
-import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  useCallback,
+  useMemo,
+} from 'react';
 import { cn } from '@/lib/utils';
 import { useTabsStore } from '@/features/tabs/store';
 import { LineNumberGutter } from './gutter/LineNumberGutter';
@@ -8,7 +15,7 @@ import { FONT_TOKENS } from '@/lib/theme/font-tokens';
 import { invoke } from '@tauri-apps/api/core';
 
 /* ------------------------------------------------------------------ */
-/*  Custom hook: fetch full‑file syntax highlights once per file       */
+/*  Highlight model (unchanged via backend)                            */
 /* ------------------------------------------------------------------ */
 interface HighlightSpan {
   start: number;
@@ -70,11 +77,9 @@ function useFullHighlight(
   return lines;
 }
 
-/**
- * Merge overlapping / nested highlight spans into a non‑overlapping
- * sequence.  The innermost (shortest) span wins when two spans
- * compete for the same character.
- */
+/* ------------------------------------------------------------------ */
+/*  Span merging (removes overlaps, innermost wins)                    */
+/* ------------------------------------------------------------------ */
 function mergeSpans(spans: HighlightSpan[], lineLen: number): HighlightSpan[] {
   if (spans.length === 0 || lineLen === 0) return [];
 
@@ -118,7 +123,6 @@ function mergeSpans(spans: HighlightSpan[], lineLen: number): HighlightSpan[] {
   return merged;
 }
 
-// Guard against overly long lines that would blow the allocations.
 const MAX_LINE_LEN = 5_000;
 
 function renderSpans(spans: HighlightSpan[], lineText: string) {
@@ -140,10 +144,7 @@ function renderSpans(spans: HighlightSpan[], lineText: string) {
     }
     const key = `${sp.start}-${i}`;
     segments.push(
-      <span
-        key={key}
-        style={sp.color ? { color: sp.color } : undefined}
-      >
+      <span key={key} style={sp.color ? { color: sp.color } : undefined}>
         {lineText.slice(sp.start, sp.end)}
       </span>,
     );
@@ -156,9 +157,8 @@ function renderSpans(spans: HighlightSpan[], lineText: string) {
 }
 
 /* ------------------------------------------------------------------ */
-/*  CodeEditor component                                              */
+/*  Viewport / helpers                                                */
 /* ------------------------------------------------------------------ */
-
 interface CodeEditorProps {
   initialValue: string;
   onChange: (value: string) => void;
@@ -167,7 +167,6 @@ interface CodeEditorProps {
   readOnly?: boolean;
   className?: string;
   contentTruncated?: boolean;
-  /** The active colour theme for syntax highlighting. */
   theme?: 'dark' | 'light';
 }
 
@@ -194,36 +193,99 @@ export function CodeEditor({
   contentTruncated,
   theme = 'dark',
 }: CodeEditorProps) {
+  // ---------- text state ----------
   const [value, setValue] = useState(initialValue);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const highlightLayerRef = useRef<HTMLDivElement>(null);
+
+  // ---------- refs ----------
   const containerRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const highlightOuterRef = useRef<HTMLDivElement>(null);
+
+  // ---------- scroll state ----------
   const [scrollTop, setScrollTop] = useState(0);
   const [scrollLeft, setScrollLeft] = useState(0);
+
+  // ---------- cursor line number (for gutter) ----------
   const [cursorLine, setCursorLine] = useState(1);
 
-  const largeFile = contentTruncated ?? (initialValue.length >= TRUNCATE_CHARS);
+  // ---------- huge file guard ----------
+  const largeFile = contentTruncated ?? initialValue.length >= TRUNCATE_CHARS;
 
+  // ---------- re-sync text when parent changes ----------
   useEffect(() => {
     setValue(initialValue);
-  }, [initialValue]);
+    setScrollTop(0);
+    setScrollLeft(0);
+  }, [initialValue, filePath]);
 
-  const handleTextareaScroll = useCallback(() => {
-    const ta = textareaRef.current;
-    if (!ta) return;
-    setScrollTop(ta.scrollTop);
-    setScrollLeft(ta.scrollLeft);
+  // ---------- dimensions ----------
+  const [containerHeight, setContainerHeight] = useState(0);
+  const [editorWidth, setEditorWidth] = useState(0);
+
+  useLayoutEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    setContainerHeight(el.clientHeight);
   }, []);
 
-  const handleSelectionChange = useCallback(() => {
+  // track the textarea’s scrollWidth so the overlay matches
+  useEffect(() => {
     const ta = textareaRef.current;
     if (!ta) return;
-    const sel = ta.selectionStart;
-    const before = value.slice(0, sel).match(/\n/g);
-    const line = before ? before.length + 1 : 1;
-    setCursorLine(line);
+    setEditorWidth(ta.scrollWidth);
+  }, [value, containerHeight, largeFile, filePath]);
+
+  // ---------- line metrics ----------
+  const lineHeight = GUTTER_CONFIG.LINE_HEIGHT;
+  const lineStarts = useMemo(() => computeLineStarts(value), [value]);
+  const totalLines = lineStarts.length;
+
+  // ---------- highlight model ----------
+  const highlightsEnabled = !largeFile && !!filePath;
+  const allHighlighted = useFullHighlight(
+    filePath ?? null,
+    highlightsEnabled,
+    theme,
+  );
+
+  // ---------- viewport ----------
+  const visibleStartLine = Math.floor(scrollTop / lineHeight);
+  const visibleCount =
+    Math.ceil(((containerHeight || lineHeight) + lineHeight) / lineHeight) * 2;
+  const visibleEndLine = Math.min(visibleStartLine + visibleCount, totalLines);
+
+  const visibleHighlighted = useMemo(
+    () =>
+      allHighlighted.filter(
+        (l) => l.index >= visibleStartLine && l.index < visibleEndLine,
+      ),
+    [allHighlighted, visibleStartLine, visibleEndLine],
+  );
+
+  // ---------- gutter ----------
+  const gutterWidth = largeFile ? 0 : computeGutterWidth(totalLines);
+  const effectiveReadOnly = readOnly || largeFile;
+
+  // ---------- scroll event ----------
+  const handleTextareaScroll = useCallback(
+    (e: React.UIEvent<HTMLTextAreaElement>) => {
+      if (!e.currentTarget) return;
+      setScrollTop(e.currentTarget.scrollTop);
+      setScrollLeft(e.currentTarget.scrollLeft);
+    },
+    [],
+  );
+
+  // ---------- cursor tracking ----------
+  const handleSelect = useCallback(() => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    const pos = ta.selectionStart;
+    const before = value.slice(0, pos).match(/\n/g);
+    setCursorLine(before ? before.length + 1 : 1);
   }, [value]);
 
+  // ---------- edit handling ----------
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       if (readOnly) return;
@@ -233,41 +295,17 @@ export function CodeEditor({
       if (filePath) {
         useTabsStore.getState().markDirty(filePath);
       }
-      const selStart = e.target.selectionStart;
-      const before = newVal.slice(0, selStart).match(/\n/g);
-      const line = before ? before.length + 1 : 1;
-      setCursorLine(line);
+      const pos = e.target.selectionStart;
+      const before = newVal.slice(0, pos).match(/\n/g);
+      setCursorLine(before ? before.length + 1 : 1);
     },
     [onChange, readOnly, filePath],
   );
 
-  const lineHeight = GUTTER_CONFIG.LINE_HEIGHT;
-  const lineStarts = useMemo(() => computeLineStarts(value), [value]);
-  const totalLines = lineStarts.length;
-
-  const highlightsEnabled = !largeFile && !!filePath;
-  const allHighlighted = useFullHighlight(
-    filePath ?? null,
-    highlightsEnabled,
-    theme,
-  );
-
-  // Virtualise the overlay content – only render a couple of screens of lines.
-  const containerHeight = Math.max(containerRef.current?.clientHeight ?? 0, lineHeight);
-  const visibleStartLine = Math.floor(scrollTop / lineHeight);
-  const visibleCount = Math.ceil((containerHeight + lineHeight) / lineHeight) * 2;
-  const visibleEndLine = Math.min(visibleStartLine + visibleCount, totalLines);
-
-  const visibleHighlighted = useMemo(
-    () => allHighlighted.filter((l) => l.index >= visibleStartLine && l.index < visibleEndLine),
-    [allHighlighted, visibleStartLine, visibleEndLine],
-  );
-
-  const gutterWidth = largeFile ? 0 : computeGutterWidth(totalLines);
-  const effectiveReadOnly = readOnly || largeFile;
-
+  /* ---------- render ---------- */
   return (
     <div ref={containerRef} className={cn('flex h-full', className)}>
+      {/* gutter */}
       {!largeFile && (
         <div
           className="shrink-0 relative overflow-hidden"
@@ -283,6 +321,7 @@ export function CodeEditor({
         </div>
       )}
 
+      {/* scrollable text area */}
       <div className="flex-1 flex flex-col overflow-hidden relative">
         {largeFile && (
           <div className="text-muted-foreground text-xs p-1 bg-muted/80 shrink-0">
@@ -290,15 +329,16 @@ export function CodeEditor({
           </div>
         )}
 
-        {/* Highlight overlay – absolutely positioned, no scrollbar, synced via transform */}
+        {/* highlight overlay */}
         {highlightsEnabled && (
           <div
-            ref={highlightLayerRef}
+            ref={highlightOuterRef}
             aria-hidden="true"
-            className="absolute inset-0 overflow-hidden pointer-events-none font-mono text-sm select-none text-editor-foreground"
+            className="absolute inset-0 overflow-hidden pointer-events-none select-none text-editor-foreground"
             style={{
               lineHeight: `${lineHeight}px`,
               fontFamily: FONT_TOKENS.editor,
+              fontSize: '0.875rem',
               whiteSpace: 'pre',
               overflowWrap: 'normal',
             }}
@@ -307,6 +347,7 @@ export function CodeEditor({
               style={{
                 height: totalLines * lineHeight,
                 position: 'relative',
+                width: editorWidth || '100%',
               }}
             >
               <div
@@ -314,13 +355,13 @@ export function CodeEditor({
                   position: 'absolute',
                   top: 0,
                   left: 0,
-                  transform: `translate3d(${-scrollLeft}px, ${visibleStartLine * lineHeight}px, 0)`,
+                  transform: `translate3d(${-scrollLeft}px, ${visibleStartLine * lineHeight}px, 0px)`,
                   whiteSpace: 'pre',
-                  minWidth: '100%',
+                  minWidth: editorWidth || '100%',
                 }}
               >
                 {visibleHighlighted.map((hl) => (
-                  <div key={hl.index}>
+                  <div key={hl.index} style={{ minHeight: lineHeight }}>
                     {renderSpans(hl.spans, hl.text)}
                   </div>
                 ))}
@@ -329,17 +370,18 @@ export function CodeEditor({
           </div>
         )}
 
-        {/* Editable textarea – text is transparent so the highlight layer shows through */}
+        {/* editable textarea */}
         <textarea
           ref={textareaRef}
           className="flex-1 resize-none outline-none bg-transparent font-mono text-sm p-0 relative z-10 scroll-hidden"
           style={{
             lineHeight: `${lineHeight}px`,
             fontFamily: FONT_TOKENS.editor,
+            fontSize: '0.875rem',
             whiteSpace: 'pre',
             overflowWrap: 'normal',
-            overflowY: 'auto',
             overflowX: 'auto',
+            overflowY: 'auto',
             color: highlightsEnabled ? 'transparent' : undefined,
             caretColor: highlightsEnabled
               ? 'var(--editor-cursor-color, #E2E8F0)'
@@ -351,7 +393,7 @@ export function CodeEditor({
           readOnly={effectiveReadOnly}
           onChange={handleChange}
           onScroll={handleTextareaScroll}
-          onSelect={handleSelectionChange}
+          onSelect={handleSelect}
           onClick={() => textareaRef.current?.focus()}
           spellCheck={false}
           autoComplete="off"
@@ -359,7 +401,7 @@ export function CodeEditor({
         />
       </div>
 
-      {/* Hide scrollbar chrome on the textarea */}
+      {/* hide scrollbar chrome */}
       <style>{`
         .scroll-hidden::-webkit-scrollbar { display: none; }
         .scroll-hidden {
