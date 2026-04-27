@@ -257,15 +257,11 @@ impl Runtime {
     }
 
     /// Get the path to the directory containing grammar shared libraries
-    /// for the current platform and architecture.
+    /// (flat directory, no platform subdirectory).
     pub fn grammar_dir(&self) -> PathBuf {
-        let target = env::consts::ARCH;
-        let os = env::consts::OS;
-
-        // Map OS and architecture to the subdirectory name used in the runtime layout.
-        // This matches the directory naming scheme described in the architecture.
-        let subdir = format!("{}-{}", os, target);
-        self.root.join("grammars").join(subdir)
+        let dir = self.root.join("grammars");
+        eprintln!("DEBUG: grammar_dir: {:?}", dir);
+        dir
     }
 
     /// Get the path to the language metadata and queries directory for a language.
@@ -277,6 +273,10 @@ impl Runtime {
     ///
     /// The library filename is expected to follow the pattern
     /// `libtree-sitter-{language}.{ext}` on Unix and `tree-sitter-{language}.dll` on Windows.
+    ///
+    /// First, the flat `grammars/` directory is tried; if the library is not found there,
+    /// the old platform‑specific subdirectory (`grammars/<os>-<arch>/`) is used as a fallback
+    /// to support existing installations.
     pub fn grammar_library_path(&self, language_id: &str) -> PathBuf {
         let prefix = if cfg!(windows) { "" } else { "lib" };
         let extension = if cfg!(windows) {
@@ -287,15 +287,27 @@ impl Runtime {
             ".so"
         };
         // Some language IDs use underscores but the library uses hyphens
-        // For example: "c_sharp" -> "c-sharp" in library name
         let lib_name = match language_id {
             "c_sharp" => "c-sharp",
             _ => language_id,
         };
         let lib_name = format!("{}tree-sitter-{}{}", prefix, lib_name, extension);
-        let path = self.grammar_dir().join(lib_name);
-        eprintln!("DEBUG: grammar_library_path for {} -> {}", language_id, path.display());
-        path
+
+        // First try the flat grammars directory
+        let flat_path = self.root.join("grammars").join(&lib_name);
+        eprintln!("DEBUG: grammar_library_path flat: {}", flat_path.display());
+        if flat_path.exists() {
+            eprintln!("DEBUG: using flat grammar path");
+            return flat_path;
+        }
+
+        // Fallback to platform-specific subdirectory
+        let target = env::consts::ARCH;
+        let os = env::consts::OS;
+        let subdir = format!("{}-{}", os, target);
+        let platform_path = self.root.join("grammars").join(&subdir).join(&lib_name);
+        eprintln!("DEBUG: grammar_library_path platform: {}", platform_path.display());
+        platform_path
     }
 
     /// Load a Tree-sitter language from a shared library in the runtime directory.

@@ -59,9 +59,12 @@ pub fn get_or_compute(
     // Fast‑path: existing state with same version → return cached spans.
     if let Some(state) = guard.get_mut(path) {
         if state.version == version && state.language == language {
+            eprintln!("[syntax-cache] cache hit for {:?} at version {}", path, version);
             return Ok(state.spans.clone());
         }
     }
+
+    eprintln!("[syntax-cache] compute fresh for {:?}, lang={:?}, version={}", path, language, version);
 
     // ── Compute fresh ──────────────────────────────────────────────
     let syntax = if language == LanguageId::PlainText {
@@ -88,6 +91,10 @@ pub fn get_or_compute(
         Vec::new()
     };
 
+    if spans.is_empty() && language != LanguageId::PlainText {
+        eprintln!("[syntax-cache] WARNING: highlight spans empty for {:?} (version {})", path, version);
+    }
+
     let state = DocumentSyntaxState {
         version,
         syntax,
@@ -102,6 +109,7 @@ pub fn get_or_compute(
 
 /// Invalidate the cache entry for `path` (usually after an edit).
 pub fn invalidate(path: &PathBuf) {
+    eprintln!("[syntax-cache] invalidate {:?}", path);
     CACHE.lock().remove(path);
 }
 
