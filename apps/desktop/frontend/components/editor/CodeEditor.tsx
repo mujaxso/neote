@@ -89,15 +89,72 @@ const tokenStyleMap: Record<string, string> = {
   punctuation: 'text-slate-400',
 };
 
+/**
+ * Merge overlapping / nested highlight spans into a non‑overlapping
+ * sequence.  The innermost (shortest) span wins when two spans
+ * compete for the same character.
+ */
+function mergeSpans(spans: HighlightSpan[], lineLen: number): HighlightSpan[] {
+  if (spans.length === 0) return [];
+
+  // Sort shortest → longest (innermost first)
+  const sorted = [...spans].sort((a, b) => (a.end - a.start) - (b.end - b.start));
+
+  // For each character we record which token should be used.
+  const charTokens: Array<{ tokenType: string; color?: string } | null> =
+    new Array(lineLen).fill(null);
+
+  for (const sp of sorted) {
+    const tok = sp.token_type;
+    const color = sp.color;
+    const from = Math.max(0, sp.start);
+    const to = Math.min(lineLen, sp.end);
+    for (let i = from; i < to; i++) {
+      if (charTokens[i] === null) {
+        charTokens[i] = { tokenType: tok, color };
+      }
+    }
+  }
+
+  // Compress contiguous runs with the same token into spans.
+  const merged: HighlightSpan[] = [];
+  let i = 0;
+  while (i < lineLen) {
+    const cur = charTokens[i];
+    if (cur) {
+      let j = i;
+      while (j < lineLen && charTokens[j] && charTokens[j]!.tokenType === cur.tokenType) {
+        j++;
+      }
+      merged.push({
+        start: i,
+        end: j,
+        token_type: cur.tokenType,
+        color: cur.color,
+      });
+      i = j;
+    } else {
+      i++;
+    }
+  }
+  return merged;
+}
+
 function renderSpans(spans: HighlightSpan[], lineText: string) {
   if (spans.length === 0) {
     return lineText;
   }
 
+  // Remove overlaps so a character is never painted twice.
+  const merged = mergeSpans(spans, lineText.length);
+  if (merged.length === 0) {
+    return lineText;
+  }
+
   const segments: React.ReactNode[] = [];
   let last = 0;
-  for (let i = 0; i < spans.length; i++) {
-    const sp = spans[i];
+  for (let i = 0; i < merged.length; i++) {
+    const sp = merged[i];
     if (sp.start > last) {
       segments.push(lineText.slice(last, sp.start));
     }
