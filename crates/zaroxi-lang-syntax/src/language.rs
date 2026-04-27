@@ -1,9 +1,8 @@
 //! Language identification and grammar loading.
 
-use std::collections::HashMap;
 use std::path::Path;
-use std::sync::OnceLock;
-use tree_sitter;
+
+use crate::runtime::Runtime;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum LanguageId {
@@ -17,21 +16,25 @@ pub enum LanguageId {
 impl LanguageId {
     /// Determine language from file path.
     pub fn from_path(path: &Path) -> Self {
-        let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
-        let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("").to_lowercase();
+        let ext = path
+            .extension()
+            .and_then(|e| e.to_str())
+            .unwrap_or("");
+        let name = path
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("")
+            .to_lowercase();
 
-        // Try to match against dynamic language registry first
-        // First check by filename
+        // Try to match against dynamic language registry first.
         if let Some(lang_id) = Self::from_filename_dynamic(&name) {
             return LanguageId::Dynamic(lang_id);
         }
-
-        // Then check by extension
         if let Some(lang_id) = Self::from_extension_dynamic(ext) {
             return LanguageId::Dynamic(lang_id);
         }
 
-        // Fall back to built-in language detection for common cases
+        // Fall back to well‑known built‑in mappings.
         match ext {
             "rs" => return LanguageId::Rust,
             "toml" => return LanguageId::Toml,
@@ -47,7 +50,9 @@ impl LanguageId {
             "java" => return LanguageId::Dynamic("java"),
             "sh" | "bash" => return LanguageId::Dynamic("bash"),
             "c" | "h" => return LanguageId::Dynamic("c"),
-            "cpp" | "cc" | "cxx" | "hpp" | "hh" | "hxx" => return LanguageId::Dynamic("cpp"),
+            "cpp" | "cc" | "cxx" | "hpp" | "hh" | "hxx" => {
+                return LanguageId::Dynamic("cpp");
+            }
             "cs" => return LanguageId::Dynamic("c_sharp"),
             "rb" => return LanguageId::Dynamic("ruby"),
             "lua" => return LanguageId::Dynamic("lua"),
@@ -59,7 +64,7 @@ impl LanguageId {
             _ => {}
         }
 
-        // Check for specific filenames
+        // Check specific filenames.
         match name.as_str() {
             "cargo.toml"
             | "rust-toolchain.toml"
@@ -82,13 +87,13 @@ impl LanguageId {
 
     fn from_filename_dynamic(name: &str) -> Option<&'static str> {
         use crate::grammar_registry::GrammarRegistry;
+        use std::collections::HashMap;
+        use std::sync::OnceLock;
 
         static FILENAME_MAP: OnceLock<HashMap<String, &'static str>> = OnceLock::new();
-
         let map = FILENAME_MAP.get_or_init(|| {
             let mut map = HashMap::new();
             let registry = GrammarRegistry::global();
-
             for (lang_id, info) in registry.languages() {
                 for filename in &info.filenames {
                     map.insert(filename.to_lowercase(), *lang_id);
@@ -102,13 +107,13 @@ impl LanguageId {
 
     fn from_extension_dynamic(ext: &str) -> Option<&'static str> {
         use crate::grammar_registry::GrammarRegistry;
+        use std::collections::HashMap;
+        use std::sync::OnceLock;
 
         static EXTENSION_MAP: OnceLock<HashMap<String, &'static str>> = OnceLock::new();
-
         let map = EXTENSION_MAP.get_or_init(|| {
             let mut map = HashMap::new();
             let registry = GrammarRegistry::global();
-
             for (lang_id, info) in registry.languages() {
                 for ext in &info.extensions {
                     map.insert(ext.to_lowercase(), *lang_id);
@@ -133,21 +138,14 @@ impl LanguageId {
         }
     }
 
-    /// Return the Tree-sitter language, loading dynamically if needed.
+    /// Return the Tree‑sitter language, loading dynamically via the
+    /// runtime directory.
     pub fn tree_sitter_language(&self) -> Option<tree_sitter::Language> {
-        eprintln!("DEBUG: tree_sitter_language called for {:?}", self);
-        let result = match self {
-            LanguageId::Rust => crate::dynamic_loader::load_language("rust"),
-            LanguageId::Toml => crate::dynamic_loader::load_language("toml"),
-            LanguageId::Markdown => crate::dynamic_loader::load_language("markdown"),
-            LanguageId::PlainText => None,
-            LanguageId::Dynamic(id) => crate::dynamic_loader::load_language(id),
-        };
-        if result.is_none() {
-            eprintln!("DEBUG: tree_sitter_language returned None for {:?}", self);
-        } else {
-            eprintln!("DEBUG: tree_sitter_language returned Some for {:?}", self);
+        if *self == LanguageId::PlainText {
+            return None;
         }
-        result
+        let id = self.as_str();
+        let runtime = Runtime::new();
+        runtime.load_language(id).ok()
     }
 }

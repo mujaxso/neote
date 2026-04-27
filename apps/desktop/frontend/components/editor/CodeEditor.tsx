@@ -8,12 +8,15 @@ import { FONT_TOKENS } from '@/lib/theme/font-tokens';
 import { invoke } from '@tauri-apps/api/core';
 
 /* ------------------------------------------------------------------ */
-/*  Custom hook: fetch syntax highlights for the current viewport    */
+/*  Custom hook: fetch syntax highlights for the current viewport     */
+/*  Accepts an optional `theme` to request theme‑aware colours.       */
 /* ------------------------------------------------------------------ */
 interface HighlightSpan {
   start: number;
   end: number;
   token_type: string;
+  /** optional hex colour string, e.g. "#FF6B6B" */
+  color?: string;
 }
 interface HighlightLine {
   index: number;
@@ -29,6 +32,7 @@ function useHighlight(
   startLine: number,
   count: number,
   enabled: boolean,
+  theme?: 'dark' | 'light',
 ) {
   const [lines, setLines] = useState<HighlightLine[]>([]);
 
@@ -46,6 +50,7 @@ function useHighlight(
           documentId,
           startLine,
           count,
+          theme: theme ?? 'dark',
         });
         if (!cancelled) {
           setLines(res.lines);
@@ -60,13 +65,13 @@ function useHighlight(
     return () => {
       cancelled = true;
     };
-  }, [documentId, startLine, count, enabled]);
+  }, [documentId, startLine, count, enabled, theme]);
 
   return lines;
 }
 
 /* ------------------------------------------------------------------ */
-/*  Simple token‑type → CSS class mapping (can be extended later)     */
+/*  Simple token‑type → CSS class mapping (kept as fallback)          */
 /* ------------------------------------------------------------------ */
 const tokenStyleMap: Record<string, string> = {
   keyword: 'text-purple-400',
@@ -92,9 +97,14 @@ function renderSpans(spans: HighlightSpan[], lineText: string) {
     if (sp.start > last) {
       segments.push(lineText.slice(last, sp.start));
     }
+    // Apply inline colour when present, otherwise fall back to CSS class
     const tokenClass = tokenStyleMap[sp.token_type] ?? '';
     segments.push(
-      <span key={`s${sp.start}`} className={tokenClass}>
+      <span
+        key={`s${sp.start}`}
+        className={tokenClass}
+        style={sp.color ? { color: sp.color } : undefined}
+      >
         {lineText.slice(sp.start, sp.end)}
       </span>,
     );
@@ -118,6 +128,8 @@ interface CodeEditorProps {
   readOnly?: boolean;
   className?: string;
   contentTruncated?: boolean;
+  /** The active colour theme for syntax highlighting. */
+  theme?: 'dark' | 'light';
 }
 
 const TRUNCATE_CHARS = 50_000;
@@ -142,6 +154,7 @@ export function CodeEditor({
   readOnly = false,
   className,
   contentTruncated,
+  theme = 'dark',
 }: CodeEditorProps) {
   // ── Local state ──────────────────────────────────────────────────
   const [value, setValue] = useState(initialValue);
@@ -206,6 +219,7 @@ export function CodeEditor({
     visibleStartLine,
     visibleCount,
     highlightsEnabled,
+    theme,
   );
 
   // ── Gutter metrics ───────────────────────────────────────────────
@@ -218,7 +232,10 @@ export function CodeEditor({
     <div ref={containerRef} className={cn('flex h-full', className)}>
       {/* Gutter – disabled for large files */}
       {!largeFile && (
-        <div className="shrink-0 relative overflow-hidden" style={{ width: gutterWidth }}>
+        <div
+          className="shrink-0 relative overflow-hidden"
+          style={{ width: gutterWidth }}
+        >
           <LineNumberGutter
             lineCount={totalLines}
             cursorLine={cursorLine}
@@ -251,7 +268,12 @@ export function CodeEditor({
               color: 'transparent',
             }}
           >
-            <div style={{ height: totalLines * lineHeight, position: 'relative' }}>
+            <div
+              style={{
+                height: totalLines * lineHeight,
+                position: 'relative',
+              }}
+            >
               <div
                 style={{
                   position: 'absolute',
@@ -265,7 +287,8 @@ export function CodeEditor({
                   const lineIdx = visibleStartLine + i;
                   if (lineIdx >= totalLines) return null;
                   const startByte = lineStarts[lineIdx];
-                  const endByte = lineStarts[lineIdx + 1] ?? value.length;
+                  const endByte =
+                    lineStarts[lineIdx + 1] ?? value.length;
                   let raw = value.slice(startByte, endByte);
                   if (raw.endsWith('\n')) raw = raw.slice(0, -1);
                   const hl = highlightedLines.find((l) => l.index === lineIdx);

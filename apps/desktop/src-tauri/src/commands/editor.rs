@@ -14,6 +14,8 @@ use zaroxi_lang_syntax::language::LanguageId;
 use zaroxi_lang_syntax::parser::ParserPool;
 use zaroxi_lang_syntax::highlight::{HighlightEngine, Highlight};
 use zaroxi_lang_syntax::cache;
+use zaroxi_theme::theme::SemanticColors;
+use zaroxi_theme::colors::Color;
 
 /// Shared buffer manager instance.
 static BUFFER_MANAGER: once_cell::sync::Lazy<Arc<BufferManager>> =
@@ -71,7 +73,17 @@ pub struct EditRequest {
     pub new_text: String,
 }
 
-// ── Highlight response DTOs ───────────────────────────────────────
+// ── Highlight request / response DTOs ─────────────────────────────
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HighlightRequest {
+    pub document_id: String,
+    pub start_line: usize,
+    pub count: usize,
+    /// Optional theme name: "dark" or "light".  If omitted, dark is used.
+    pub theme: Option<String>,
+}
 
 #[derive(Debug, Serialize)]
 pub struct HighlightResponse {
@@ -90,6 +102,9 @@ pub struct HighlightSpanDto {
     pub start: usize,
     pub end: usize,
     pub token_type: String,
+    /// Colour hex string (e.g. "#FF6B6B"). Absent when theme information is unavailable.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub color: Option<String>,
 }
 
 // ── open_document ─────────────────────────────────────────────────
@@ -250,11 +265,9 @@ pub async fn get_document_content(document_id: String) -> Result<String, String>
 
 #[command]
 pub async fn highlight_document(
-    document_id: String,
-    start_line: usize,
-    count: usize,
+    request: HighlightRequest,
 ) -> Result<HighlightResponse, String> {
-    let path = std::path::PathBuf::from(&document_id);
+    let path = std::path::PathBuf::from(&request.document_id);
     let cached_arc = BUFFER_MANAGER
         .get_cached(&path)
         .await
@@ -276,6 +289,12 @@ pub async fn highlight_document(
     let full_text = document.text();
     let engine = HighlightEngine::new();
 
+    // ── Resolve theme colours ────────────────────────────────────
+    let theme_colors = match request.theme.as_deref() {
+        Some("light") => SemanticColors::light(),
+        _ => SemanticColors::dark(),
+    };
+
     let spans = cache::get_or_compute(
         &path,
         version,
@@ -289,8 +308,8 @@ pub async fn highlight_document(
     // ── map spans to requested line range ──
     use std::borrow::Cow;
     let line_count = full_text.lines().count();
-    let end_line = start_line.saturating_add(count).min(line_count);
-    let mut response_lines = Vec::with_capacity(end_line - start_line);
+    let end_line = request.start_line.saturating_add(request.count).min(line_count);
+    let mut response_lines = Vec::with_capacity(end_line - request.start_line);
 
     let mut line_offsets = Vec::with_capacity(line_count + 1);
     line_offsets.push(0usize);
@@ -300,7 +319,7 @@ pub async fn highlight_document(
         }
     }
 
-    for idx in start_line..end_line {
+    for idx in request.start_line..end_line {
         let line_start = *line_offsets.get(idx).unwrap_or(&full_text.len());
         let line_end = *line_offsets.get(idx + 1).unwrap_or(&full_text.len());
         let raw = &full_text[line_start..line_end];
@@ -317,10 +336,14 @@ pub async fn highlight_document(
             }
             let rel_start = (sp.start - line_start).max(0);
             let rel_end = (sp.end - line_start).min(line_end - line_start);
+            let token_type = highlight_tag_to_string(sp.highlight);
+            // Map the semantic highlight to a theme colour (hex string)
+            let color = tag_to_color(sp.highlight, &theme_colors).map(color_to_hex);
             line_spans.push(HighlightSpanDto {
                 start: rel_start,
                 end: rel_end,
-                token_type: highlight_tag_to_string(sp.highlight),
+                token_type,
+                color,
             });
         }
         line_spans.sort_by_key(|s| s.start);
@@ -358,4 +381,19 @@ fn highlight_tag_to_string(tag: Highlight) -> String {
         Highlight::Operator => "operator".to_string(),
         other => format!("{:?}", other),
     }
+}
+
+/// Convert a semantic `Highlight` into the corresponding theme colour.
+fn tag_to_color(tag: Highlight, colors: &SemanticColors) -> Option<Color> {
+    use zaroxi_lang_syntax::theme_map::SemanticTokenType;
+    let token_type = SemanticTokenType::from_highlight(tag);
+    Some(token_type.theme_color(colors))
+}
+
+/// Convert a `Color` to a hex string suitable for CSS.
+fn color_to_hex(c: Color) -> String {
+    let r = (c.r.clamp(0.0, 1.0) * 255.0) as u8;
+    let g = (c.g.clamp(0.0, 1.0) * 255.0) as u8;
+    let b = (c.b.clamp(0.0, 1.0) * 255.0) as u8;
+    format!("#{r:02x}{g:02x}{b:02x}")
 }
