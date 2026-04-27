@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { useTabsStore } from '@/features/tabs/store';
 import { LineNumberGutter } from './gutter/LineNumberGutter';
@@ -120,19 +120,19 @@ interface CodeEditorProps {
   contentTruncated?: boolean;
 }
 
-/** Maximum characters used for the legacy length‑check (kept for backward compat). */
 const TRUNCATE_CHARS = 50_000;
 
-/** Fast line‑counting (O(n), not used for large files where the gutter is hidden). */
-function fastLineCount(text: string): number {
-  let lines = 1;
-  const len = text.length;
-  let i = 0;
-  while (i < len) {
-    if (text.charCodeAt(i) === 10) lines++;
-    i++;
+/** Build an array of byte positions where each line starts (including newline). */
+function computeLineStarts(text: string): number[] {
+  const starts: number[] = [0];
+  let pos = 0;
+  while (pos < text.length) {
+    const next = text.indexOf('\n', pos);
+    if (next === -1) break;
+    starts.push(next + 1); // start of next line
+    pos = next + 1;
   }
-  return lines;
+  return starts;
 }
 
 export function CodeEditor({
@@ -153,25 +153,15 @@ export function CodeEditor({
 
   const largeFile = contentTruncated ?? (initialValue.length >= TRUNCATE_CHARS);
 
-  // Keep local value in sync with prop changes (e.g. when switching tabs)
   useEffect(() => {
     setValue(initialValue);
   }, [initialValue]);
 
   // ── Scroll & selection ───────────────────────────────────────────
-  const syncScroll = useCallback(() => {
-    const ta = textareaRef.current;
-    const hl = highlightLayerRef.current;
-    if (ta && hl) {
-      hl.scrollTop = ta.scrollTop;
-      hl.scrollLeft = ta.scrollLeft;
-    }
-    setScrollTop(ta?.scrollTop ?? 0);
-  }, []);
 
   const handleTextareaScroll = useCallback(() => {
-    syncScroll();
-  }, [syncScroll]);
+    setScrollTop(textareaRef.current?.scrollTop ?? 0);
+  }, []);
 
   const handleSelectionChange = useCallback(() => {
     const ta = textareaRef.current;
@@ -199,14 +189,18 @@ export function CodeEditor({
     [onChange, readOnly, filePath],
   );
 
-  // ── Visible range for highlight fetching ─────────────────────────
+  // ── Derived metrics ──────────────────────────────────────────────
+
   const lineHeight = GUTTER_CONFIG.LINE_HEIGHT;
+  const lineStarts = useMemo(() => computeLineStarts(value), [value]);
+  const totalLines = lineStarts.length;
+
+  // Visible range for syntax highlight fetching
   const containerHeight = containerRef.current?.clientHeight ?? 0;
   const visibleStartLine = Math.floor(scrollTop / lineHeight);
-  const visibleCount = Math.ceil((containerHeight + lineHeight) / lineHeight) * 2; // generous overscan
+  const visibleCount = Math.ceil((containerHeight + lineHeight) / lineHeight) * 2;
 
   const highlightsEnabled = !largeFile && !!filePath;
-
   const highlightedLines = useHighlight(
     filePath ?? null,
     visibleStartLine,
@@ -214,11 +208,9 @@ export function CodeEditor({
     highlightsEnabled,
   );
 
-  // ── Derived metrics (only needed when gutter is shown) ───────────
-  const totalLines = largeFile ? 0 : fastLineCount(value);
-  const gutterWidth = largeFile ? 0 : computeGutterWidth(totalLines);
+  // ── Gutter metrics ───────────────────────────────────────────────
 
-  // Large files are always read‑only (content is truncated on the backend)
+  const gutterWidth = largeFile ? 0 : computeGutterWidth(totalLines);
   const effectiveReadOnly = readOnly || largeFile;
 
   /* ---------- Layout ---------- */
@@ -241,11 +233,11 @@ export function CodeEditor({
       <div className="flex-1 flex flex-col overflow-hidden relative">
         {largeFile && (
           <div className="text-muted-foreground text-xs p-1 bg-muted/80 shrink-0">
-            File &gt; 100 MB – read‑only preview (first 50 000 characters shown)
+            File &gt; 5 MB – read‑only preview (first 50 000 characters shown)
           </div>
         )}
 
-        {/* Highlighted background layer */}
+        {/* Highlighted background layer – only visible lines are rendered */}
         {highlightsEnabled && (
           <div
             ref={highlightLayerRef}
@@ -259,15 +251,31 @@ export function CodeEditor({
               color: 'transparent',
             }}
           >
-            <div style={{ minWidth: '100%' }}>
-              {Array.from({ length: totalLines }).map((_, idx) => {
-                const hl = highlightedLines.find((l) => l.index === idx);
-                return (
-                  <div key={idx}>
-                    {hl ? renderSpans(hl.spans, hl.text) : idx < totalLines ? value.split('\n')[idx] ?? '' : ''}
-                  </div>
-                );
-              })}
+            <div style={{ height: totalLines * lineHeight, position: 'relative' }}>
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  transform: `translateY(${-visibleStartLine * lineHeight}px)`,
+                }}
+              >
+                {Array.from({ length: visibleCount }).map((_, i) => {
+                  const lineIdx = visibleStartLine + i;
+                  if (lineIdx >= totalLines) return null;
+                  const startByte = lineStarts[lineIdx];
+                  const endByte = lineStarts[lineIdx + 1] ?? value.length;
+                  let raw = value.slice(startByte, endByte);
+                  if (raw.endsWith('\n')) raw = raw.slice(0, -1);
+                  const hl = highlightedLines.find((l) => l.index === lineIdx);
+                  return (
+                    <div key={lineIdx}>
+                      {hl ? renderSpans(hl.spans, hl.text) : raw}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         )}
