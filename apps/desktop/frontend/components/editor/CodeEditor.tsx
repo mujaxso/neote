@@ -264,13 +264,12 @@ export function CodeEditor({
           <div
             ref={highlightLayerRef}
             aria-hidden="true"
-            className="absolute inset-0 overflow-hidden pointer-events-none font-mono text-sm whitespace-pre select-none"
+            className="absolute inset-0 overflow-hidden pointer-events-none font-mono text-sm whitespace-pre select-none text-editor-foreground"
             style={{
               lineHeight: `${lineHeight}px`,
               fontFamily: FONT_TOKENS.editor,
               whiteSpace: 'pre',
               overflowWrap: 'normal',
-              color: 'transparent',
             }}
           >
             <div
