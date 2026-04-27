@@ -8,7 +8,7 @@ import { FONT_TOKENS } from '@/lib/theme/font-tokens';
 import { invoke } from '@tauri-apps/api/core';
 
 /* ------------------------------------------------------------------ */
-/*  Custom hook: fetch full-file syntax highlights once per file     */
+/*  Custom hook: fetch full-file syntax highlights once per file       */
 /* ------------------------------------------------------------------ */
 interface HighlightSpan {
   start: number;
@@ -43,7 +43,6 @@ function useFullHighlight(
     let cancelled = false;
 
     async function fetch() {
-      console.log('[CodeEditor] fetching full highlights for', documentId);
       try {
         const res: HighlightResponse = await invoke('highlight_document', {
           request: {
@@ -70,49 +69,6 @@ function useFullHighlight(
 
   return lines;
 }
-
-/* ------------------------------------------------------------------ */
-/*  Token‑type → CSS class mapping (used as fallback when inline       */
-/*  colour is absent).  The mapping now covers every token name that   */
-/*  the backend may emit.                                              */
-/* ------------------------------------------------------------------ */
-const tokenStyleMap: Record<string, string> = {
-  // lower‑case keys match the backend highlight_tag_to_string output
-  keyword: 'text-keyword',
-  string: 'text-string',
-  comment: 'text-comment italic',
-  function: 'text-function',
-  type: 'text-type',
-  variable: 'text-variable',
-  constant: 'text-constant',
-  number: 'text-number',
-  operator: 'text-operator',
-  punctuation: 'text-punctuation',
-  // pascal‑case variants (older captures may arrive like this)
-  Keyword: 'text-keyword',
-  String: 'text-string',
-  Comment: 'text-comment italic',
-  Function: 'text-function',
-  Type: 'text-type',
-  Variable: 'text-variable',
-  Constant: 'text-constant',
-  Number: 'text-number',
-  Operator: 'text-operator',
-  Punctuation: 'text-punctuation',
-  // additional semantic tokens
-  Attribute: 'text-attribute',
-  attribute: 'text-attribute',
-  Property: 'text-property',
-  property: 'text-property',
-  Namespace: 'text-namespace',
-  namespace: 'text-namespace',
-  Tag: 'text-tag',
-  tag: 'text-tag',
-  Macro: 'text-macro',
-  macro: 'text-macro',
-  Plain: 'text-plain',
-  plain: 'text-plain',
-};
 
 /**
  * Merge overlapping / nested highlight spans into a non‑overlapping
@@ -182,12 +138,10 @@ function renderSpans(spans: HighlightSpan[], lineText: string) {
     if (sp.start > last) {
       segments.push(lineText.slice(last, sp.start));
     }
-    const tokenClass = tokenStyleMap[sp.token_type] ?? '';
     const key = `${sp.start}-${i}`;
     segments.push(
       <span
         key={key}
-        className={tokenClass}
         style={sp.color ? { color: sp.color } : undefined}
       >
         {lineText.slice(sp.start, sp.end)}
@@ -291,10 +245,21 @@ export function CodeEditor({
   const totalLines = lineStarts.length;
 
   const highlightsEnabled = !largeFile && !!filePath;
-  const highlightedLines = useFullHighlight(
+  const allHighlighted = useFullHighlight(
     filePath ?? null,
     highlightsEnabled,
     theme,
+  );
+
+  // Virtualise the overlay content so we never render thousands of DOM nodes.
+  const containerHeight = containerRef.current?.clientHeight ?? 0;
+  const visibleStartLine = Math.floor(scrollTop / lineHeight);
+  const visibleCount = Math.ceil((containerHeight + lineHeight) / lineHeight) * 2;
+  const visibleEndLine = Math.min(visibleStartLine + visibleCount, totalLines);
+
+  const visibleHighlighted = useMemo(
+    () => allHighlighted.filter((l) => l.index >= visibleStartLine && l.index < visibleEndLine),
+    [allHighlighted, visibleStartLine, visibleEndLine],
   );
 
   // Keep overlay scroll in sync with textarea
@@ -333,7 +298,6 @@ export function CodeEditor({
           </div>
         )}
 
-        {/* Highlight overlay – synced via its scrollTop/scrollLeft */}
         {highlightsEnabled && (
           <div
             ref={highlightLayerRef}
@@ -352,18 +316,11 @@ export function CodeEditor({
                 position: 'relative',
               }}
             >
-              {Array.from({ length: totalLines }).map((_, lineIdx) => {
-                const startByte = lineStarts[lineIdx];
-                const endByte = lineStarts[lineIdx + 1] ?? value.length;
-                let raw = value.slice(startByte, endByte);
-                if (raw.endsWith('\n')) raw = raw.slice(0, -1);
-                const hl = highlightedLines.find((l) => l.index === lineIdx);
-                return (
-                  <div key={lineIdx}>
-                    {hl ? renderSpans(hl.spans, hl.text) : raw}
-                  </div>
-                );
-              })}
+              {visibleHighlighted.map((hl) => (
+                <div key={hl.index}>
+                  {renderSpans(hl.spans, hl.text)}
+                </div>
+              ))}
             </div>
           </div>
         )}
