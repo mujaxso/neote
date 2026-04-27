@@ -14,7 +14,7 @@ use zaroxi_domain_editor::document_cache::BufferManager;
 use zaroxi_domain_editor::FileClass;
 use zaroxi_lang_syntax::language::LanguageId;
 use zaroxi_lang_syntax::parser::{ParserPool, SyntaxTree};
-use zaroxi_lang_syntax::highlight::{HighlightEngine, HighlightSpan};
+use zaroxi_lang_syntax::highlight::{HighlightEngine, HighlightSpan, Highlight};
 
 /// Global buffer manager instance shared across all commands.
 static BUFFER_MANAGER: once_cell::sync::Lazy<Arc<BufferManager>> =
@@ -380,8 +380,8 @@ pub async fn highlight_document(
 
         let mut line_spans: Vec<HighlightSpanDto> = Vec::new();
         for sp in &spans {
-            let span_start = sp.start_byte;
-            let span_end = sp.end_byte;
+            let span_start = sp.start;
+            let span_end = sp.end;
             if span_end <= line_start || span_start >= line_end {
                 continue;
             }
@@ -425,18 +425,18 @@ pub async fn get_styled_spans() -> Result<(), String> {
 // Helpers
 // ---------------------------------------------------------------------------
 
-fn highlight_tag_to_string(tag: tree_sitter::Highlight) -> String {
+fn highlight_tag_to_string(tag: Highlight) -> String {
     match tag {
-        tree_sitter::Highlight::Keyword => "keyword".to_string(),
-        tree_sitter::Highlight::String => "string".to_string(),
-        tree_sitter::Highlight::Comment => "comment".to_string(),
-        tree_sitter::Highlight::Function => "function".to_string(),
-        tree_sitter::Highlight::Type => "type".to_string(),
-        tree_sitter::Highlight::Variable => "variable".to_string(),
-        tree_sitter::Highlight::Constant => "constant".to_string(),
-        tree_sitter::Highlight::Number => "number".to_string(),
-        tree_sitter::Highlight::Operator => "operator".to_string(),
-        tree_sitter::Highlight::Punctuation => "punctuation".to_string(),
+        Highlight::Keyword => "keyword".to_string(),
+        Highlight::String => "string".to_string(),
+        Highlight::Comment => "comment".to_string(),
+        Highlight::Function => "function".to_string(),
+        Highlight::Type => "type".to_string(),
+        Highlight::Variable => "variable".to_string(),
+        Highlight::Constant => "constant".to_string(),
+        Highlight::Number => "number".to_string(),
+        Highlight::Operator => "operator".to_string(),
+        Highlight::Punctuation => "punctuation".to_string(),
         other => format!("{:?}", other),
     }
 }
