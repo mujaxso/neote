@@ -37,7 +37,8 @@ function fastLineCount(text: string): number {
  *
  * For normal/medium files a gutter with line numbers is shown.
  * For large files the gutter is hidden to avoid expensive computations,
- * but the full text is still editable via a textarea.
+ * and the content is a read‑only preview (editing the truncated text would
+ * corrupt the file).
  */
 export function CodeEditor({
   initialValue,
@@ -99,6 +100,9 @@ export function CodeEditor({
   const totalLines = largeFile ? 0 : fastLineCount(value);
   const gutterWidth = largeFile ? 0 : computeGutterWidth(totalLines);
 
+  // Large files are always read‑only (content is truncated on the backend)
+  const effectiveReadOnly = readOnly || largeFile;
+
   // ── Layout ────────────────────────────────────────────────────────
   return (
     <div ref={containerRef} className={cn('flex h-full', className)}>
@@ -120,7 +124,7 @@ export function CodeEditor({
       <div className="flex-1 flex flex-col overflow-hidden">
         {largeFile && (
           <div className="text-muted-foreground text-xs p-1 bg-muted/80 shrink-0">
-            Large file – editing may be slow
+            Large file – read‑only preview (first 50 000 characters shown)
           </div>
         )}
         <textarea
@@ -134,7 +138,7 @@ export function CodeEditor({
             wrap: 'off',
           }}
           value={value}
-          readOnly={readOnly}
+          readOnly={effectiveReadOnly}
           onChange={handleChange}
           onScroll={handleTextareaScroll}
           onSelect={handleSelectionChange}

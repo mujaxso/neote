@@ -68,30 +68,42 @@ pub struct EditRequest {
 
 /// Open a document and return its metadata.
 ///
-/// The returned `content` is the full rope text for every file class, even
-/// for large files – editing is allowed for all files.  The frontend uses
-/// `content_truncated` as a signal to suppress expensive decorations like
-/// the line‑number gutter, but the text itself is complete.
+/// The returned `content` is the full rope text for normal/medium files,
+/// and a truncated preview for large files.  Large files are always read‑only
+/// in the frontend to avoid memory exhaustion.
 #[command]
 pub async fn open_document(path: String) -> Result<OpenDocumentResponse, String> {
     let path_buf = std::path::PathBuf::from(&path);
 
-    let cached = BUFFER_MANAGER
+    let cached_arc = BUFFER_MANAGER
         .open_document(&path_buf, &zaroxi_ops_file::FileLoader)
         .await
         .map_err(|e| format!("Failed to open document: {}", e))?;
 
-    let document = &cached.document;
+    let guard = cached_arc.lock();
+    let document = &guard.document;
     let file_class = document.file_class();
     let content_truncated = file_class == FileClass::Large;
+    let is_read_only = content_truncated; // large files are read‑only in the UI
 
-    // Always include the full text so that editing is possible.
-    let content = document.text();
+    // Build the content string.  For large files we only send a
+    // truncated preview so that the Tauri IPC and the frontend do not
+    // receive gigabytes of data.
+    let content: String = if content_truncated {
+        document.text().chars().take(TRUNCATE_CHARS).collect()
+    } else {
+        document.text()
+    };
 
-    // For large files we keep the real line/char counts, because the
-    // gutter is disabled on the frontend when content_truncated is true.
-    let line_count = document.len_lines();
-    let char_count = document.len_chars();
+    // For large files the line/char counts reflect the truncated preview.
+    let (line_count, char_count) = if content_truncated {
+        let preview_lines = content.lines().count();
+        (preview_lines, content.len())
+    } else {
+        (document.len_lines(), document.len_chars())
+    };
+
+    let version = document.version();
 
     Ok(OpenDocumentResponse {
         document_id: path.clone(),
@@ -99,10 +111,10 @@ pub async fn open_document(path: String) -> Result<OpenDocumentResponse, String>
         line_count,
         char_count,
         file_class: format!("{:?}", file_class),
-        is_read_only: false,   // not enforced at the model level
+        is_read_only,
         content,
         content_truncated,
-        version: document.version(),
+        version,
     })
 }
 
@@ -112,12 +124,13 @@ pub async fn get_visible_lines(
     request: VisibleLinesRequest,
 ) -> Result<VisibleLinesResponse, String> {
     let path = std::path::PathBuf::from(&request.document_id);
-    let cached = BUFFER_MANAGER
+    let cached_arc = BUFFER_MANAGER
         .get_cached(&path)
         .await
         .ok_or_else(|| "Document not found in cache".to_string())?;
 
-    let document = &cached.document;
+    let guard = cached_arc.lock();
+    let document = &guard.document;
     let total_lines = document.len_lines();
     let mut lines = Vec::new();
 
@@ -137,16 +150,23 @@ pub async fn get_visible_lines(
 
 /// Apply an edit to a document.
 ///
-/// Large‑file reads are no longer blocked; editing is allowed for all files.
+/// Large‑file edits are refused because the frontend does not have the
+/// full content and the document is treated as read‑only.
 #[command]
 pub async fn apply_edit(request: EditRequest) -> Result<(), String> {
     let path = std::path::PathBuf::from(&request.document_id);
-    let cached = BUFFER_MANAGER
+    let cached_arc = BUFFER_MANAGER
         .get_cached(&path)
         .await
         .ok_or_else(|| "Document not found in cache".to_string())?;
 
-    let mut document = cached.document;
+    let mut guard = cached_arc.lock();
+    let document = &mut guard.document;
+
+    // Reject edits for read‑only documents (very large files)
+    if document.file_class().is_read_only() {
+        return Err("Document is read‑only (very large file)".to_string());
+    }
 
     // Convert byte positions to character positions
     let start_char = document.byte_to_char(request.start_byte);
@@ -169,7 +189,8 @@ pub async fn apply_edit(request: EditRequest) -> Result<(), String> {
         document.insert(delete_start, &request.new_text)?;
     }
 
-    // Update cache with the modified document
+    // Mark dirty via the cache (must release guard first)
+    drop(guard);
     BUFFER_MANAGER.mark_dirty(&path).await;
 
     Ok(())
@@ -179,13 +200,16 @@ pub async fn apply_edit(request: EditRequest) -> Result<(), String> {
 #[command]
 pub async fn save_document(document_id: String) -> Result<(), String> {
     let path = std::path::PathBuf::from(&document_id);
-    let cached = BUFFER_MANAGER
+    let cached_arc = BUFFER_MANAGER
         .get_cached(&path)
         .await
         .ok_or_else(|| "Document not found in cache".to_string())?;
 
-    let text = cached.document.text();
-    std::fs::write(&path, &text).map_err(|e| format!("Failed to save file: {}", e))?;
+    {
+        let guard = cached_arc.lock();
+        let text = guard.document.text();
+        std::fs::write(&path, &text).map_err(|e| format!("Failed to save file: {}", e))?;
+    }
 
     BUFFER_MANAGER.mark_clean(&path).await;
 
@@ -196,29 +220,30 @@ pub async fn save_document(document_id: String) -> Result<(), String> {
 #[command]
 pub async fn get_line_count(document_id: String) -> Result<usize, String> {
     let path = std::path::PathBuf::from(&document_id);
-    let cached = BUFFER_MANAGER
+    let cached_arc = BUFFER_MANAGER
         .get_cached(&path)
         .await
         .ok_or_else(|| "Document not found in cache".to_string())?;
 
-    Ok(cached.document.len_lines())
+    let guard = cached_arc.lock();
+    Ok(guard.document.len_lines())
 }
 
 /// Return the full text content of a document.
 #[command]
 pub async fn get_document_content(document_id: String) -> Result<String, String> {
     let path = std::path::PathBuf::from(&document_id);
-    let cached = BUFFER_MANAGER
+    let cached_arc = BUFFER_MANAGER
         .get_cached(&path)
         .await
         .ok_or_else(|| "Document not found in cache".to_string())?;
 
-    Ok(cached.document.text())
+    let guard = cached_arc.lock();
+    Ok(guard.document.text())
 }
 
 // ---------------------------------------------------------------------------
 // Temporary stub – exists only to satisfy the legacy handler registration.
-// Will be replaced with the real syntax‑highlighting command when it is layered.
 // ---------------------------------------------------------------------------
 #[command]
 pub async fn get_styled_spans() -> Result<(), String> {

@@ -1,20 +1,21 @@
-//! In-memory document cache for the editor.
+//! In‑memory document cache for the editor.
 //!
 //! This module provides a cache that stores loaded documents keyed by
 //! their canonical file path.  The cache is designed to be shared across
 //! multiple editor views so that switching tabs does not require re‑reading
 //! the file from disk or rebuilding the rope.
 //!
-//! **Large‑file policy**: documents of class `Large` never contain a rope;
-//! they are stored as `CachedDocument` with a `Document` that holds only a
-//! preview.  The cache treats them exactly like normal documents, enabling
-//! fast tab switches without re‑scanning.
+//! **Large‑file policy**: documents of class `Large` still hold a rope,
+//! but the frontend will receive a truncated preview and treat the file
+//! as read‑only.  The rope is never cloned after construction – we share
+//! an `Arc<Mutex<CachedDocument>>`.
 
 use crate::document::Document;
 use crate::thresholds::FileClass;
 use zaroxi_ops_file::file_loader::FileLoader;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use std::time::Instant;
 use parking_lot::Mutex;
 
@@ -70,7 +71,7 @@ impl CachedDocument {
         }
     }
 
-    /// Touch the last-access timestamp (called when the document is activated).
+    /// Touch the last‑access timestamp (called when the document is activated).
     pub fn touch(&mut self) {
         self.meta.last_access = Instant::now();
     }
@@ -92,14 +93,16 @@ impl CachedDocument {
 }
 
 // ---------------------------------------------------------------------------
-// DocumentCache – the central cache store
+// DocumentCache – central cache store (now stores Arc<Mutex<CachedDocument>>)
 // ---------------------------------------------------------------------------
 
-/// Thread-safe cache of open documents, keyed by canonical file path.
+/// Thread‑safe cache of open documents, keyed by canonical file path.
 #[derive(Debug)]
 pub struct DocumentCache {
-    /// The actual cache entries.
-    entries: HashMap<PathBuf, CachedDocument>,
+    /// The actual cache entries.  Each entry is guarded by a mutex so that
+    /// the document can be mutated (edit/mark dirty) while multiple
+    /// callers share a cheap `Arc` clone.
+    entries: HashMap<PathBuf, Arc<Mutex<CachedDocument>>>,
     /// Maximum number of entries before eviction kicks in (0 = unlimited).
     max_entries: usize,
 }
@@ -114,19 +117,24 @@ impl DocumentCache {
     }
 
     /// Insert or replace a cached document.
-    pub fn insert(&mut self, path: PathBuf, doc: CachedDocument) {
+    pub fn insert(&mut self, path: PathBuf, doc: CachedDocument) -> Arc<Mutex<CachedDocument>> {
         // If we are at capacity, evict the least recently used entry (unless it's dirty).
         if self.max_entries > 0 && self.entries.len() >= self.max_entries {
             self.evict_lru();
         }
-        self.entries.insert(path, doc);
+        let entry = Arc::new(Mutex::new(doc));
+        self.entries.insert(path, entry.clone());
+        entry
     }
 
-    /// Retrieve a cached document by path, touching its last-access time.
-    pub fn get(&mut self, path: &Path) -> Option<&mut CachedDocument> {
-        if let Some(entry) = self.entries.get_mut(path) {
-            entry.touch();
-            Some(entry)
+    /// Retrieve a cached document by path, touching its last‑access time.
+    /// Returns a clone of the `Arc` so the caller can lock it and read/mutate.
+    pub fn get(&mut self, path: &Path) -> Option<Arc<Mutex<CachedDocument>>> {
+        if let Some(entry) = self.entries.get(path) {
+            let mut guard = entry.lock();
+            guard.touch();
+            // Give the caller a clone of the Arc (cheap)
+            Some(Arc::clone(entry))
         } else {
             None
         }
@@ -138,7 +146,7 @@ impl DocumentCache {
     }
 
     /// Remove a document from the cache (e.g., when the tab is closed).
-    pub fn remove(&mut self, path: &Path) -> Option<CachedDocument> {
+    pub fn remove(&mut self, path: &Path) -> Option<Arc<Mutex<CachedDocument>>> {
         self.entries.remove(path)
     }
 
@@ -152,18 +160,19 @@ impl DocumentCache {
         self.entries.is_empty()
     }
 
-    /// Evict the least recently used non-dirty entry.
+    /// Evict the least recently used non‑dirty entry.
     fn evict_lru(&mut self) {
         let mut oldest: Option<PathBuf> = None;
         let mut oldest_time = std::time::Instant::now();
 
         for (path, entry) in &self.entries {
-            if entry.meta.is_dirty {
+            let guard = entry.lock();
+            if guard.meta.is_dirty {
                 // Never evict dirty documents.
                 continue;
             }
-            if entry.meta.last_access < oldest_time {
-                oldest_time = entry.meta.last_access;
+            if guard.meta.last_access < oldest_time {
+                oldest_time = guard.meta.last_access;
                 oldest = Some(path.clone());
             }
         }
@@ -175,13 +184,13 @@ impl DocumentCache {
 }
 
 // ---------------------------------------------------------------------------
-// BufferManager – high-level API for the editor commands
+// BufferManager – high‑level API for the editor commands
 // ---------------------------------------------------------------------------
 
 /// The global buffer manager that owns the document cache.
 ///
 /// This is the single point of contact for the Tauri commands and the frontend
-/// service.  It ensures that opening a file reuses an already-cached document
+/// service.  It ensures that opening a file reuses an already‑cached document
 /// when possible, and that dirty documents are never silently replaced.
 #[derive(Debug)]
 pub struct BufferManager {
@@ -203,11 +212,14 @@ impl BufferManager {
     ///
     /// If the file has changed on disk, the cache is updated (unless the cached
     /// version is dirty, in which case the caller must decide how to reconcile).
+    ///
+    /// Returns an `Arc<Mutex<CachedDocument>>`; the caller must lock the
+    /// mutex to access the inner data.
     pub async fn open_document(
         &self,
         path: &Path,
         _file_loader: &FileLoader,
-    ) -> Result<CachedDocument, String> {
+    ) -> Result<Arc<Mutex<CachedDocument>>, String> {
         let canonical = path
             .canonicalize()
             .map_err(|e| format!("Cannot canonicalize path: {}", e))?;
@@ -215,11 +227,12 @@ impl BufferManager {
         // Check cache first.
         {
             let mut cache = self.cache.lock();
-            if let Some(cached) = cache.get(&canonical) {
+            if let Some(entry) = cache.get(&canonical) {
+                let guard = entry.lock();
                 // If the cached document is dirty, we must NOT replace it with
                 // stale disk content.  Return the dirty version.
-                if cached.meta.is_dirty {
-                    return Ok(cached.clone());
+                if guard.meta.is_dirty {
+                    return Ok(Arc::clone(&entry));
                 }
 
                 // Check if the file on disk has changed.
@@ -228,9 +241,9 @@ impl BufferManager {
                 let current_mtime = mtime_secs(&current_meta);
                 let current_size = current_meta.len();
 
-                if cached.meta.mtime_secs == current_mtime && cached.meta.file_size == current_size {
+                if guard.meta.mtime_secs == current_mtime && guard.meta.file_size == current_size {
                     // File unchanged – reuse cached version.
-                    return Ok(cached.clone());
+                    return Ok(Arc::clone(&entry));
                 }
                 // File changed on disk – fall through to reload.
             }
@@ -240,7 +253,7 @@ impl BufferManager {
         let (file_source, size) = FileLoader::load_file(path.to_str().unwrap_or(""))
             .map_err(|e| format!("Failed to load file: {}", e))?;
 
-        // For large files we delegate creation to from_mmap (which never builds a rope).
+        // For large files we delegate creation to from_mmap.
         let document = match &file_source {
             zaroxi_ops_file::file_loader::FileSource::Mmap(mmap) => {
                 Document::from_mmap(mmap, canonical.to_string_lossy().to_string(), size)
@@ -257,21 +270,21 @@ impl BufferManager {
 
         let cached = CachedDocument::new(document, size, mtime);
 
-        // Store in cache.
-        {
+        // Store in cache and return a shared reference.
+        let entry = {
             let mut cache = self.cache.lock();
-            cache.insert(canonical.clone(), cached.clone());
-        }
+            cache.insert(canonical.clone(), cached)
+        };
 
-        Ok(cached)
+        Ok(entry)
     }
 
     /// Retrieve a cached document without any disk I/O.
     /// Returns `None` if the document is not in the cache.
-    pub async fn get_cached(&self, path: &Path) -> Option<CachedDocument> {
+    pub async fn get_cached(&self, path: &Path) -> Option<Arc<Mutex<CachedDocument>>> {
         let canonical = path.canonicalize().ok()?;
         let mut cache = self.cache.lock();
-        cache.get(&canonical).map(|c: &mut CachedDocument| c.clone())
+        cache.get(&canonical)
     }
 
     /// Mark a document as dirty (unsaved changes).
@@ -280,8 +293,9 @@ impl BufferManager {
         if let Some(canonical) = canonical {
             let mut cache = self.cache.lock();
             if let Some(entry) = cache.get(&canonical) {
-                entry.meta.is_dirty = true;
-                entry.meta.version += 1;
+                let mut guard = entry.lock();
+                guard.meta.is_dirty = true;
+                guard.meta.version += 1;
             }
         }
     }
@@ -292,8 +306,9 @@ impl BufferManager {
         if let Some(canonical) = canonical {
             let mut cache = self.cache.lock();
             if let Some(entry) = cache.get(&canonical) {
-                entry.meta.is_dirty = false;
-                entry.meta.version += 1;
+                let mut guard = entry.lock();
+                guard.meta.is_dirty = false;
+                guard.meta.version += 1;
             }
         }
     }
@@ -326,15 +341,4 @@ fn mtime_secs(metadata: &std::fs::Metadata) -> u64 {
         .and_then(|t| t.duration_since(UNIX_EPOCH).ok())
         .map(|d| d.as_secs())
         .unwrap_or(0)
-}
-
-// We need a way to deep-clone a CachedDocument for returning from the cache.
-// Since Document contains a Rope (which is Clone), we can implement Clone.
-impl Clone for CachedDocument {
-    fn clone(&self) -> Self {
-        Self {
-            meta: self.meta.clone(),
-            document: self.document.clone(),
-        }
-    }
 }
