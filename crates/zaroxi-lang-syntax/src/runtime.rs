@@ -27,7 +27,6 @@ impl Runtime {
             // Fallback to a placeholder path; errors will be reported when trying to load.
             PathBuf::from("./runtime/treesitter")
         });
-        eprintln!("DEBUG: Runtime root path: {:?}", root);
         let runtime = Self { root };
 
         // Try to fix nested structure if it exists
@@ -51,17 +50,14 @@ impl Runtime {
                         // Found workspace root, look for crates/zaroxi-lang-syntax/runtime/treesitter
                         let candidate = current.join("crates/zaroxi-lang-syntax/runtime/treesitter");
                         if candidate.is_dir() {
-                            eprintln!("DEBUG: locate_root: found via workspace root/crates/zaroxi-lang-syntax/runtime/treesitter: {:?}", candidate);
                             return Some(candidate);
                         }
                         let runtime_dir = current.join("crates/zaroxi-lang-syntax/runtime");
                         if runtime_dir.is_dir() {
                             let ts_dir = runtime_dir.join("treesitter");
                             if ts_dir.is_dir() {
-                                eprintln!("DEBUG: locate_root: found via workspace root/crates/zaroxi-lang-syntax/runtime/treesitter: {:?}", ts_dir);
                                 return Some(ts_dir);
                             }
-                            eprintln!("DEBUG: locate_root: found via workspace root/crates/zaroxi-lang-syntax/runtime: {:?}", runtime_dir);
                             return Some(runtime_dir);
                         }
                         break;
@@ -75,7 +71,6 @@ impl Runtime {
         if let Ok(env_path) = env::var("ZAROXI_STUDIO_RUNTIME") {
             let p = PathBuf::from(env_path);
             if p.is_dir() {
-                eprintln!("DEBUG: locate_root: found via ZAROXI_STUDIO_RUNTIME: {:?}", p);
                 return Some(p);
             }
         }
@@ -84,7 +79,6 @@ impl Runtime {
         if let Ok(env_path) = env::var("QYZER_STUDIO_RUNTIME") {
             let p = PathBuf::from(env_path);
             if p.is_dir() {
-                eprintln!("DEBUG: locate_root: found via QYZER_STUDIO_RUNTIME: {:?}", p);
                 return Some(p);
             }
         }
@@ -93,7 +87,6 @@ impl Runtime {
         if let Ok(env_path) = env::var("NEOTE_RUNTIME") {
             let p = PathBuf::from(env_path);
             if p.is_dir() {
-                eprintln!("DEBUG: locate_root: found via NEOTE_RUNTIME: {:?}", p);
                 return Some(p);
             }
         }
@@ -101,22 +94,15 @@ impl Runtime {
         // 4. Check for the correct structure: look for runtime/treesitter directory
         // First, try current working directory
         if let Ok(cwd) = env::current_dir() {
-            eprintln!("DEBUG: locate_root: checking cwd: {:?}", cwd);
             // Check for runtime/treesitter directly
             let candidate = cwd.join("runtime/treesitter");
             if candidate.is_dir() {
-                eprintln!("DEBUG: locate_root: found via cwd/runtime/treesitter: {:?}", candidate);
                 return Some(candidate);
             }
 
             // Check for nested runtime/treesitter/runtime/treesitter (incorrect structure)
             let nested_candidate = candidate.join("runtime/treesitter");
             if nested_candidate.is_dir() {
-                // This is the incorrect nested structure, use the parent instead
-                eprintln!(
-                    "WARNING: Found nested runtime directory at {:?}. Using parent directory {:?} instead.",
-                    nested_candidate, candidate
-                );
                 return Some(candidate);
             }
 
@@ -125,7 +111,6 @@ impl Runtime {
             while current.parent().is_some() {
                 let candidate = current.join("runtime/treesitter");
                 if candidate.is_dir() {
-                    eprintln!("DEBUG: locate_root: found by walking up from cwd: {:?}", candidate);
                     return Some(candidate);
                 }
                 current = current.parent().unwrap().to_path_buf();
@@ -134,12 +119,10 @@ impl Runtime {
 
         // 5. Sibling to executable (development mode)
         if let Ok(exe_path) = env::current_exe() {
-            eprintln!("DEBUG: locate_root: checking exe path: {:?}", exe_path);
             if let Some(exe_dir) = exe_path.parent() {
                 // Try development layout: ../runtime/treesitter
                 let candidate = exe_dir.join("../runtime/treesitter");
                 if candidate.is_dir() {
-                    eprintln!("DEBUG: locate_root: found via exe/../runtime/treesitter: {:?}", candidate);
                     return Some(candidate);
                 }
 
@@ -148,7 +131,6 @@ impl Runtime {
                 while current.parent().is_some() {
                     let candidate = current.join("runtime/treesitter");
                     if candidate.is_dir() {
-                        eprintln!("DEBUG: locate_root: found by walking up from exe: {:?}", candidate);
                         return Some(candidate);
                     }
                     current = current.parent().unwrap().to_path_buf();
@@ -167,7 +149,6 @@ impl Runtime {
                     // Found project root, look for runtime/treesitter relative to it
                     let candidate = current.join("runtime/treesitter");
                     if candidate.is_dir() {
-                        eprintln!("DEBUG: locate_root: found via project root: {:?}", candidate);
                         return Some(candidate);
                     }
                     // Also try just "runtime" directory
@@ -176,11 +157,9 @@ impl Runtime {
                         // Check if runtime contains treesitter subdirectory
                         let ts_dir = runtime_dir.join("treesitter");
                         if ts_dir.is_dir() {
-                            eprintln!("DEBUG: locate_root: found via project root/runtime/treesitter: {:?}", ts_dir);
                             return Some(ts_dir);
                         }
                         // If runtime exists but no treesitter subdir, use runtime itself
-                        eprintln!("DEBUG: locate_root: found via project root/runtime: {:?}", runtime_dir);
                         return Some(runtime_dir);
                     }
                     break;
@@ -193,14 +172,12 @@ impl Runtime {
         if let Ok(cwd) = env::current_dir() {
             let runtime_dir = cwd.join("runtime");
             if runtime_dir.is_dir() {
-                eprintln!("DEBUG: locate_root: found via cwd/runtime: {:?}", runtime_dir);
                 return Some(runtime_dir);
             }
         }
 
         // 8. Try to find runtime directory relative to the CARGO_MANIFEST_DIR
         if let Ok(manifest_dir) = env::var("CARGO_MANIFEST_DIR") {
-            eprintln!("DEBUG: locate_root: checking CARGO_MANIFEST_DIR: {:?}", manifest_dir);
             let manifest_path = PathBuf::from(manifest_dir);
             // Walk up to find workspace root
             let mut current = manifest_path.clone();
@@ -210,17 +187,14 @@ impl Runtime {
                     // Found workspace root, look for runtime/treesitter
                     let candidate = current.join("runtime/treesitter");
                     if candidate.is_dir() {
-                        eprintln!("DEBUG: locate_root: found via CARGO_MANIFEST_DIR: {:?}", candidate);
                         return Some(candidate);
                     }
                     let runtime_dir = current.join("runtime");
                     if runtime_dir.is_dir() {
                         let ts_dir = runtime_dir.join("treesitter");
                         if ts_dir.is_dir() {
-                            eprintln!("DEBUG: locate_root: found via CARGO_MANIFEST_DIR/runtime/treesitter: {:?}", ts_dir);
                             return Some(ts_dir);
                         }
-                        eprintln!("DEBUG: locate_root: found via CARGO_MANIFEST_DIR/runtime: {:?}", runtime_dir);
                         return Some(runtime_dir);
                     }
                     break;
@@ -236,7 +210,6 @@ impl Runtime {
             // Check if runtime/treesitter exists directly in the crate directory
             let candidate = manifest_path.join("runtime/treesitter");
             if candidate.is_dir() {
-                eprintln!("DEBUG: locate_root: found via crate dir (fallback): {:?}", candidate);
                 return Some(candidate);
             }
             // Check if runtime exists directly in the crate directory
@@ -244,24 +217,19 @@ impl Runtime {
             if runtime_dir.is_dir() {
                 let ts_dir = runtime_dir.join("treesitter");
                 if ts_dir.is_dir() {
-                    eprintln!("DEBUG: locate_root: found via crate dir/runtime/treesitter (fallback): {:?}", ts_dir);
                     return Some(ts_dir);
                 }
-                eprintln!("DEBUG: locate_root: found via crate dir/runtime (fallback): {:?}", runtime_dir);
                 return Some(runtime_dir);
             }
         }
 
-        eprintln!("DEBUG: locate_root: could not find runtime directory");
         None
     }
 
     /// Get the path to the directory containing grammar shared libraries
     /// (flat directory, no platform subdirectory).
     pub fn grammar_dir(&self) -> PathBuf {
-        let dir = self.root.join("grammars");
-        eprintln!("DEBUG: grammar_dir: {:?}", dir);
-        dir
+        self.root.join("grammars")
     }
 
     /// Get the path to the language metadata and queries directory for a language.
@@ -295,9 +263,7 @@ impl Runtime {
 
         // First try the flat grammars directory
         let flat_path = self.root.join("grammars").join(&lib_name);
-        eprintln!("DEBUG: grammar_library_path flat: {}", flat_path.display());
         if flat_path.exists() {
-            eprintln!("DEBUG: using flat grammar path");
             return flat_path;
         }
 
@@ -305,9 +271,7 @@ impl Runtime {
         let target = env::consts::ARCH;
         let os = env::consts::OS;
         let subdir = format!("{}-{}", os, target);
-        let platform_path = self.root.join("grammars").join(&subdir).join(&lib_name);
-        eprintln!("DEBUG: grammar_library_path platform: {}", platform_path.display());
-        platform_path
+        self.root.join("grammars").join(&subdir).join(&lib_name)
     }
 
     /// Load a Tree-sitter language from a shared library in the runtime directory.
@@ -373,8 +337,6 @@ impl Runtime {
     pub fn fix_nested_structure(&self) -> std::io::Result<()> {
         let nested_path = self.root.join("runtime/treesitter");
         if nested_path.is_dir() {
-            eprintln!("Found nested runtime directory at {:?}. Attempting to fix...", nested_path);
-
             // Move contents from nested to parent
             let grammars_nested = nested_path.join("grammars");
             let languages_nested = nested_path.join("languages");
@@ -400,7 +362,6 @@ impl Runtime {
 
             // Try to remove the now-empty nested directory
             let _ = std::fs::remove_dir_all(&nested_path);
-            eprintln!("Fixed nested runtime structure.");
         }
         Ok(())
     }

@@ -8,14 +8,12 @@ import { FONT_TOKENS } from '@/lib/theme/font-tokens';
 import { invoke } from '@tauri-apps/api/core';
 
 /* ------------------------------------------------------------------ */
-/*  Custom hook: fetch syntax highlights for the current viewport     */
-/*  Accepts an optional `theme` to request theme‑aware colours.       */
+/*  Custom hook: fetch full-file syntax highlights once per file     */
 /* ------------------------------------------------------------------ */
 interface HighlightSpan {
   start: number;
   end: number;
   token_type: string;
-  /** optional hex colour string, e.g. "#FF6B6B" */
   color?: string;
 }
 interface HighlightLine {
@@ -27,17 +25,17 @@ interface HighlightResponse {
   lines: HighlightLine[];
 }
 
-function useHighlight(
+const FULL_LINES_LIMIT = 100_000;
+
+function useFullHighlight(
   documentId: string | null,
-  startLine: number,
-  count: number,
   enabled: boolean,
   theme?: 'dark' | 'light',
 ) {
   const [lines, setLines] = useState<HighlightLine[]>([]);
 
   useEffect(() => {
-    if (!documentId || !enabled || count === 0) {
+    if (!documentId || !enabled) {
       setLines([]);
       return;
     }
@@ -45,13 +43,13 @@ function useHighlight(
     let cancelled = false;
 
     async function fetch() {
+      console.log('[CodeEditor] fetching full highlights for', documentId);
       try {
-        // IMPORTANT: Tauri command expects a single `request` struct with camelCase keys
         const res: HighlightResponse = await invoke('highlight_document', {
           request: {
             documentId,
-            startLine,
-            count,
+            startLine: 0,
+            count: FULL_LINES_LIMIT,
             theme: theme ?? 'dark',
           },
         });
@@ -59,7 +57,7 @@ function useHighlight(
           setLines(res.lines);
         }
       } catch (err) {
-        console.warn('highlight_document failed:', err);
+        console.warn('full highlight failed:', err);
         if (!cancelled) setLines([]);
       }
     }
@@ -68,7 +66,7 @@ function useHighlight(
     return () => {
       cancelled = true;
     };
-  }, [documentId, startLine, count, enabled, theme]);
+  }, [documentId, enabled, theme]);
 
   return lines;
 }
@@ -95,12 +93,11 @@ const tokenStyleMap: Record<string, string> = {
  * compete for the same character.
  */
 function mergeSpans(spans: HighlightSpan[], lineLen: number): HighlightSpan[] {
-  if (spans.length === 0) return [];
+  if (spans.length === 0 || lineLen === 0) return [];
 
   // Sort shortest → longest (innermost first)
   const sorted = [...spans].sort((a, b) => (a.end - a.start) - (b.end - b.start));
 
-  // For each character we record which token should be used.
   const charTokens: Array<{ tokenType: string; color?: string } | null> =
     new Array(lineLen).fill(null);
 
@@ -158,9 +155,8 @@ function renderSpans(spans: HighlightSpan[], lineText: string) {
     if (sp.start > last) {
       segments.push(lineText.slice(last, sp.start));
     }
-    // Rely on the inline color from the backend; fall back to CSS class only as a safety net.
     const tokenClass = tokenStyleMap[sp.token_type] ?? '';
-    const key = `${sp.start}-${i}`; // unique per span
+    const key = `${sp.start}-${i}`;
     segments.push(
       <span
         key={key}
@@ -190,20 +186,18 @@ interface CodeEditorProps {
   readOnly?: boolean;
   className?: string;
   contentTruncated?: boolean;
-  /** The active colour theme for syntax highlighting. */
   theme?: 'dark' | 'light';
 }
 
 const TRUNCATE_CHARS = 50_000;
 
-/** Build an array of byte positions where each line starts (including newline). */
 function computeLineStarts(text: string): number[] {
   const starts: number[] = [0];
   let pos = 0;
   while (pos < text.length) {
     const next = text.indexOf('\n', pos);
     if (next === -1) break;
-    starts.push(next + 1); // start of next line
+    starts.push(next + 1);
     pos = next + 1;
   }
   return starts;
@@ -218,12 +212,12 @@ export function CodeEditor({
   contentTruncated,
   theme = 'dark',
 }: CodeEditorProps) {
-  // ── Local state ──────────────────────────────────────────────────
   const [value, setValue] = useState(initialValue);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const highlightLayerRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [scrollTop, setScrollTop] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
   const [cursorLine, setCursorLine] = useState(1);
 
   const largeFile = contentTruncated ?? (initialValue.length >= TRUNCATE_CHARS);
@@ -232,10 +226,11 @@ export function CodeEditor({
     setValue(initialValue);
   }, [initialValue]);
 
-  // ── Scroll & selection ───────────────────────────────────────────
-
   const handleTextareaScroll = useCallback(() => {
-    setScrollTop(textareaRef.current?.scrollTop ?? 0);
+    const ta = textareaRef.current;
+    if (!ta) return;
+    setScrollTop(ta.scrollTop);
+    setScrollLeft(ta.scrollLeft);
   }, []);
 
   const handleSelectionChange = useCallback(() => {
@@ -264,35 +259,31 @@ export function CodeEditor({
     [onChange, readOnly, filePath],
   );
 
-  // ── Derived metrics ──────────────────────────────────────────────
-
   const lineHeight = GUTTER_CONFIG.LINE_HEIGHT;
   const lineStarts = useMemo(() => computeLineStarts(value), [value]);
   const totalLines = lineStarts.length;
 
-  // Visible range for syntax highlight fetching
-  const containerHeight = containerRef.current?.clientHeight ?? 0;
-  const visibleStartLine = Math.floor(scrollTop / lineHeight);
-  const visibleCount = Math.ceil((containerHeight + lineHeight) / lineHeight) * 2;
-
   const highlightsEnabled = !largeFile && !!filePath;
-  const highlightedLines = useHighlight(
+  const highlightedLines = useFullHighlight(
     filePath ?? null,
-    visibleStartLine,
-    visibleCount,
     highlightsEnabled,
     theme,
   );
 
-  // ── Gutter metrics ───────────────────────────────────────────────
+  // Keep overlay scroll in sync with textarea
+  useEffect(() => {
+    const overlay = highlightLayerRef.current;
+    if (overlay && highlightsEnabled) {
+      overlay.scrollTop = scrollTop;
+      overlay.scrollLeft = scrollLeft;
+    }
+  }, [scrollTop, scrollLeft, highlightsEnabled]);
 
   const gutterWidth = largeFile ? 0 : computeGutterWidth(totalLines);
   const effectiveReadOnly = readOnly || largeFile;
 
-  /* ---------- Layout ---------- */
   return (
     <div ref={containerRef} className={cn('flex h-full', className)}>
-      {/* Gutter – disabled for large files */}
       {!largeFile && (
         <div
           className="shrink-0 relative overflow-hidden"
@@ -303,12 +294,11 @@ export function CodeEditor({
             cursorLine={cursorLine}
             lineHeight={lineHeight}
             scrollTop={scrollTop}
-            containerHeight={containerHeight}
+            containerHeight={containerRef.current?.clientHeight ?? 0}
           />
         </div>
       )}
 
-      {/* Scrollable text area with syntax overlay */}
       <div className="flex-1 flex flex-col overflow-hidden relative">
         {largeFile && (
           <div className="text-muted-foreground text-xs p-1 bg-muted/80 shrink-0">
@@ -316,7 +306,7 @@ export function CodeEditor({
           </div>
         )}
 
-        {/* Highlighted background layer – only visible lines are rendered */}
+        {/* Highlight overlay – synced via its scrollTop/scrollLeft */}
         {highlightsEnabled && (
           <div
             ref={highlightLayerRef}
@@ -335,37 +325,22 @@ export function CodeEditor({
                 position: 'relative',
               }}
             >
-              <div
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  transform: `translateY(${-visibleStartLine * lineHeight}px)`,
-                }}
-              >
-                {Array.from({ length: visibleCount }).map((_, i) => {
-                  const lineIdx = visibleStartLine + i;
-                  if (lineIdx >= totalLines) return null;
-                  const startByte = lineStarts[lineIdx];
-                  const endByte =
-                    lineStarts[lineIdx + 1] ?? value.length;
-                  let raw = value.slice(startByte, endByte);
-                  if (raw.endsWith('\n')) raw = raw.slice(0, -1);
-                  const hl = highlightedLines.find((l) => l.index === lineIdx);
-                  return (
-                    <div key={lineIdx}>
-                      {hl ? renderSpans(hl.spans, hl.text) : raw}
-                    </div>
-                  );
-                })}
-              </div>
+              {Array.from({ length: totalLines }).map((_, lineIdx) => {
+                const startByte = lineStarts[lineIdx];
+                const endByte = lineStarts[lineIdx + 1] ?? value.length;
+                let raw = value.slice(startByte, endByte);
+                if (raw.endsWith('\n')) raw = raw.slice(0, -1);
+                const hl = highlightedLines.find((l) => l.index === lineIdx);
+                return (
+                  <div key={lineIdx}>
+                    {hl ? renderSpans(hl.spans, hl.text) : raw}
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
 
-        {/* Editable textarea – text is transparent when highlights are enabled so the
-            syntax layer shows through.  The caret remains visible via caretColor. */}
         <textarea
           ref={textareaRef}
           className="flex-1 resize-none outline-none bg-transparent font-mono text-sm p-0 overflow-auto scrollbar-none relative z-10"
