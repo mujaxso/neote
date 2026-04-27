@@ -26,8 +26,8 @@ impl FileClass {
 /// Maximum bytes for a normal file (1 MiB).
 pub const NORMAL_BYTE_LIMIT: u64 = 1_000_000;
 
-/// Maximum bytes for a medium file (10 MiB).
-pub const MEDIUM_BYTE_LIMIT: u64 = 10_000_000;
+/// Maximum bytes for a medium file (100 MiB).
+pub const MEDIUM_BYTE_LIMIT: u64 = 100_000_000;
 
 /// Maximum lines for a normal file.
 pub const NORMAL_LINE_LIMIT: usize = 10_000;

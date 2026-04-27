@@ -198,10 +198,10 @@ pub struct BufferManager {
 }
 
 impl BufferManager {
-    /// Create a new buffer manager with a default cache size (unlimited for now).
+    /// Create a new buffer manager with a cache that holds at most 8 entries.
     pub fn new() -> Self {
         Self {
-            cache: Mutex::new(DocumentCache::new(0)),
+            cache: Mutex::new(DocumentCache::new(8)),
         }
     }
 
