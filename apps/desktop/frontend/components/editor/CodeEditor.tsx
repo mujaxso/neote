@@ -118,8 +118,11 @@ function mergeSpans(spans: HighlightSpan[], lineLen: number): HighlightSpan[] {
   return merged;
 }
 
+// Guard against overly long lines that would blow the allocations.
+const MAX_LINE_LEN = 5_000;
+
 function renderSpans(spans: HighlightSpan[], lineText: string) {
-  if (spans.length === 0) {
+  if (spans.length === 0 || lineText.length > MAX_LINE_LEN) {
     return lineText;
   }
 
@@ -164,6 +167,7 @@ interface CodeEditorProps {
   readOnly?: boolean;
   className?: string;
   contentTruncated?: boolean;
+  /** The active colour theme for syntax highlighting. */
   theme?: 'dark' | 'light';
 }
 
@@ -259,15 +263,6 @@ export function CodeEditor({
     [allHighlighted, visibleStartLine, visibleEndLine],
   );
 
-  // Sync overlay scroll position to match the textarea.
-  useEffect(() => {
-    const overlay = highlightLayerRef.current;
-    if (overlay && highlightsEnabled) {
-      overlay.scrollTop = scrollTop;
-      overlay.scrollLeft = scrollLeft;
-    }
-  }, [scrollTop, scrollLeft, highlightsEnabled]);
-
   const gutterWidth = largeFile ? 0 : computeGutterWidth(totalLines);
   const effectiveReadOnly = readOnly || largeFile;
 
@@ -295,34 +290,33 @@ export function CodeEditor({
           </div>
         )}
 
-        {/* Highlight overlay – absolutely positioned over the textarea area
-            with explicit overflow‑scroll (hidden scrollbar) so that programmatic
-            scrollTop/scrollLeft actually displays the contents. */}
+        {/* Highlight overlay – absolutely positioned, no scrollbar, synced via transform */}
         {highlightsEnabled && (
           <div
             ref={highlightLayerRef}
             aria-hidden="true"
-            className="absolute inset-0 pointer-events-none font-mono text-sm whitespace-pre select-none text-editor-foreground"
+            className="absolute inset-0 overflow-hidden pointer-events-none font-mono text-sm select-none text-editor-foreground"
             style={{
               lineHeight: `${lineHeight}px`,
               fontFamily: FONT_TOKENS.editor,
               whiteSpace: 'pre',
               overflowWrap: 'normal',
-              overflow: 'scroll',
-              scrollbarWidth: 'none', // Firefox
-              msOverflowStyle: 'none', // IE/Edge
             }}
           >
-            {/* Total height placeholder that creates a scrollable area equal to the textarea */}
-            <div style={{ height: totalLines * lineHeight, position: 'relative' }}>
-              {/* Only render the visible lines, shifted to their correct position */}
+            <div
+              style={{
+                height: totalLines * lineHeight,
+                position: 'relative',
+              }}
+            >
               <div
                 style={{
                   position: 'absolute',
                   top: 0,
                   left: 0,
-                  width: '100%',
-                  transform: `translateY(${visibleStartLine * lineHeight}px)`,
+                  transform: `translate3d(${-scrollLeft}px, ${visibleStartLine * lineHeight}px, 0)`,
+                  whiteSpace: 'pre',
+                  minWidth: '100%',
                 }}
               >
                 {visibleHighlighted.map((hl) => (
@@ -332,23 +326,20 @@ export function CodeEditor({
                 ))}
               </div>
             </div>
-            {/* Hide scrollbar chrome for WebKit browsers */}
-            <style>{`
-              ::-webkit-scrollbar { display: none; }
-            `}</style>
           </div>
         )}
 
         {/* Editable textarea – text is transparent so the highlight layer shows through */}
         <textarea
           ref={textareaRef}
-          className="flex-1 resize-none outline-none bg-transparent font-mono text-sm p-0 overflow-auto scrollbar-none relative z-10"
+          className="flex-1 resize-none outline-none bg-transparent font-mono text-sm p-0 relative z-10 scroll-hidden"
           style={{
             lineHeight: `${lineHeight}px`,
             fontFamily: FONT_TOKENS.editor,
             whiteSpace: 'pre',
             overflowWrap: 'normal',
-            wrap: 'off',
+            overflowY: 'auto',
+            overflowX: 'auto',
             color: highlightsEnabled ? 'transparent' : undefined,
             caretColor: highlightsEnabled
               ? 'var(--editor-cursor-color, #E2E8F0)'
@@ -367,6 +358,15 @@ export function CodeEditor({
           autoCorrect="off"
         />
       </div>
+
+      {/* Hide scrollbar chrome on the textarea */}
+      <style>{`
+        .scroll-hidden::-webkit-scrollbar { display: none; }
+        .scroll-hidden {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+      `}</style>
     </div>
   );
 }
