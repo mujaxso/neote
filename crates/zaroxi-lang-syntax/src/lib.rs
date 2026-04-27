@@ -71,8 +71,6 @@ mod tests {
     fn test_markdown_highlight_captures() {
         use crate::highlight::map_capture_name;
 
-        // Test that Markdown-specific captures map to appropriate Highlight variants
-        // Based on tree-sitter-markdown-inline grammar
         assert_eq!(map_capture_name("emphasis"), Highlight::Comment);
         assert_eq!(map_capture_name("strong_emphasis"), Highlight::Keyword);
         assert_eq!(map_capture_name("code_span"), Highlight::Constant);
@@ -96,14 +94,12 @@ mod tests {
         assert_eq!(map_capture_name("escape"), Highlight::String);
         assert_eq!(map_capture_name("latex"), Highlight::Constant);
 
-        // Test fallback captures for compatibility
         assert_eq!(map_capture_name("heading"), Highlight::Type);
         assert_eq!(map_capture_name("link"), Highlight::Variable);
         assert_eq!(map_capture_name("blockquote"), Highlight::Comment);
         assert_eq!(map_capture_name("list"), Highlight::Property);
         assert_eq!(map_capture_name("thematic_break"), Highlight::Operator);
 
-        // Test that programming language captures still work
         assert_eq!(map_capture_name("comment"), Highlight::Comment);
         assert_eq!(map_capture_name("string"), Highlight::String);
         assert_eq!(map_capture_name("keyword"), Highlight::Keyword);
@@ -114,12 +110,9 @@ mod tests {
         use crate::language::LanguageId;
         use std::path::Path;
 
-        // Test that the language can be obtained
         let lang = LanguageId::Markdown;
         assert_eq!(lang.as_str(), "markdown");
 
-        // Test that tree_sitter_language returns something when feature is enabled
-        // This may panic if tree-sitter-markdown is not properly linked, but that's okay for a test
         let _ = lang.tree_sitter_language();
     }
 
