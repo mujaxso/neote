@@ -193,23 +193,32 @@ export function CodeEditor({
   theme = 'dark',
 }: CodeEditorProps) {
   // Hold the full text. We re‑fetch it whenever filePath changes.
-  const [value, setValue] = useState(initialValue);
+  const [value, setValue] = useState(
+    filePath ? '' : initialValue // file-backed: start empty, load soon
+  );
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const highlightLayerRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [scrollTop, setScrollTop] = useState(0);
   const [scrollLeft, setScrollLeft] = useState(0);
   const [cursorLine, setCursorLine] = useState(1);
+  const [contentLoading, setContentLoading] = useState(!!filePath);
 
   // Determine whether this is a huge file (read‑only preview).
   const largeFile = contentTruncated ?? (initialValue.length >= TRUNCATE_CHARS);
 
   // When filePath changes, re‑fetch content from the backend.
+  // Never fall back to `initialValue` for file-backed documents.
   useEffect(() => {
     if (!filePath) {
       setValue(initialValue);
+      setContentLoading(false);
       return;
     }
+
+    setContentLoading(true);
+    setValue(''); // clear previous file content immediately
+
     let cancelled = false;
     async function loadContent() {
       try {
@@ -218,15 +227,20 @@ export function CodeEditor({
           setValue(text);
         }
       } catch (err) {
-        console.warn('Failed to fetch document content, falling back to initialValue:', err);
-        if (!cancelled) setValue(initialValue);
+        console.warn('[CodeEditor] Failed to fetch document content for', filePath, err);
+        if (!cancelled) {
+          // Keep empty – do NOT overwrite with a different file’s content.
+          setValue('');
+        }
+      } finally {
+        if (!cancelled) setContentLoading(false);
       }
     }
     loadContent();
     return () => { cancelled = true; };
   }, [filePath]);
 
-  // Reflect externally controlled initialValue (e.g. when no filePath).
+  // Reflect externally controlled initialValue only when there is no filePath.
   useEffect(() => {
     if (!filePath) {
       setValue(initialValue);
